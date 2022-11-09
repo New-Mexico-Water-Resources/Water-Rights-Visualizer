@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
-
-
 import sys
 import io
 from datetime import datetime
@@ -1343,13 +1340,15 @@ def get_path(path):
 
     return filepath
 
+
 def water_rights_gui(argv=sys.argv):
     # GEOJSON/ROI FILEPATH
     entry_roi = Entry(root, font=10, bd=2)
     entry_roi.insert(END, "Water Rights Boundary")
     #entry_roi.insert(END, "C:/Users/CashOnly/Desktop/PT-JPL/ROI_477/2035.geojson")
     entry_roi['font'] = myFont
-    entry_roi.place(relx=0.36, rely=0.1, relwidth=.66, relheight=0.05, anchor='n')
+    entry_roi.place(relx=0.36, rely=0.1, relwidth=.66,
+                    relheight=0.05, anchor='n')
 
     roi_button = Button(root, text="Single", width=8, command=lambda: [
                         browse_roi(get_path('Single'))])
@@ -1357,7 +1356,7 @@ def water_rights_gui(argv=sys.argv):
     roi_button.place(relx=0.85, rely=0.1, relheight=0.05)
 
     roi_batch = Button(root, text="Batch", width=8, command=lambda: [
-                    browse_batch(get_path('Batch'))])
+        browse_batch(get_path('Batch'))])
     roi_batch['font'] = myFont
     roi_batch.place(relx=0.720, rely=0.1, relheight=0.05)
 
@@ -1367,13 +1366,12 @@ def water_rights_gui(argv=sys.argv):
     #entry_filepath.insert(END, 'E:/Personal/ISC_DATA')
     entry_filepath['font'] = myFont
     entry_filepath.place(relx=0.41, rely=0.2, relwidth=.76,
-                        relheight=0.05, anchor='n')
+                         relheight=0.05, anchor='n')
 
     filepath_button = Button(root, text="Search", width=10, command=lambda: [
-                            browse_data(get_path('Landsat'))])
+        browse_data(get_path('Landsat'))])
     filepath_button['font'] = myFont
     filepath_button.place(relx=0.825, rely=0.2, relheight=0.05)
-
 
     # OUTPUT FILEPATH
     output_path = Entry(root, font=10, bd=2)
@@ -1381,10 +1379,10 @@ def water_rights_gui(argv=sys.argv):
     #output_path.insert(END, "C:/Users/CashOnly/Desktop/PT-JPL")
     output_path['font'] = myFont
     output_path.place(relx=0.41, rely=0.3, relwidth=0.76,
-                    relheight=0.05, anchor='n')
+                      relheight=0.05, anchor='n')
 
     output_button = Button(root, text="Search", width=10, command=lambda: [
-                        browse_output(get_path('Output'))])
+        browse_output(get_path('Output'))])
     output_button['font'] = myFont
     output_button.place(relx=0.825, rely=0.3, relheight=0.05)
 
@@ -1392,14 +1390,15 @@ def water_rights_gui(argv=sys.argv):
     entry_start = Entry(root, font=10, bd=2, justify='center')
     entry_start['font'] = myFont
     entry_start.place(relx=0.09, rely=0.4, relwidth=.12,
-                    relheight=0.05, anchor='n')
+                      relheight=0.05, anchor='n')
     #entry_start.insert(0, "2020")
     entry_start.insert(0, "Start")
 
     # END YEAR
     entry_end = Entry(root, font=10, bd=2, justify='center')
     entry_end['font'] = myFont
-    entry_end.place(relx=0.24, rely=0.4, relwidth=0.12, relheight=0.05, anchor='n')
+    entry_end.place(relx=0.24, rely=0.4, relwidth=0.12,
+                    relheight=0.05, anchor='n')
     #entry_end.insert(0, "2020")
     entry_end.insert(0, "End")
 
@@ -1414,14 +1413,14 @@ def water_rights_gui(argv=sys.argv):
     # # #entry_area.insert(0, "Acres")
 
     # Clear Texts
-    clear_text = Button(root, text='Clear Board', width=10, command=clear_text)
-    clear_text['font'] = myFont
-    clear_text.place(relx=0.825, rely=0.4, relheight=0.05)
+    clear_text_button = Button(
+        root, text='Clear Board', width=10, command=clear_text)
+    clear_text_button['font'] = myFont
+    clear_text_button.place(relx=0.825, rely=0.4, relheight=0.05)
 
     # SUBMIT BUTTON
     submit_button = Button(root, text="Submit", width=10, command=submit)
     submit_button['font'] = myFont
     submit_button.place(relx=0.670, rely=0.4, relheight=0.05)
-
 
     root.mainloop()
