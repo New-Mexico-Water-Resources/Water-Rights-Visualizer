@@ -1424,3 +1424,11 @@ def water_rights_gui(argv=sys.argv):
     submit_button.place(relx=0.670, rely=0.4, relheight=0.05)
 
     root.mainloop()
+
+
+def main(argv=sys.argv):
+    water_rights_gui(argv=argv)
+
+
+if __name__ == "__main__":
+    sys.exit(main(argv=sys.argv))
