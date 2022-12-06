@@ -48,26 +48,113 @@ from tkinter import scrolledtext
 
 # In[ ]:
 
+class Error(Exception):
+    #Base class for user defined exceptions
+    pass
+
+
+class YearOrderError(Error):
+    #Raised when start year comes after end year
+    pass
+
+
+class EarlyYearError(Error):
+    #Raised when year requested is not available (before 1985)
+    pass
+
+
+# class LateYearError(Error):
+#     #Raised when year requested is not available (after 2019)
+#     #IMPORTANT: This error is set to be raised given the range of available dates at the time this code was updated (data available for 1982-2020 but only full years in 1985-2019)
+#     pass
+
+class YearAvailableError(Error):
+    # Raised when no data found in year requested
+    # IMPORTANT: This error does not get raised if there is partial data for a year (eg. 2020 at time of code written)
+    pass
+
+
+
 
 def submit():
 
     year_list = []
-    source_path = entry_filepath.get()
     roi_path = entry_roi.get()
+    try:
+        source_path = entry_filepath.get()
+    except FileNotFoundError:
+        clear_text()
+        print("Not a valid Landsat filepath  ")
+        texts("Not a valid Landsat filepath  ")
+        return
+
 
     try:
         start = int(entry_start.get())
         year_list.append(start)
+        if start < 1985:
+            raise EarlyYearError
+        # elif start > 2019:                               # <--- WILL NEED TO BE CHANGED IF ADDITIONAL LANDSAT YEARS ARE PROCESSED!!!
+        #     raise LateYearError
     except ValueError:
-        print("Input a valid year")
-        texts("Input a valid year")
+        clear_text()
+        print("Input a valid start year  ")
+        texts("Input a valid start year  ")
+        return
+    except EarlyYearError:
+        clear_text()
+        print("Requested start year not available, must be 1985 or later  ")
+        texts("Requested start year not available, must be 1985 or later  ")
+        return
+    # except LateYearError:
+    #     clear_text()
+    #     print("Requested start year not available, must be 1985 - 2019  ")              # <-- this error message would also have to change
+    #     texts("Requested start year not available, must be 1985 - 2019  ")
+    #     return
+
+    ## this is the original try except for errors
+    # try:
+    #     end = int(entry_end.get())
+    #     year_list.append(end)
+    # except ValueError:
+    #     end = entry_start.get()
+    #     #year_list.append(end)
+
 
     try:
         end = int(entry_end.get())
         year_list.append(end)
+        if start > end:
+            raise YearOrderError
+        elif end < 1985:
+            raise EarlyYearError
+        # elif end > 2019:                                # <--- WILL NEED TO BE CHANGED IF ADDITIONAL LANDSAT YEARS ARE PROCESSED!!!
+        #     raise LateYearError
+        # elif end not in years_available:
+        #     raise EndAvailableError
     except ValueError:
-        end = entry_start.get()
-        # year_list.append(end)
+        clear_text()
+        print("Input a valid end year  ")
+        texts("Input a valid end year  ")
+        #end = entry_start.get()
+        #year_list.append(end)
+        return
+    except YearOrderError:
+        clear_text()
+        print("Start year must be before end year  ")
+        texts("Start year must be before end year  ")
+        return
+    except EarlyYearError:
+        clear_text()
+        print("Requested end year not available, must be 1985 or later  ")
+        texts("Requested end year not available, must be 1985 or later  ")
+        return
+    # except LateYearError:
+    #     clear_text()
+    #     print("Requested end year not available, must be 1985 - 2019    ")              # <-- similarly, this error message would also have to change
+    #     texts("Requested end year not available, must be 1985 - 2019    ")
+    #     return
+
 
     output = output_path.get()
 
@@ -75,8 +162,18 @@ def submit():
 
     print(year_list)
 
-    working_directory = f"{output}"
-    chdir(working_directory)
+
+    # working_directory = f"{output}"
+    # chdir(working_directory)
+
+    try:
+        working_directory = f"{output}"
+        chdir(working_directory)
+    except FileNotFoundError:
+        clear_text()
+        print("Invalid output directory filepath   ")
+        texts("Invalid output directory filepath   ")
+        return
 
     ROI_base = splitext(basename(roi_path))[0]
     DEFAULT_ROI_DIRECTORY = Path(f"{roi_path}")
@@ -90,12 +187,11 @@ def submit():
     CELL_SIZE_DEGREES = 0.0003
     CELL_SIZE_METERS = 30
     TILE_SELECTION_BUFFER_RADIUS_DEGREES = 0.01
-    ARD_TILES_FILENAME = join(abspath(dirname(__file__)), "ARD_tiles.geojson")
 
+    # ARD_tiles.geojson must be inside output directory for the code to locate it
     def select_tiles(target_geometry_latlon):
-        tiles_df = gpd.read_file(ARD_TILES_FILENAME).to_crs(WGS84)
-        selection = tiles_df.intersects(
-            target_geometry_latlon.buffer(TILE_SELECTION_BUFFER_RADIUS_DEGREES))
+        tiles_df = gpd.read_file(join(working_directory, "ARD_tiles.geojson")).to_crs(WGS84)
+        selection = tiles_df.intersects(target_geometry_latlon.buffer(TILE_SELECTION_BUFFER_RADIUS_DEGREES))
         selected_tiles_df = tiles_df[selection]
         tiles = [item[2:] for item in list(selected_tiles_df["name"])]
 
@@ -139,8 +235,7 @@ def submit():
             target_CRS = WGS84
 
         if exists(subset_filename):
-            print(
-                f"loading existing {variable_name} subset file: {subset_filename}")
+            print(f"loading existing {variable_name} subset file: {subset_filename}")
 
             with rasterio.open(subset_filename, "r") as f:
                 subset = f.read(1)
@@ -152,8 +247,7 @@ def submit():
 
         tiles = select_tiles(ROI_latlon)
         print(f"tiles: {tiles}")
-        ROI_projected = gpd.GeoDataFrame(
-            {}, geometry=[ROI_latlon], crs=WGS84).to_crs(target_CRS).geometry[0]
+        ROI_projected = gpd.GeoDataFrame({}, geometry=[ROI_latlon], crs=WGS84).to_crs(target_CRS).geometry[0]
         centroid = ROI_projected.centroid
         x_min = centroid.x - buffer_size
         x_max = centroid.x + buffer_size
@@ -173,21 +267,19 @@ def submit():
         target_cols = int(width_meters / cell_size)
         height_meters = (y_max - y_min)
         target_rows = int(height_meters / cell_size)
-        output_raster = np.full(
-            (target_rows, target_cols), np.nan, dtype=np.float32)
+        output_raster = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
+
+
 
         for tile in tiles:
-            pattern = join(raster_directory, "**",
-                           f"*_{tile}_*_{variable_name}.tif")
+            pattern = join(raster_directory, "**", f"*_{tile}_*_{variable_name}.tif")
             print(f"searching pattern: {pattern}")
             matches = sorted(glob(pattern, recursive=True))
 
             if len(matches) == 0:
                 print(f"no files found for tile: {tile}")
-                files_found = sorted(
-                    glob(join(raster_directory, '**', '*'), recursive=True))
-                tiles_found = sorted(
-                    set([splitext(basename(filename))[0].split("_")[2] for filename in files_found]))
+                files_found = sorted(glob(join(raster_directory, '**', '*'), recursive=True))
+                tiles_found = sorted(set([splitext(basename(filename))[0].split("_")[2] for filename in files_found]))
                 print(f"files found: {', '.join(tiles_found)}")
                 continue
 
@@ -198,26 +290,22 @@ def submit():
                 source_CRS = input_file.crs
                 input_affine = input_file.transform
 
-                ul = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_max)], crs=target_CRS).to_crs(
-                    source_CRS).geometry[0]
+                ul = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
                 col_ul, row_ul = ~input_affine * (ul.x, ul.y)
                 col_ul = int(col_ul)
                 row_ul = int(row_ul)
 
-                ur = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_max)], crs=target_CRS).to_crs(
-                    source_CRS).geometry[0]
+                ur = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
                 col_ur, row_ur = ~input_affine * (ur.x, ur.y)
                 col_ur = int(col_ur)
                 row_ur = int(row_ur)
 
-                lr = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_min)], crs=target_CRS).to_crs(
-                    source_CRS).geometry[0]
+                lr = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
                 col_lr, row_lr = ~input_affine * (lr.x, lr.y)
                 col_lr = int(col_lr)
                 row_lr = int(row_lr)
 
-                ll = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_min)], crs=target_CRS).to_crs(
-                    source_CRS).geometry[0]
+                ll = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
                 col_ll, row_ll = ~input_affine * (ll.x, ll.y)
                 col_ll = int(col_ll)
                 row_ll = int(row_ll)
@@ -233,16 +321,14 @@ def submit():
                 window = (row_min, row_max), (col_min, col_max)
 
                 if row_min < 0 or col_min < 0 or row_max <= row_min or col_max <= col_min:
-                    print(
-                        f"raster does not intersect target surface: {input_filename}")
+                    print(f"raster does not intersect target surface: {input_filename}")
                     continue
 
                 window = Window.from_slices(*window)
                 source_subset = input_file.read(1, window=window)
                 source_affine = window_transform(window, input_affine)
 
-            target_surface = np.full(
-                (target_rows, target_cols), np.nan, dtype=np.float32)
+            target_surface = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
 
             reproject(
                 source_subset,
@@ -255,8 +341,7 @@ def submit():
                 dst_nodata=np.nan
             )
 
-            output_raster = np.where(
-                np.isnan(output_raster), target_surface, output_raster)
+            output_raster = np.where(np.isnan(output_raster), target_surface, output_raster)
         if np.all(np.isnan(output_raster)):
             raise ValueError("blank output raster")
 
@@ -282,21 +367,20 @@ def submit():
         if isinstance(polygon, MultiPolygon):
             polygon = list(polygon)[0]
 
-        polygon_indices = [
-            ~affine * coords for coords in polygon.exterior.coords]
+        polygon_indices = [~affine * coords for coords in polygon.exterior.coords]
         patch = Polygon(polygon_indices, fill=None, color="black", linewidth=1)
+
 
         return patch
 
+    ## This is where def inventory was originally, I wanted to pull from years_available in checking if the user's end year value was within available years with flexibility for later processed data
     def inventory(source_directory):
         #print(f"searching data: {source_directory}")
         date_directories = sorted(glob(join(source_directory, "*")))
-        date_directories = [
-            directory for directory in date_directories if isdir(directory)]
-        dates_available = [datetime.strptime(
-            basename(directory), "%Y.%m.%d").date() for directory in date_directories]
-        years_available = list(
-            set(sorted([date_step.year for date_step in dates_available])))
+        date_directories = [directory for directory in date_directories if isdir(directory)]
+        dates_available = [datetime.strptime(basename(directory), "%Y.%m.%d").date() for directory in date_directories]
+        years_available = list(set(sorted([date_step.year for date_step in dates_available])))
+
 
         return years_available, dates_available
 
@@ -338,11 +422,24 @@ def submit():
             if date_step.year == year
         ]
 
-        # print("dates_in_year:")
-        # print(dates_in_year)
+        #print("dates_in_year:")
+        #print(dates_in_year)
 
-        if len(dates_in_year) == 0:
-            raise ValueError(f"no dates for year: {year}")
+
+        # if len(dates_in_year) == 0:
+        #     raise ValueError(f"no dates for year: {year}")
+
+        try:
+            if len(dates_in_year) == 0:
+                raise YearAvailableError()
+            else:
+                pass
+        except YearAvailableError:
+            clear_text()
+            print(f"No data found for year: {year}, check Landsat filepath and year availability  ")
+            texts(f"No data found for year: {year}, check Landsat filepath and year availability  ")
+            return
+
 
         for date_step in dates_in_year:
             #print(f"date: {date_step.strftime('%Y-%m-%d')}")
@@ -350,13 +447,10 @@ def submit():
             if not exists(subset_directory):
                 makedirs(subset_directory)
 
-            ET_subset_filename = join(
-                subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ET_subset.tif")
-            ESI_subset_filename = join(
-                subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ESI_subset.tif")
+            ET_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ET_subset.tif")
+            ESI_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ESI_subset.tif")
 
-            source_raster_directory = join(
-                source_directory, date_step.strftime("%Y.%m.%d"))
+            source_raster_directory = join(source_directory, date_step.strftime("%Y.%m.%d"))
 
             try:
                 ET_subset, affine = generate_subset(
@@ -392,27 +486,20 @@ def submit():
             day = date_step.day
 
             if ET_sparse_stack is None:
-                days_in_year = (datetime(year, 12, 31) -
-                                datetime(year, 1, 1)).days + 1
-                ET_sparse_stack = np.full(
-                    (days_in_year, rows, cols), np.nan, dtype=np.float32)
+                days_in_year = (datetime(year, 12, 31) - datetime(year, 1, 1)).days + 1
+                ET_sparse_stack = np.full((days_in_year, rows, cols), np.nan, dtype=np.float32)
 
             if ESI_sparse_stack is None:
-                days_in_year = (datetime(year, 12, 31) -
-                                datetime(year, 1, 1)).days + 1
-                ESI_sparse_stack = np.full(
-                    (days_in_year, rows, cols), np.nan, dtype=np.float32)
+                days_in_year = (datetime(year, 12, 31) - datetime(year, 1, 1)).days + 1
+                ESI_sparse_stack = np.full((days_in_year, rows, cols), np.nan, dtype=np.float32)
 
-            day_of_year = (datetime(year, month, day) -
-                           datetime(year, 1, 1)).days - 1
+            day_of_year = (datetime(year, month, day) - datetime(year, 1, 1)).days - 1
 
             ET_doy_image = ET_sparse_stack[day_of_year, :, :]
-            ET_sparse_stack[day_of_year, :, :] = np.where(
-                np.isnan(ET_doy_image), ET_subset, ET_doy_image)
+            ET_sparse_stack[day_of_year, :, :] = np.where(np.isnan(ET_doy_image), ET_subset, ET_doy_image)
 
             ESI_doy_image = ESI_sparse_stack[day_of_year, :, :]
-            ESI_sparse_stack[day_of_year, :, :] = np.where(
-                np.isnan(ESI_doy_image), ESI_subset, ESI_doy_image)
+            ESI_sparse_stack[day_of_year, :, :] = np.where(np.isnan(ESI_doy_image), ESI_subset, ESI_doy_image)
 
         if ET_sparse_stack is None:
             raise ValueError("no ET stack generated")
@@ -447,6 +534,7 @@ def submit():
                 affine.f
             )
 
+
         return ET_stack, PET_stack, affine
 
     def interpolate_stack(stack):
@@ -464,10 +552,11 @@ def submit():
                     continue
 
                 pixel_timeseries = pixel_timeseries[known_indices]
-                f = interp1d(known_days, pixel_timeseries, axis=0,
-                             kind="nearest", fill_value="extrapolate")
+                f = interp1d(known_days, pixel_timeseries, axis=0, kind="nearest", fill_value="extrapolate")
                 y = f(x)
                 filled_stack[:, row, col] = y
+
+
 
         return filled_stack
 
@@ -499,8 +588,9 @@ def submit():
             year,
             monthly_sums_directory,
             monthly_means_directory):
-        monthly_means_filename = join(
-            monthly_means_directory, f"{year}_monthly_means.csv")
+        monthly_means_filename = join(monthly_means_directory, f"{year}_monthly_means.csv")
+
+
 
         if exists(monthly_means_filename):
             #print(f"loading monthly means: {monthly_means_filename}")
@@ -509,8 +599,7 @@ def submit():
             days, rows, cols = ET_stack.shape
             subset_shape = (rows, cols)
             #print("rasterizing ROI")
-            mask = geometry_mask([ROI_latlon], subset_shape,
-                                 subset_affine, invert=True)
+            mask = geometry_mask([ROI_latlon], subset_shape, subset_affine, invert=True)
 
            # print(f"processing monthly values for year: {year}")
             monthly_means = []
@@ -519,8 +608,7 @@ def submit():
                 if not exists(monthly_sums_directory):
                     makedirs(monthly_sums_directory)
 
-                ET_monthly_filename = join(
-                    monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
+                ET_monthly_filename = join(monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
                 if exists(ET_monthly_filename):
                     #print(f"loading monthly file: {ET_monthly_filename}")
@@ -594,19 +682,18 @@ def submit():
                         "transform": subset_affine,
                         "crs": CRS}
 
+
                     with rasterio.open(PET_monthly_filename, "w", **profile) as f:
                         f.write(PET_monthly.astype(np.float32), 1)
 
                 ET_monthly_mean = np.nanmean(ET_monthly[mask])
                 PET_monthly_mean = np.nanmean(PET_monthly[mask])
-                monthly_means.append(
-                    [year, month, ET_monthly_mean, PET_monthly_mean])
+                monthly_means.append([year, month, ET_monthly_mean, PET_monthly_mean])
 
             if not exists(monthly_means_directory):
                 makedirs(monthly_means_directory)
 
-            monthly_means_df = pd.DataFrame(
-                monthly_means, columns=["Year", "Month", "ET", "PET"])
+            monthly_means_df = pd.DataFrame(monthly_means, columns=["Year", "Month", "ET", "PET"])
             #print(f"writing monthly means: {monthly_means_filename}")
             monthly_means_df.to_csv(monthly_means_filename)
 
@@ -635,8 +722,7 @@ def submit():
                                        **out_meta) as dest:
                         dest.write(out_image)
 
-        a_subset = rasterio.open(
-            subset_directory + "/" + listdir(subset_directory)[0])
+        a_subset = rasterio.open(subset_directory + "/" + listdir(subset_directory)[0])
 
         out_image, out_transform = mask(a_subset, ROI_for_nan, invert=True)
         out_meta = a_subset.meta.copy()
@@ -648,24 +734,23 @@ def submit():
             dest2.write(out_image)
 
         roi_mask = raster_geometry_mask(a_subset, ROI_for_nan, invert=True)
-        # print(f"roi_mask:")
-        # print(roi_mask)
+        #print(f"roi_mask:")
+        #print(roi_mask)
         open_mask = (rasterio.open(subset_directory + "/masked_area.tif"))
-        # print(f"open_mask:")
-        # print(open_mask)
+        #print(f"open_mask:")
+        #print(open_mask)
         area_mask = open_mask.read()
-        # print(f"area_mask:")
-        # print(area_mask)
+        #print(f"area_mask:")
+        #print(area_mask)
         #area = np.count_nonzero((area_mask[0][roi_mask[0]]))
         area = np.count_nonzero(((area_mask[0][roi_mask[0]])) == 0)
-        # print(f"area:")
-        # print(area)
+        #print(f"area:")
+        #print(area)
 
         ET_subset = rasterio.open(nan_subsets + "/" + listdir(nan_subsets)[0])
         base_name = basename(ET_subset.name)
         file_name = splitext(base_name)[0]
-        subset_in_mskdir = (rasterio.open(
-            nan_subsets + '/' + file_name + ".tif"))
+        subset_in_mskdir = (rasterio.open(nan_subsets + '/' + file_name + ".tif"))
 
         percent_nan = []
         msk_subsets = glob(join(nan_subsets, '*.tif'))
@@ -743,8 +828,8 @@ def submit():
 
         for years in set(nan_monthly_avg.Year):
             new_csv_by_year = monthly_nan_directory + '/' + str(years) + ".csv"
-            nan_monthly_avg.loc[nan_monthly_avg.Year == years].to_csv(
-                new_csv_by_year, index=False, columns=cols_nan)
+            nan_monthly_avg.loc[nan_monthly_avg.Year == years].to_csv(new_csv_by_year, index=False, columns=cols_nan)
+
 
         remove(nan_monthly_folder)
         remove(nan_folder)
@@ -762,21 +847,21 @@ def submit():
             monthly_sums_directory,
             figure_filename):
 
+
+
+
         fig = plt.figure()
-        fig.suptitle(
-            (f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize=14)
+        fig.suptitle((f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize = 14)
         grid = plt.GridSpec(3, 4, wspace=0.4, hspace=0.3)
 
         for i, month in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
             #print(f"rendering month: {month} sub-figure: {i}")
             subfigure_title = datetime(year, month, 1).date().strftime("%Y-%m")
             #print(f"sub-figure title: {subfigure_title}")
-            ET_monthly_filename = join(
-                monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
+            ET_monthly_filename = join(monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
             if not exists(ET_monthly_filename):
-                raise IOError(
-                    f"monthly sum file not found: {ET_monthly_filename}")
+                raise IOError(f"monthly sum file not found: {ET_monthly_filename}")
 
             #print(f"loading monthly file: {ET_monthly_filename}")
             with rasterio.open(ET_monthly_filename, "r") as f:
@@ -803,8 +888,7 @@ def submit():
 
         fig.subplots_adjust(right=0.8)
         cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-        fig.colorbar(im, cax=cbar_ax, ticks=[
-        ], label=f'Low                                                            High')
+        fig.colorbar(im, cax=cbar_ax, ticks=[], label= f'Low                                                            High')
 
         ax = plt.subplot(grid[2, :])
         df = main_df[main_df["Year"] == year]
@@ -812,11 +896,11 @@ def submit():
         y = df["PET"]
         y2 = df["ET"]
         ci = df["percent_nan"]
-        sns.lineplot(x=x, y=y, ax=ax, color="blue", label="PET")
-        sns.lineplot(x=x, y=y2, ax=ax, color="green", label="ET")
+        sns.lineplot(x, y, ax=ax, color="blue", label="PET")
+        sns.lineplot(x, y2, ax=ax, color="green", label="ET")
         ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1)
         ax.fill_between(x, (y2 - ci), (y2 + ci), color='g', alpha=.1)
-        plt.legend(labels=['ET'], loc='upper right')
+        plt.legend(labels=['ET'], loc ='upper right')
         ax.legend(loc='upper left', fontsize=6)
         ax.set(xlabel="Month", ylabel="ET (mm)")
         ymin = min(min(main_df["ET"]), min(main_df["ET"]))
@@ -826,13 +910,12 @@ def submit():
         ax.set_yticks([int(ymin), int(ymax)+10])
         ax.set_yticklabels(['Low', 'High'])
 
-        plt.title(f"Area of Interest Average Monthly Water Use", fontsize=10)
-        caption = "ET and PET calculated by the PT-JPL retrieval: Fisher et al. (2008) with Landsat data"
+
+        plt.title(f"Area of Interest Average Monthly Water Use", fontsize = 10)
+        caption =  "ET and PET calculated by the PT-JPL retrieval: Fisher et al. (2008) with Landsat data"
         caption2 = f"Visualization created {date}"
-        plt.figtext(0.48, 0.001, caption, wrap=True, verticalalignment='bottom',
-                    horizontalalignment='center', fontsize=5)
-        plt.figtext(0.93, 0.001, caption2, wrap=True,
-                    verticalalignment='bottom', horizontalalignment='right', fontsize=5)
+        plt.figtext(0.48, 0.001, caption, wrap = True, verticalalignment = 'bottom', horizontalalignment = 'center', fontsize = 5)
+        plt.figtext(0.93, 0.001, caption2, wrap = True, verticalalignment = 'bottom', horizontalalignment = 'right', fontsize = 5)
         plt.tight_layout()
 
         #print(f"writing figure: {figure_filename}")
@@ -841,8 +924,8 @@ def submit():
         texts(f"End Time:{end_time}\n")
         texts("\n")
         plt.savefig(figure_filename, dpi=300)
-        # plt.show()
-        # plt.close(fig)
+        #plt.show()
+        #plt.close(fig)
 
         add_image(figure_filename)
 
@@ -850,7 +933,7 @@ def submit():
             ROI,
             start,
             end,
-            # acres,
+            #acres,
             output,
             source_path,
             ROI_name=None,
@@ -868,16 +951,14 @@ def submit():
             remove_working_directory=None):
 
         ROI_base = splitext(basename(ROI))[0]
-        DEFAULT_FIGURE_DIRECTORY = Path(f"{output}/figures")
+        DEFAULT_FIGURE_DIRECTORY = Path(f"{output}/Figures")
         DEFAULT_SOURCE_DIRECTORY = Path(f"{source_path}")
-        DEFAULT_SUBSET_DIRECTORY = Path(f"{output}/subset/{ROI_base}")
-        DEFAULT_NAN_SUBSET_DIRECTORY = Path(f"{output}/nan_subsets/{ROI_base}")
-        DEFAULT_MONTHLY_DIRECTORY = Path(f"{output}/monthly/{ROI_base}")
-        DEFAULT_STACK_DIRECTORY = Path(f"{output}/stack/{ROI_base}")
-        DEFAULT_MONTHLY_NAN_DIRECTORY = Path(
-            f"{output}/monthly_nan/{ROI_base}")
-        DEFAULT_MONTHLY_MEANS_DIRECTORY = Path(
-            f"{output}/monthly_means/{ROI_base}")
+        DEFAULT_SUBSET_DIRECTORY = Path(f"{output}/Subset_TIFs/{ROI_base}")
+        DEFAULT_NAN_SUBSET_DIRECTORY = Path(f"{output}/Subset_nan/{ROI_base}")
+        DEFAULT_MONTHLY_DIRECTORY = Path(f"{output}/Monthly_TIFs/{ROI_base}")
+        DEFAULT_STACK_DIRECTORY = Path(f"{output}/Yearly_Stack/{ROI_base}")
+        DEFAULT_MONTHLY_NAN_DIRECTORY = Path(f"{output}/Monthly_nan_CSV/{ROI_base}")
+        DEFAULT_MONTHLY_MEANS_DIRECTORY = Path(f"{output}/Monthly_means_CSV/{ROI_base}")
 
         if ROI_name is None:
             ROI_name = splitext(basename(ROI))[0]
@@ -889,27 +970,22 @@ def submit():
             remove_working_directory = True
 
         if subset_directory is None:
-            subset_directory = join(
-                working_directory, DEFAULT_SUBSET_DIRECTORY)
+            subset_directory = join(working_directory, DEFAULT_SUBSET_DIRECTORY)
 
         if nan_subset_directory is None:
-            nan_subset_directory = join(
-                working_directory, DEFAULT_NAN_SUBSET_DIRECTORY)
+            nan_subset_directory = join(working_directory, DEFAULT_NAN_SUBSET_DIRECTORY)
 
         if monthly_sums_directory is None:
-            monthly_sums_directory = join(
-                working_directory, DEFAULT_MONTHLY_DIRECTORY)
+            monthly_sums_directory = join(working_directory, DEFAULT_MONTHLY_DIRECTORY)
 
         if stack_directory is None:
             stack_directory = join(working_directory, DEFAULT_STACK_DIRECTORY)
 
         if monthly_means_directory is None:
-            monthly_means_directory = join(
-                working_directory, DEFAULT_MONTHLY_MEANS_DIRECTORY)
+            monthly_means_directory = join(working_directory, DEFAULT_MONTHLY_MEANS_DIRECTORY)
 
         if monthly_nan_directory is None:
-            monthly_nan_directory = join(
-                working_directory, DEFAULT_MONTHLY_NAN_DIRECTORY)
+            monthly_nan_directory = join(working_directory, DEFAULT_MONTHLY_NAN_DIRECTORY)
 
         if source_directory is None:
             source_directory = DEFAULT_SOURCE_DIRECTORY
@@ -920,19 +996,19 @@ def submit():
         if target_CRS is None:
             target_CRS = WGS84
 
-        if start == end:
+        if start == end :
+            clear_text()
             str_time = datetime.now().strftime("%H%M")
             texts(f"Start Time:{str_time}\n")
-            display_text01 = io.StringIO(
-                f"Generating ET for {ROI_name}:\n{start}\n")
+            display_text01 = io.StringIO(f"Generating ET for {ROI_name}:\n{start}\n")
             output01 = display_text01.getvalue()
             text.insert(1.0, output01)
             root.update()
         else:
+            clear_text()
             str_time = datetime.now().strftime("%H%M")
             texts(f"Start Time:{str_time}\n")
-            display_text01 = io.StringIO(
-                f"Generating ET for {ROI_name}:\n{start} - {end}\n")
+            display_text01 = io.StringIO(f"Generating ET for {ROI_name}:\n{start} - {end}\n")
             output01 = display_text01.getvalue()
             text.insert(1.0, output01)
             root.update()
@@ -951,12 +1027,14 @@ def submit():
         else:
             years_x = [*range(int(start), int(end)+1)]
 
+
+
         for i, year in enumerate(years_x):
             print(f"processing: {year}")
             texts(f"Processing: {year}\n")
 
-            stack_filename = join(
-                stack_directory, f"{year:04d}_{ROI_name}_stack.h5")
+
+            stack_filename = join(stack_directory, f"{year:04d}_{ROI_name}_stack.h5")
 
             try:
 
@@ -970,11 +1048,12 @@ def submit():
                     dates_available=dates_available,
                     stack_filename=stack_filename,
                     target_CRS=target_CRS
-                )
+            )
             except Exception as e:
                 print(e)
                 print(f"unable to generate stack for year: {year}")
                 continue
+
 
             monthly_means.append(process_monthly(
                 ET_stack=ET_stack,
@@ -1004,20 +1083,17 @@ def submit():
             print(f"application nan means: \n {nan_means}")
 
             month_means = []
-            mm = pd.read_csv(
-                f"{monthly_means_directory}/{year}_monthly_means.csv")
+            mm = pd.read_csv(f"{monthly_means_directory}/{year}_monthly_means.csv")
             month_means.append(mm)
             print(f"application monthly means: \n {month_means}")
 
-            idx = {'Months': [3, 4, 5, 6, 7, 8, 9, 10]}
-            df1 = pd.DataFrame(idx, columns=['Months'])
-            df2 = pd.DataFrame(idx, columns=['Months'])
+            idx =  {'Months': [3,4,5,6,7,8,9,10]}
+            df1 = pd.DataFrame(idx, columns = ['Months'])
+            df2 = pd.DataFrame(idx, columns = ['Months'])
 
-            main_dfa = pd.merge(left=df1, right=mm, how='left',
-                                left_on="Months", right_on="Month")
-            main_df = pd.merge(left=main_dfa, right=nd,
-                               how='left', left_on="Months", right_on="month")
-            main_df = main_df.replace(np.nan, 100)
+            main_dfa = pd.merge(left = df1, right = mm, how = 'left', left_on = "Months", right_on = "Month")
+            main_df = pd.merge(left = main_dfa, right = nd, how = 'left', left_on = "Months", right_on = "month")
+            main_df = main_df.replace(np.nan,100)
             print(f'main_df: {main_df}')
 
             monthly_means_df = pd.concat(month_means, axis=0)
@@ -1028,7 +1104,7 @@ def submit():
             vmax = mean + 2 * sd
 
             today = dt.today()
-            date = str(today)
+            date= str(today)
 
             print(f"generating figure for year: {year}")
 
@@ -1037,8 +1113,7 @@ def submit():
             if not exists(figure_output_directory):
                 makedirs(figure_output_directory)
 
-            figure_filename = join(
-                figure_output_directory, f"{year}_{ROI_name}.png")
+            figure_filename = join(figure_output_directory, f"{year}_{ROI_name}.png")
 
             if exists(figure_filename):
                 print(f"figure already exists: {figure_filename}")
@@ -1065,67 +1140,69 @@ def submit():
                 print(f"unable to generate figure for year: {year}")
                 continue
 
+
+
     if isfile(ROI) == True:
         water_rights(
-            ROI,
-            start,
-            end,
-            # acres,
-            output,
-            source_path,
-            ROI_name=None,
-            source_directory=None,
-            figure_directory=None,
-            working_directory=None,
-            subset_directory=None,
-            nan_subset_directory=None,
-            stack_directory=None,
-            monthly_sums_directory=None,
-            monthly_means_directory=None,
-            monthly_nan_directory=None,
-            target_CRS=None,
-            remove_working_directory=None)
+        ROI,
+        start,
+        end,
+        #acres,
+        output,
+        source_path,
+        ROI_name=None,
+        source_directory=None,
+        figure_directory=None,
+        working_directory=None,
+        subset_directory=None,
+        nan_subset_directory=None,
+        stack_directory=None,
+        monthly_sums_directory=None,
+        monthly_means_directory=None,
+        monthly_nan_directory=None,
+        target_CRS=None,
+        remove_working_directory=None)
 
     elif isdir(ROI) == True:
         for items in scandir(ROI):
             if items.name.endswith(".geojson"):
                 roi_name = abspath(items)
                 water_rights(
-                    roi_name,
-                    start,
-                    end,
-                    # acres,
-                    output,
-                    source_path,
-                    ROI_name=None,
-                    source_directory=None,
-                    figure_directory=None,
-                    working_directory=None,
-                    subset_directory=None,
-                    nan_subset_directory=None,
-                    stack_directory=None,
-                    monthly_sums_directory=None,
-                    monthly_means_directory=None,
-                    monthly_nan_directory=None,
-                    target_CRS=None,
-                    remove_working_directory=None)
+                roi_name,
+                start,
+                end,
+                #acres,
+                output,
+                source_path,
+                ROI_name=None,
+                source_directory=None,
+                figure_directory=None,
+                working_directory=None,
+                subset_directory=None,
+                nan_subset_directory=None,
+                stack_directory=None,
+                monthly_sums_directory=None,
+                monthly_means_directory=None,
+                monthly_nan_directory=None,
+                target_CRS=None,
+                remove_working_directory=None)
     else:
-        texts("Not a valid file")
-        print("Not a valid file")
-
+        clear_text()
+        texts("Not a valid Water Right file   ")
+        print("Not a valid Water Right file   ")
 
 HEIGHT = 600
 WIDTH = 700
 
-root = Tk()
+root =  Tk()
 root.title("JPL-NMOSE ET visualizer")
 root.geometry("700x600")
-root.resizable(0, 0)
+root.resizable(0,0)
 
-canvas = Canvas(root, height=HEIGHT, width=WIDTH)
+canvas = Canvas(root, height = HEIGHT, width = WIDTH )
 canvas.pack()
 
-myFont = font.Font(family='Helvetica', size=12)
+myFont = font.Font(family='Helvetica', size = 12)
 
 imgpath = join(dirname(abspath(sys.argv[0])), "img4.png")
 
@@ -1133,31 +1210,27 @@ imgpath = join(dirname(abspath(sys.argv[0])), "img4.png")
 
 
 if exists(imgpath) == True:
-    img = PhotoImage(file=imgpath)
-    background_label = Label(root, image=img)
-    background_label.place(relwidth=1, relheight=1)
-    low_frame = Frame(root, bg='skyblue', bd=4)
-    low_frame.place(relx=0.20, rely=0.5, relwidth=0.35,
-                    relheight=0.4, anchor='n')
-    img_frame = Frame(root, bg='skyblue', bd=4)
-    img_frame.place(relx=0.675, rely=0.5, relwidth=0.60,
-                    relheight=0.4, anchor='n')
+    img = PhotoImage(file = imgpath)
+    background_label = Label(root, image = img)
+    background_label.place(relwidth = 1, relheight = 1)
+    low_frame = Frame(root, bg = 'skyblue', bd = 4)
+    low_frame.place(relx = 0.20, rely = 0.5, relwidth = 0.35, relheight = 0.4, anchor = 'n')
+    img_frame = Frame(root, bg = 'skyblue', bd = 4)
+    img_frame.place(relx = 0.675, rely = 0.5, relwidth = 0.60, relheight = 0.4, anchor = 'n')
 else:
-    background_label = Label(root, bg='lightseagreen')
-    background_label.place(relwidth=1, relheight=1)
-    low_frame = Frame(root, bg='mediumturquoise', bd=4)
-    low_frame.place(relx=0.20, rely=0.5, relwidth=0.35,
-                    relheight=0.4, anchor='n')
-    img_frame = Frame(root, bg='mediumturquoise', bd=4)
-    img_frame.place(relx=0.675, rely=0.5, relwidth=0.60,
-                    relheight=0.4, anchor='n')
+    background_label = Label(root, bg = 'lightseagreen')
+    background_label.place(relwidth = 1, relheight = 1)
+    low_frame = Frame(root, bg = 'mediumturquoise', bd = 4)
+    low_frame.place(relx = 0.20, rely = 0.5, relwidth = 0.35, relheight = 0.4, anchor = 'n')
+    img_frame = Frame(root, bg = 'mediumturquoise', bd = 4)
+    img_frame.place(relx = 0.675, rely = 0.5, relwidth = 0.60, relheight = 0.4, anchor = 'n')
 
 
-text = scrolledtext.ScrolledText(low_frame, width=200, height=200)
+text = scrolledtext.ScrolledText(low_frame, width = 200, height = 200)
 text.config(state=NORMAL)
 text.pack()
 
-image = Text(img_frame, width=200, height=200)
+image = Text(img_frame, width = 200, height = 200)
 image.config(state=NORMAL)
 image.pack()
 
@@ -1169,7 +1242,6 @@ image.pack()
 # # display_text = io.StringIO("text\n")
 # # output = display_text.getvalue()
 # # text.insert(END, output)
-
 
 def texts(sometexts):
     display_text = io.StringIO(f"{sometexts}")
@@ -1185,25 +1257,23 @@ def browse_data(i):
     phrase = i
 
     if isdir(phrase) == True:
-        landsat_file = filedialog.askdirectory(
-            initialdir=phrase, title="Select Landsat directory")
+        landsat_file = filedialog.askdirectory(initialdir = phrase, title ="Select Landsat directory")
         if landsat_file == phrase:
             pass
         elif len(landsat_file) < 1:
             pass
         else:
             clear_data()
-            entry_filepath.insert(END, landsat_file)
+            entry_filepath.insert(END, landsat_file )
     else:
-        landsat_file = filedialog.askdirectory(
-            initialdir="C:/Users/", title="Select Landsat directory")
+        landsat_file = filedialog.askdirectory(initialdir = "C:/Users/", title ="Select Landsat directory")
         if landsat_file == phrase:
             pass
         elif len(landsat_file) < 1:
             pass
         else:
             clear_data()
-            entry_filepath.insert(END, landsat_file)
+            entry_filepath.insert(END, landsat_file )
 
 
 def browse_roi(i):
@@ -1211,8 +1281,7 @@ def browse_roi(i):
     phrase = i
 
     if isdir(phrase) == True:
-        roi_file = filedialog.askopenfilename(
-            initialdir=phrase, title="Select geojson file")
+        roi_file = filedialog.askopenfilename(initialdir = phrase, title ="Select geojson file")
         if roi_file == phrase:
             pass
         elif len(roi_file) < 1:
@@ -1222,8 +1291,7 @@ def browse_roi(i):
             entry_roi.insert(END, roi_file)
 
     elif isfile(phrase) == True:
-        roi_file = filedialog.askopenfilename(
-            initialdir=phrase, title="Select geojson file")
+        roi_file = filedialog.askopenfilename(initialdir = phrase, title ="Select geojson file")
         if roi_file == phrase:
             pass
         elif len(roi_file) < 1:
@@ -1233,8 +1301,7 @@ def browse_roi(i):
             entry_roi.insert(END, roi_file)
 
     else:
-        roi_file = filedialog.askopenfilename(
-            initialdir="C:/Users/", title="Select geojson file")
+        roi_file = filedialog.askopenfilename(initialdir = "C:/Users/", title ="Select geojson file")
         if roi_file == phrase:
             pass
         elif len(roi_file) < 1:
@@ -1242,15 +1309,13 @@ def browse_roi(i):
         else:
             clear_roi()
             entry_roi.insert(END, roi_file)
-
 
 def browse_batch(i):
 
     phrase = i
 
     if isdir(phrase) == True:
-        roi_batch = filedialog.askdirectory(
-            initialdir=phrase, title="Select outpt directory")
+        roi_batch =  filedialog.askdirectory(initialdir = phrase, title ="Select output directory")
         if roi_batch == phrase:
             pass
         elif len(roi_batch) < 1:
@@ -1259,8 +1324,7 @@ def browse_batch(i):
             clear_roi()
             entry_roi.insert(END, roi_batch)
     else:
-        roi_batch = filedialog.askdirectory(
-            initialdir="C:/Users/", title="Select outpt directory")
+        roi_batch =  filedialog.askdirectory(initialdir = "C:/Users/", title ="Select output directory")
         if roi_batch == phrase:
             pass
         elif len(roi_batch) < 1:
@@ -1269,14 +1333,12 @@ def browse_batch(i):
             clear_roi()
             entry_roi.insert(END, roi_batch)
 
-
 def browse_output(i):
 
     phrase = i
 
     if isdir(phrase) == True:
-        output_file = filedialog.askdirectory(
-            initialdir=phrase, title="Select outpt directory")
+        output_file =  filedialog.askdirectory(initialdir = phrase, title ="Select output directory")
         if output_file == phrase:
             pass
         elif len(output_file) < 1:
@@ -1285,8 +1347,7 @@ def browse_output(i):
             clear_output()
             output_path.insert(END, output_file)
     else:
-        output_file = filedialog.askdirectory(
-            initialdir="C:/Users/", title="Select outpt directory")
+        output_file =  filedialog.askdirectory(initialdir = "C:/Users/", title ="Select output directory")
         if output_file == phrase:
             pass
         elif len(output_file) < 1:
@@ -1299,31 +1360,26 @@ def browse_output(i):
 def clear_roi():
     entry_roi.delete(0, 'end')
 
-
 def clear_data():
     entry_filepath.delete(0, 'end')
-
 
 def clear_output():
     output_path.delete(0, 'end')
 
-
 def clear_text():
     image.delete(1.0, END)
     text.delete(1.0, END)
-    progress.set(0)
+    #progress.set(0)
     root.update()
-
 
 def add_image(filepath):
     global im_resize
     im = PIL.Image.open(filepath)
     im = im.resize((375, 225), PIL.Image.ANTIALIAS)
     im_resize = PIL.ImageTk.PhotoImage(im)
-    image.image_create('1.0', image=im_resize)
+    image.image_create('1.0',image = im_resize)
     root.image.see('1.0')
     root.update()
-
 
 def get_path(path):
 
@@ -1340,95 +1396,80 @@ def get_path(path):
 
     return filepath
 
+# GEOJSON/ROI FILEPATH
+entry_roi = Entry(root, font = 10, bd = 2)
+entry_roi.insert(END, "Water Rights Boundary")
+#entry_roi.insert(END, "C:/Users/CashOnly/Desktop/PT-JPL/ROI_477/2035.geojson")
+entry_roi['font'] = myFont
+entry_roi.place(relx = 0.36, rely = 0.1, relwidth = .66, relheight = 0.05, anchor = 'n')
 
-def water_rights_gui(argv=sys.argv):
-    # GEOJSON/ROI FILEPATH
-    entry_roi = Entry(root, font=10, bd=2)
-    entry_roi.insert(END, "Water Rights Boundary")
-    #entry_roi.insert(END, "C:/Users/CashOnly/Desktop/PT-JPL/ROI_477/2035.geojson")
-    entry_roi['font'] = myFont
-    entry_roi.place(relx=0.36, rely=0.1, relwidth=.66,
-                    relheight=0.05, anchor='n')
+roi_button = Button(root, text = "Single", width = 8, command = lambda:[browse_roi(get_path('Single'))])
+roi_button['font'] = myFont
+roi_button.place(relx = 0.85, rely = 0.1 , relheight = 0.05)
 
-    roi_button = Button(root, text="Single", width=8, command=lambda: [
-                        browse_roi(get_path('Single'))])
-    roi_button['font'] = myFont
-    roi_button.place(relx=0.85, rely=0.1, relheight=0.05)
+roi_batch = Button(root, text = "Batch", width = 8, command = lambda:[browse_batch(get_path('Batch'))])
+roi_batch['font'] = myFont
+roi_batch.place(relx = 0.720, rely = 0.1 , relheight = 0.05)
 
-    roi_batch = Button(root, text="Batch", width=8, command=lambda: [
-        browse_batch(get_path('Batch'))])
-    roi_batch['font'] = myFont
-    roi_batch.place(relx=0.720, rely=0.1, relheight=0.05)
+# LANDSAT DATA FILEPATH
+entry_filepath = Entry(root,  font = 10, bd = 2, borderwidth = 2)
+entry_filepath.insert(END, 'Landsat Directory')
+#entry_filepath.insert(END, 'E:/Personal/ISC_DATA')
+entry_filepath['font'] = myFont
+entry_filepath.place(relx = 0.41, rely = 0.2, relwidth = .76, relheight = 0.05, anchor = 'n')
 
-    # LANDSAT DATA FILEPATH
-    entry_filepath = Entry(root,  font=10, bd=2, borderwidth=2)
-    entry_filepath.insert(END, 'Landsat Directory')
-    #entry_filepath.insert(END, 'E:/Personal/ISC_DATA')
-    entry_filepath['font'] = myFont
-    entry_filepath.place(relx=0.41, rely=0.2, relwidth=.76,
-                         relheight=0.05, anchor='n')
-
-    filepath_button = Button(root, text="Search", width=10, command=lambda: [
-        browse_data(get_path('Landsat'))])
-    filepath_button['font'] = myFont
-    filepath_button.place(relx=0.825, rely=0.2, relheight=0.05)
-
-    # OUTPUT FILEPATH
-    output_path = Entry(root, font=10, bd=2)
-    output_path.insert(END, "Output Directory")
-    #output_path.insert(END, "C:/Users/CashOnly/Desktop/PT-JPL")
-    output_path['font'] = myFont
-    output_path.place(relx=0.41, rely=0.3, relwidth=0.76,
-                      relheight=0.05, anchor='n')
-
-    output_button = Button(root, text="Search", width=10, command=lambda: [
-        browse_output(get_path('Output'))])
-    output_button['font'] = myFont
-    output_button.place(relx=0.825, rely=0.3, relheight=0.05)
-
-    # START YEAR
-    entry_start = Entry(root, font=10, bd=2, justify='center')
-    entry_start['font'] = myFont
-    entry_start.place(relx=0.09, rely=0.4, relwidth=.12,
-                      relheight=0.05, anchor='n')
-    #entry_start.insert(0, "2020")
-    entry_start.insert(0, "Start")
-
-    # END YEAR
-    entry_end = Entry(root, font=10, bd=2, justify='center')
-    entry_end['font'] = myFont
-    entry_end.place(relx=0.24, rely=0.4, relwidth=0.12,
-                    relheight=0.05, anchor='n')
-    #entry_end.insert(0, "2020")
-    entry_end.insert(0, "End")
-
-    # # WR AREA
-    # options = ['Column','Geoanalysis']
-    # variable = StringVar(root)
-    # variable.set(options[0])
-    # entry_area = OptionMenu(root, variable, *options)
-    # # #entry_area = Entry(root, font = 2, bd = 2, width = 10)
-    # # entry_area['font'] = myFont
-    # # entry_area.place(relx = 0.355, rely = 0.4, relwidth = 0.15, relheight = 0.05)
-    # # #entry_area.insert(0, "Acres")
-
-    # Clear Texts
-    clear_text_button = Button(
-        root, text='Clear Board', width=10, command=clear_text)
-    clear_text_button['font'] = myFont
-    clear_text_button.place(relx=0.825, rely=0.4, relheight=0.05)
-
-    # SUBMIT BUTTON
-    submit_button = Button(root, text="Submit", width=10, command=submit)
-    submit_button['font'] = myFont
-    submit_button.place(relx=0.670, rely=0.4, relheight=0.05)
-
-    root.mainloop()
+filepath_button = Button(root, text = "Search", width  = 10, command = lambda: [ browse_data(get_path('Landsat'))])
+filepath_button['font'] = myFont
+filepath_button.place(relx = 0.825, rely = 0.2, relheight = 0.05)
 
 
-def main(argv=sys.argv):
-    water_rights_gui(argv=argv)
+# OUTPUT FILEPATH
+output_path = Entry(root, font = 10, bd = 2)
+output_path.insert(END, "Output Directory")
+#output_path.insert(END, "C:/Users/CashOnly/Desktop/PT-JPL")
+output_path['font'] = myFont
+output_path.place(relx = 0.41, rely = 0.3, relwidth = 0.76, relheight = 0.05, anchor = 'n')
+
+output_button = Button(root,text = "Search", width = 10, command = lambda:[browse_output(get_path('Output'))])
+output_button['font'] = myFont
+output_button.place(relx = 0.825, rely = 0.3, relheight = 0.05)
+
+# START YEAR
+entry_start = Entry(root, font = 10, bd = 2, justify='center')
+entry_start['font'] = myFont
+entry_start.place(relx = 0.09, rely = 0.4, relwidth = .12, relheight = 0.05, anchor = 'n')
+#entry_start.insert(0, "2020")
+entry_start.insert(0, "Start")
+
+# END YEAR
+entry_end = Entry(root, font = 10, bd = 2, justify='center')
+entry_end['font'] = myFont
+entry_end.place(relx = 0.24, rely = 0.4, relwidth = 0.12, relheight= 0.05, anchor = 'n')
+#entry_end.insert(0, "2020")
+entry_end.insert(0, "End")
+
+# # WR AREA
+# options = ['Column','Geoanalysis']
+# variable = StringVar(root)
+# variable.set(options[0])
+# entry_area = OptionMenu(root, variable, *options)
+# # #entry_area = Entry(root, font = 2, bd = 2, width = 10)
+# # entry_area['font'] = myFont
+# # entry_area.place(relx = 0.355, rely = 0.4, relwidth = 0.15, relheight = 0.05)
+# # #entry_area.insert(0, "Acres")
+
+#Clear Texts
+clear_text_button = Button(root, text = 'Clear Board', width =10, command = clear_text)
+clear_text_button['font'] = myFont
+clear_text_button.place(relx = 0.825, rely=0.4, relheight=0.05)
+
+# SUBMIT BUTTON
+submit_button = Button(root, text = "Submit", width = 10, command = submit)
+submit_button['font'] = myFont
+submit_button.place(relx = 0.670, rely = 0.4, relheight = 0.05)
 
 
-if __name__ == "__main__":
-    sys.exit(main(argv=sys.argv))
+root.mainloop()
+
+
+# In[ ]:
