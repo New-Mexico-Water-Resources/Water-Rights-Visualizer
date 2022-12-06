@@ -896,8 +896,8 @@ def submit():
         y = df["PET"]
         y2 = df["ET"]
         ci = df["percent_nan"]
-        sns.lineplot(x, y, ax=ax, color="blue", label="PET")
-        sns.lineplot(x, y2, ax=ax, color="green", label="ET")
+        sns.lineplot(x=x, y=y, ax=ax, color="blue", label="PET")
+        sns.lineplot(x=x, y=y2, ax=ax, color="green", label="ET")
         ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1)
         ax.fill_between(x, (y2 - ci), (y2 + ci), color='g', alpha=.1)
         plt.legend(labels=['ET'], loc ='upper right')
@@ -1087,7 +1087,7 @@ def submit():
             month_means.append(mm)
             print(f"application monthly means: \n {month_means}")
 
-            idx =  {'Months': [3,4,5,6,7,8,9,10]}
+            idx =  {'Months': [1,2,3,4,5,6,7,8,9,10,11,12]}
             df1 = pd.DataFrame(idx, columns = ['Months'])
             df2 = pd.DataFrame(idx, columns = ['Months'])
 
