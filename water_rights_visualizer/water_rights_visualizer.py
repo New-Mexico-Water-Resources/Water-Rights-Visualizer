@@ -767,7 +767,7 @@ def submit():
             (f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize=14)
         grid = plt.GridSpec(3, 4, wspace=0.4, hspace=0.3)
 
-        for i, month in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
+        for i, month in enumerate((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12)):
             #print(f"rendering month: {month} sub-figure: {i}")
             subfigure_title = datetime(year, month, 1).date().strftime("%Y-%m")
             #print(f"sub-figure title: {subfigure_title}")
@@ -1009,7 +1009,7 @@ def submit():
             month_means.append(mm)
             print(f"application monthly means: \n {month_means}")
 
-            idx = {'Months': [3, 4, 5, 6, 7, 8, 9, 10]}
+            idx = {'Months': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
             df1 = pd.DataFrame(idx, columns=['Months'])
             df2 = pd.DataFrame(idx, columns=['Months'])
 
