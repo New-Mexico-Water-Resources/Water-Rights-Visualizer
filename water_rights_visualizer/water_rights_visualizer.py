@@ -854,7 +854,7 @@ def submit():
         fig.suptitle((f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize = 14)
         grid = plt.GridSpec(3, 4, wspace=0.4, hspace=0.3)
 
-        for i, month in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
+        for i, month in enumerate((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)):
             #print(f"rendering month: {month} sub-figure: {i}")
             subfigure_title = datetime(year, month, 1).date().strftime("%Y-%m")
             #print(f"sub-figure title: {subfigure_title}")
