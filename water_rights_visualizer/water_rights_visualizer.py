@@ -68,6 +68,7 @@ class EarlyYearError(Error):
 #     #IMPORTANT: This error is set to be raised given the range of available dates at the time this code was updated (data available for 1982-2020 but only full years in 1985-2019)
 #     pass
 
+
 class YearAvailableError(Error):
     # Raised when no data found in year requested
     # IMPORTANT: This error does not get raised if there is partial data for a year (eg. 2020 at time of code written)
@@ -76,8 +77,18 @@ class YearAvailableError(Error):
 
 
 
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Submit is run when the submit button is pressed and performs the majority of computations in the tool
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def submit():
 
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Creating local variables
+    # Local
+    #   year_list - list containing the start and end years only for the request (i.e. [2000, 2001])
+    #   roi_path - string of the directory containing the roi file(s) typed into the ROI box of the tool  (roi - Region of Interest)
+    #   source_path - string of the directory containing the landsat folder typed into the Landsat box of the tool (if not found, an error is thrown and submit is exited)
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     year_list = []
     roi_path = entry_roi.get()
     try:
@@ -89,6 +100,9 @@ def submit():
         return
 
 
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    #   start - string of the start year typed into the Start box of the tool (if start is after 1985, an error is thrown and submit is exited)
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     try:
         start = int(entry_start.get())
         year_list.append(start)
@@ -121,6 +135,9 @@ def submit():
     #     #year_list.append(end)
 
 
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    #   end - string of the end year typed into the End box of the tool (if end is before start, an error is thrown and submit is exited)
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     try:
         end = int(entry_end.get())
         year_list.append(end)
@@ -156,6 +173,9 @@ def submit():
     #     return
 
 
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    #   output - string of the directory containing the output folder typed into the Output box in the tool
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     output = output_path.get()
 
     #acres = variable.get()
@@ -166,6 +186,10 @@ def submit():
     # working_directory = f"{output}"
     # chdir(working_directory)
 
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    #   working_directory - string of the directory containing the output folder to use as the working directory for creating the output of the tool
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
     try:
         working_directory = f"{output}"
         chdir(working_directory)
@@ -175,6 +199,17 @@ def submit():
         texts("Invalid output directory filepath   ")
         return
 
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Creating local constants and variables for future computations
+    # Local
+    #   Constants
+    #       DEFAULT_ROI_DIRECTORY - string of the directory containing the roi 
+    #       WGS84 - World Geodetic System, time dependent coordinate datum              (https://earth-info.nga.mil/?dir=wgs84&action=wgs84)
+    #       UTM - Universal Transverse Mercator, coordinate grid for map projection     (https://www.usgs.gov/faqs/what-does-term-utm-mean-utm-better-or-more-accurate-latitudelongitude)
+    #       BUFFER_METERS - Constant integer that is not called in the current version, BUFFER_DEGREES is used instead
+    #       BUFFER_DEGREES - integer now defined based on determined size of the ROI, this is the region around the ROI that is included in the figure and other computations
+    #       CELL_SIZE_DEGREES - 
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     ROI_base = splitext(basename(roi_path))[0]
     DEFAULT_ROI_DIRECTORY = Path(f"{roi_path}")
     ROI_name = Path(f"{DEFAULT_ROI_DIRECTORY}")
@@ -604,7 +639,7 @@ def submit():
            # print(f"processing monthly values for year: {year}")
             monthly_means = []
 
-            for j, month in enumerate(range(3, 11)):
+            for j, month in enumerate(range(1, 12)):
                 if not exists(monthly_sums_directory):
                     makedirs(monthly_sums_directory)
 
