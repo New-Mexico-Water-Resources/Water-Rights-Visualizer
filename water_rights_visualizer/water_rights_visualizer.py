@@ -78,6 +78,36 @@ def submit():
     working_directory = f"{output}"
     chdir(working_directory)
 
+<<<<<<< Updated upstream
+=======
+    # working_directory = f"{output}"
+    # chdir(working_directory)
+
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    #   working_directory - string of the directory containing the output folder to use as the working directory for creating the output of the tool
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    try:
+        working_directory = f"{output}"
+        chdir(working_directory)
+    except FileNotFoundError:
+        clear_text()
+        print("Invalid output directory filepath   ")
+        texts("Invalid output directory filepath   ")
+        return
+
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Creating local constants and variables for future computations
+    # Local
+    #   Constants
+    #       DEFAULT_ROI_DIRECTORY - string of the directory containing the roi 
+    #       WGS84 - World Geodetic System, time dependent coordinate datum              (https://earth-info.nga.mil/?dir=wgs84&action=wgs84)
+    #       UTM - Universal Transverse Mercator, coordinate grid for map projection     (https://www.usgs.gov/faqs/what-does-term-utm-mean-utm-better-or-more-accurate-latitudelongitude)
+    #       BUFFER_METERS - Constant integer that is not called in the current version, BUFFER_DEGREES is used instead
+    #       BUFFER_DEGREES - integer based on determined size of the ROI, this is the region around the ROI that is included in the figure and other computations
+    #       CELL_SIZE_DEGREES - 
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+>>>>>>> Stashed changes
     ROI_base = splitext(basename(roi_path))[0]
     DEFAULT_ROI_DIRECTORY = Path(f"{roi_path}")
     ROI_name = Path(f"{DEFAULT_ROI_DIRECTORY}")
@@ -86,7 +116,7 @@ def submit():
     WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
     UTM = "+proj=utm +zone=13 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
     BUFFER_METERS = 2000
-    #BUFFER_DEGREES = 0.001
+    BUFFER_DEGREES = 0.001
     CELL_SIZE_DEGREES = 0.0003
     CELL_SIZE_METERS = 30
     TILE_SELECTION_BUFFER_RADIUS_DEGREES = 0.01
@@ -775,9 +805,14 @@ def submit():
                 monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
             if not exists(ET_monthly_filename):
+<<<<<<< Updated upstream
                 raise IOError(
                     f"monthly sum file not found: {ET_monthly_filename}")
 
+=======
+                print(f"monthly sum file not found: {ET_monthly_filename}")
+                raise IOError()
+>>>>>>> Stashed changes
             #print(f"loading monthly file: {ET_monthly_filename}")
             with rasterio.open(ET_monthly_filename, "r") as f:
                 monthly = f.read(1)
@@ -973,7 +1008,8 @@ def submit():
                 )
             except Exception as e:
                 print(e)
-                print(f"unable to generate stack for year: {year}")
+                print( f"unable to generate stack for year: {year}")
+                
                 continue
 
             monthly_means.append(process_monthly(
