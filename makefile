@@ -9,7 +9,7 @@ version:
 	$(info New Mexico Water Rights Visualizer version ${VERSION})
 
 mamba:
-ifeq ($(word 1,$(shell conda run -n base conda list mamba | grep mamba)),mamba)
+ifeq ($(word 1,$(shell mamba --version)),mamba)
 	@echo "mamba already installed"
 else
 	-conda deactivate; conda install -y -c conda-forge "mamba>=0.23"
@@ -65,3 +65,6 @@ reinstall-hard:
 reinstall-soft:
 	make uninstall
 	make install-package
+
+docker-build:
+	docker build -t water-rights-visualizer .
