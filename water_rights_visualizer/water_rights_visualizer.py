@@ -78,8 +78,6 @@ def submit():
     working_directory = f"{output}"
     chdir(working_directory)
 
-<<<<<<< Updated upstream
-=======
     # working_directory = f"{output}"
     # chdir(working_directory)
 
@@ -107,7 +105,6 @@ def submit():
     #       BUFFER_DEGREES - integer based on determined size of the ROI, this is the region around the ROI that is included in the figure and other computations
     #       CELL_SIZE_DEGREES - 
     #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
->>>>>>> Stashed changes
     ROI_base = splitext(basename(roi_path))[0]
     DEFAULT_ROI_DIRECTORY = Path(f"{roi_path}")
     ROI_name = Path(f"{DEFAULT_ROI_DIRECTORY}")
@@ -805,14 +802,10 @@ def submit():
                 monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
             if not exists(ET_monthly_filename):
-<<<<<<< Updated upstream
-                raise IOError(
-                    f"monthly sum file not found: {ET_monthly_filename}")
+                raise IOError(f"monthly sum file not found: {ET_monthly_filename}")
 
-=======
                 print(f"monthly sum file not found: {ET_monthly_filename}")
                 raise IOError()
->>>>>>> Stashed changes
             #print(f"loading monthly file: {ET_monthly_filename}")
             with rasterio.open(ET_monthly_filename, "r") as f:
                 monthly = f.read(1)
