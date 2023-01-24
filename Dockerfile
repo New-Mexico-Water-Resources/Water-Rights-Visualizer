@@ -12,8 +12,12 @@ RUN mamba install -y geopandas
 RUN mamba install -y h5py
 RUN mamba install -y rasterio
 RUN mamba install -y seaborn
+RUN mamba install -y termcolor
 RUN mamba install -y tk
 RUN pip install area
+
+RUN add-apt-repository ppa:alessandro-strada/ppa; apt-get install google-drive-ocamlfuse
+
 
 # install app
 RUN mkdir ${APP_ROOT}
