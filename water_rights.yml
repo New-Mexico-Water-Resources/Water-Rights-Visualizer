@@ -1,4 +1,3 @@
-name: water_rights
 channels:
   - conda-forge
   - defaults
