@@ -1,0 +1,7 @@
+version: "0.1"
+
+services:
+  water_rights_visualizer:
+    build: .
+    container_name: water-rights-visualizer
+    command: "list-google-drive"

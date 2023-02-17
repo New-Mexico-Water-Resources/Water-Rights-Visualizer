@@ -15,18 +15,9 @@ else
 	-conda deactivate; conda install -y -c conda-forge "mamba>=0.23"
 endif
 
-create-blank-env:
-	$(info creating blank environment)
-	-conda run -n base mamba create -n water_rights
-
-update-env-mamba:
-	-conda run -n water_rights mamba env update --file water_rights.yml
-
 environment:
 	make mamba
-	-conda run -n base pip install pybind11_cmake
-	make create-blank-env
-	make update-env-mamba
+	mamba env create -n water_rights -f water_rights.yml
 
 clean:
 	$(info cleaning build)
@@ -45,18 +36,19 @@ setuptools:
 
 install-package:
 	$(info installing water_rights_visualizer package)
+	-cp google_drive_key.txt water_rights_visualizer
 	-make setuptools
 	make clean
 	make unit-tests f
 
 install:
-	make environment
+	-make environment
 	make clean
 	make uninstall
 	make install-package
 
 remove:
-	conda run -n base conda env remove -n ECOSTRESS
+	mamba env remove -n water_rights
 
 reinstall-hard:
 	make remove

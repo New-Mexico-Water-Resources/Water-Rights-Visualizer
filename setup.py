@@ -15,5 +15,5 @@ setup(
     author=__author__,
     author_email=AUTHOR_EMAIL,
     packages=find_packages(),
-    package_data={'': ["*"]}
+    package_data={'': ["*"], "water_rights_visualizer": ["*"]}
 )
