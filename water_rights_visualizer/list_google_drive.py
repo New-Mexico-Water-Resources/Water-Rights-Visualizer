@@ -7,26 +7,16 @@ from pydrive2.drive import GoogleDrive
 KEY_FILENAME = join(abspath(dirname(__file__)), "google_drive_key.txt")
 # KEY_FILENAME = join("~", ".water_rights", "google_drive_key.txt")
 
-
-def main(argv=sys.argv):
-    if "--key" in argv:
-        key_filename = argv[argv.index("--key") + 1]
-    else:
+def google_drive_login(key_filename: str) -> GoogleDrive:
+    if key_filename is None:
         key_filename = KEY_FILENAME
 
     gauth = GoogleAuth()
     # Try to load saved client credentials
     gauth.settings["get_refresh_token"] = True
 
-    # print(exists(key_filename))
-
     print(f"loading credentials: {key_filename}")
     gauth.LoadCredentialsFile(key_filename)
-
-    # gauth.flow.params.update({
-    #     "access_type": "offline",
-    #     "approval_prompt": "force"
-    # })
 
     if gauth.credentials is None:
         # Authenticate if they're not there
@@ -47,6 +37,14 @@ def main(argv=sys.argv):
     gauth.SaveCredentialsFile(key_filename)
 
     drive = GoogleDrive(gauth)
+
+def main(argv=sys.argv):
+    if "--key" in argv:
+        key_filename = argv[argv.index("--key") + 1]
+    else:
+        key_filename = None
+
+    drive = google_drive_login(key_filename)
 
     shared_drive_ID = "0ACr4TpC8rBkqUk9PVA"
     file_list = drive.ListFile(

@@ -2,17 +2,22 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - astropy
   - affine
-  - h5py<3.0
-  - gdal>=3.5.1
+  - h5py
+  - gdal
   - geojson
   - geopandas
+  - jupyter
   - matplotlib
   - numpy<=1.21
   - pandas
   - pillow
   - pydrive2
+  - pygeos
+  - pyresample
   - rasterio>1.0.0
+  - scikit-image
   - scipy
   - seaborn
   - shapely<2.0.0

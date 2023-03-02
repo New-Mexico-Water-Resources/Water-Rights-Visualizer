@@ -15,9 +15,17 @@ else
 	-conda deactivate; conda install -y -c conda-forge "mamba>=0.23"
 endif
 
+create-blank-env:
+	$(info creating blank water_rights environment)
+	-conda run -n base mamba create -n water_rights
+
+update-env-mamba:
+	-conda run -n water_rights mamba env update --file water_rights.yml
+
 environment:
 	make mamba
-	mamba env create -n water_rights -f water_rights.yml
+	make create-blank-env
+	make update-env-mamba
 
 clean:
 	$(info cleaning build)
@@ -59,4 +67,5 @@ reinstall-soft:
 	make install-package
 
 docker-build:
+	-cp google_drive_key.txt water_rights_visualizer
 	docker build -t water-rights-visualizer .
