@@ -43,6 +43,9 @@ else:
             {'q': f"'{date_directory_ID}' in parents and trashed=false"}).GetList()
 
         for granule_directory_item in granule_directory_listing:
+            if drive.auth.access_token_expired:
+                drive.auth.Refresh()
+
             granule_ID = str(granule_directory_item["title"])
             granule_directory_ID = str(granule_directory_item["id"])
             print(granule_ID, granule_directory_ID)
@@ -67,6 +70,9 @@ else:
             {'q': f"'{granule_directory_ID}' in parents and trashed=false"}).GetList()
 
         for file_item in file_listing:
+            if drive.auth.access_token_expired:
+                drive.auth.Refresh()
+                
             filename = str(file_item["title"])
             file_ID = str(file_item["id"])
             print(filename, file_ID)

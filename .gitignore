@@ -1,3 +1,4 @@
+*.pyc
 google_drive_key.txt
 client_secrets.json
 water_rights_visualizer/google_drive_key.txt
