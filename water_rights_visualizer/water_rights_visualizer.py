@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
-
+import contextlib
+import csv
+import logging
+import os
 import sys
-import io
-from datetime import datetime
+import tempfile
+from abc import abstractmethod
 from datetime import date as dt
+from datetime import datetime, date
 from glob import glob
-from os import makedirs, scandir, listdir, getcwd, remove, chdir
-from os.path import basename, isdir, exists, abspath, dirname, splitext
-from os.path import join, exists, isfile, split
-from shutil import rmtree
+from os import makedirs, scandir, listdir, remove, chdir
+from os.path import basename, isdir, abspath, dirname, splitext
+from os.path import join, exists, isfile
+from pathlib import Path
+from typing import Union
 
-# import pyproject
 import geojson
 import geopandas as gpd
 import h5py
@@ -20,16 +24,14 @@ import numpy as np
 import pandas as pd
 import rasterio
 import seaborn as sns
-import random
-import csv
-
-from pathlib import Path
-from area import area
 from affine import Affine
+from area import area
+from dateutil import parser
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import Polygon
-from rasterio.mask import raster_geometry_mask, mask
+from pydrive2.drive import GoogleDrive
 from rasterio.features import geometry_mask
+from rasterio.mask import raster_geometry_mask, mask
 from rasterio.warp import reproject
 from rasterio.windows import Window
 from rasterio.windows import transform as window_transform
@@ -37,14 +39,9 @@ from scipy.interpolate import interp1d
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Point
 
-import PIL.Image
-import PIL.ImageTk
-
-import cl
-import logging
+from water_rights_visualizer.google_drive import google_drive_login
 
 logger = logging.getLogger(__name__)
-
 
 ARD_TILES_FILENAME = join(abspath(dirname(__file__)), "ARD_tiles.geojson")
 
@@ -56,6 +53,98 @@ CELL_SIZE_METERS = 30
 
 WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 UTM = "+proj=utm +zone=13 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+
+
+class FileUnavailable(Exception):
+    pass
+
+
+class DataSource:
+    @abstractmethod
+    def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
+        pass
+
+
+class FilepathSource(DataSource):
+    def __init__(self, directory: str):
+        self.directory = directory
+
+    def date_directory(self, acquisition_date: Union[date, str]) -> str:
+        if isinstance(acquisition_date, str):
+            acquisition_date = parser.parse(acquisition_date).date()
+
+        date_directory = join(self.directory, f"{acquisition_date:%Y.%m.%d}")
+
+        return date_directory
+
+    @contextlib.contextmanager
+    def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
+        raster_directory = self.date_directory(acquisition_date)
+        pattern = join(raster_directory, "**",
+                       f"*_{tile}_*_{variable_name}.tif")
+        logger.info(f"searching pattern: {pattern}")
+        matches = sorted(glob(pattern, recursive=True))
+
+        if len(matches) == 0:
+            raise FileUnavailable(f"no files found for tile: {tile}")
+
+        input_filename = matches[0]
+        logger.info(f"{tile}: {input_filename}")
+
+        yield input_filename
+
+
+class GoogleSource(DataSource):
+    def __init__(self, drive: GoogleDrive = None, temporary_directory: str = None, ID_table_filename: str = None):
+        if drive is None:
+            drive = google_drive_login()
+
+        if temporary_directory is None:
+            temporary_directory = tempfile.gettempdir()
+
+        if ID_table_filename is None:
+            ID_table_filename = join(
+                abspath(dirname(__file__)), "google_drive_file_IDs.csv")
+
+        ID_table = pd.read_csv(ID_table_filename)
+
+        self.drive = drive
+        self.temporary_directory = temporary_directory
+        self.ID_table = ID_table
+
+    @contextlib.contextmanager
+    def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
+        if isinstance(acquisition_date, str):
+            acquisition_date = parser.parse(acquisition_date).date()
+
+        acquisition_date = acquisition_date.strftime("%Y-%m-%d")
+
+        filtered_table = self.ID_table[self.ID_table.apply(lambda row: row.tile == int(
+            tile) and row.variable == variable_name and parser.parse(str(row.date)).date().strftime(
+            "%Y-%m-%d") == acquisition_date, axis=1)]
+
+        if len(filtered_table) == 0:
+            raise FileUnavailable(f"no files found for tile: {tile}")
+
+        print(filtered_table)
+        print(filtered_table.iloc[0])
+
+        filename_base = str(filtered_table.iloc[0].filename)
+        file_ID = str(filtered_table.iloc[0].file_ID)
+
+        logger.info(
+            f"retrieving {filename_base} from Google Drive ID {file_ID}")
+        filename = join(self.temporary_directory, filename_base)
+
+        google_drive_file = self.drive.CreateFile(metadata={"id": file_ID})
+        google_drive_file.GetContentFile(filename=filename)
+
+        logger.info(f"temporary file: {filename}")
+
+        yield filename
+
+        logger.info(f"removing temporary file: {filename}")
+        os.remove(filename)
 
 
 def generate_patch(polygon, affine):
@@ -256,7 +345,6 @@ def interpolate_stack(stack):
 
 
 def ROI_area(ROI, working_directory):
-
     try:
         ROI_gpd = gpd.read_file(ROI).to_crs(WGS84)
         ROI_acre = ROI_gpd['Acres']
@@ -548,7 +636,6 @@ def generate_figure(
         main_df,
         monthly_sums_directory,
         figure_filename):
-
     fig = plt.figure()
     fig.suptitle(
         (f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize=14)
@@ -610,7 +697,7 @@ def generate_figure(
     ymax = max(max(main_df["PET"]), max(main_df["PET"]))
     ylim = (int(ymin), int(ymax + 10))
     ax.set(ylim=ylim)
-    ax.set_yticks([int(ymin), int(ymax)+10])
+    ax.set_yticks([int(ymin), int(ymax) + 10])
     ax.set_yticklabels(['Low', 'High'])
 
     plt.title(f"Area of Interest Average Monthly Water Use", fontsize=10)
@@ -645,7 +732,6 @@ def water_rights(
         monthly_nan_directory=None,
         target_CRS=None,
         remove_working_directory=None):
-
     ROI_base = splitext(basename(ROI))[0]
     DEFAULT_FIGURE_DIRECTORY = Path(f"{output_directory}/figures")
     DEFAULT_SOURCE_DIRECTORY = Path(f"{input_directory}")
@@ -718,7 +804,7 @@ def water_rights(
     if start_year == end_year:
         years_x = [start_year]
     else:
-        years_x = [*range(int(start_year), int(end_year)+1)]
+        years_x = [*range(int(start_year), int(end_year) + 1)]
 
     for i, year in enumerate(years_x):
         logger.info(f"processing: {year}")
@@ -832,8 +918,8 @@ def water_rights(
             continue
 
 
-def water_rights_visualizer(boundary_filename: str, input_directory: str, output_directory: str, start_year: int = None, end_year: int = None):
-
+def water_rights_visualizer(boundary_filename: str, input_directory: str, output_directory: str, start_year: int = None,
+                            end_year: int = None):
     logger.info(f"boundary file: {boundary_filename}")
     logger.info(f"input directory: {input_directory}")
     logger.info(f"output directory: {output_directory}")
@@ -921,7 +1007,6 @@ def generate_subset(
         cell_size=None,
         buffer_size=None,
         target_CRS=None):
-
     roi_size = round(ROI_acres, 2)
 
     if roi_size <= 4:
