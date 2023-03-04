@@ -3,6 +3,9 @@ from os import makedirs
 from os.path import join, abspath, dirname, exists
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
+import logging
+
+logger = logging.getLogger(__name__)
 
 KEY_FILENAME = join(abspath(dirname(__file__)), "google_drive_key.txt")
 # KEY_FILENAME = join("~", ".water_rights", "google_drive_key.txt")
@@ -15,7 +18,7 @@ def google_drive_login(key_filename: str = None) -> GoogleDrive:
     # Try to load saved client credentials
     gauth.settings["get_refresh_token"] = True
 
-    print(f"loading credentials: {key_filename}")
+    logger.info(f"loading credentials: {key_filename}")
     gauth.LoadCredentialsFile(key_filename)
 
     if gauth.credentials is None:
@@ -33,7 +36,7 @@ def google_drive_login(key_filename: str = None) -> GoogleDrive:
         gauth.Authorize()
     # Save the current credentials to a file
     makedirs(dirname(key_filename), exist_ok=True)
-    print(f"saving credentials: {key_filename}")
+    logger.info(f"saving credentials: {key_filename}")
     gauth.SaveCredentialsFile(key_filename)
     drive = GoogleDrive(gauth)
 

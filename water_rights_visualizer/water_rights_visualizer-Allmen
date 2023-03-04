@@ -375,7 +375,7 @@ def submit():
 
     ## This is where def inventory was originally, I wanted to pull from years_available in checking if the user's end year value was within available years with flexibility for later processed data
     def inventory(source_directory):
-        #print(f"searching data: {source_directory}")
+        #print(f"searching data: {input_datastore}")
         date_directories = sorted(glob(join(source_directory, "*")))
         date_directories = [directory for directory in date_directories if isdir(directory)]
         dates_available = [datetime.strptime(basename(directory), "%Y.%m.%d").date() for directory in date_directories]

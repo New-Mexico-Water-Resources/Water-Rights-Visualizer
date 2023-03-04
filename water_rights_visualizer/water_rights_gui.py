@@ -289,7 +289,7 @@ def submit():
         return patch
 
     def inventory(source_directory):
-        #print(f"searching data: {source_directory}")
+        #print(f"searching data: {input_datastore}")
         date_directories = sorted(glob(join(source_directory, "*")))
         date_directories = [
             directory for directory in date_directories if isdir(directory)]

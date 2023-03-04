@@ -14,7 +14,7 @@ from os import makedirs, scandir, listdir, remove, chdir
 from os.path import basename, isdir, abspath, dirname, splitext
 from os.path import join, exists, isfile
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
 import geojson
 import geopandas as gpd
@@ -38,12 +38,18 @@ from rasterio.windows import transform as window_transform
 from scipy.interpolate import interp1d
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Point
+import matplotlib as mpl
 
 from water_rights_visualizer.google_drive import google_drive_login
+import cl
 
 logger = logging.getLogger(__name__)
 
+mpl.use("Agg")
+
 ARD_TILES_FILENAME = join(abspath(dirname(__file__)), "ARD_tiles.geojson")
+
+START_YEAR = 1985
 
 TILE_SELECTION_BUFFER_RADIUS_DEGREES = 0.01
 BUFFER_METERS = 2000
@@ -55,11 +61,17 @@ WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 UTM = "+proj=utm +zone=13 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
 
 
-class FileUnavailable(Exception):
+class FileUnavailable(IOError):
     pass
 
+class BlankOutput(ValueError):
+    pass
 
 class DataSource:
+    @abstractmethod
+    def inventory(self):
+        pass
+
     @abstractmethod
     def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
         pass
@@ -67,6 +79,9 @@ class DataSource:
 
 class FilepathSource(DataSource):
     def __init__(self, directory: str):
+        if not exists(directory):
+            raise IOError(f"directory not found: {directory}")
+
         self.directory = directory
 
     def date_directory(self, acquisition_date: Union[date, str]) -> str:
@@ -77,19 +92,30 @@ class FilepathSource(DataSource):
 
         return date_directory
 
+    def inventory(self):
+        date_directory_pattern = join(self.directory, "*")
+        logger.info(f"searching for date directories with pattern: {cl.val(date_directory_pattern)}")
+        date_directories = sorted(glob(date_directory_pattern))
+        date_directories = [directory for directory in date_directories if isdir(directory)]
+        logger.info(f"found {cl.val(len(date_directories))} date directories under {cl.dir(self.directory)}")
+        dates_available = [datetime.strptime(basename(directory), "%Y.%m.%d").date() for directory in date_directories]
+        years_available = list(set(sorted([date_step.year for date_step in dates_available])))
+        logger.info(f"counted {cl.val(len(years_available))} year available in date directories")
+
+        return years_available, dates_available
+
     @contextlib.contextmanager
     def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
         raster_directory = self.date_directory(acquisition_date)
-        pattern = join(raster_directory, "**",
-                       f"*_{tile}_*_{variable_name}.tif")
-        logger.info(f"searching pattern: {pattern}")
+        pattern = join(raster_directory, "**", f"*_{tile}_*_{variable_name}.tif")
+        logger.info(f"searching pattern: {cl.val(pattern)}")
         matches = sorted(glob(pattern, recursive=True))
 
         if len(matches) == 0:
-            raise FileUnavailable(f"no files found for tile: {tile}")
+            raise FileUnavailable(f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
 
         input_filename = matches[0]
-        logger.info(f"{tile}: {input_filename}")
+        logger.info(f"file for tile {cl.place(tile)} variable {cl.name(variable_name)} date {cl.time(acquisition_date)}: {cl.file(input_filename)}")
 
         yield input_filename
 
@@ -111,9 +137,25 @@ class GoogleSource(DataSource):
         self.drive = drive
         self.temporary_directory = temporary_directory
         self.ID_table = ID_table
+        self.filenames = {}
+
+    def inventory(self):
+        dates_available = [parser.parse(str(d)).date() for d in self.ID_table.date]
+        years_available = list(
+            set(sorted([date_step.year for date_step in dates_available])))
+
+        return years_available, dates_available
 
     @contextlib.contextmanager
     def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
+        if isinstance(acquisition_date, str):
+            acquisition_date = parser.parse(acquisition_date).date()
+
+        key = f"{int(tile):06d}_{str(variable_name)}_{acquisition_date:%Y-%m-%d}"
+
+        if key in self.filenames:
+            return self.filenames[key]
+
         if isinstance(acquisition_date, str):
             acquisition_date = parser.parse(acquisition_date).date()
 
@@ -124,71 +166,60 @@ class GoogleSource(DataSource):
             "%Y-%m-%d") == acquisition_date, axis=1)]
 
         if len(filtered_table) == 0:
-            raise FileUnavailable(f"no files found for tile: {tile}")
-
-        print(filtered_table)
-        print(filtered_table.iloc[0])
+            raise FileUnavailable(f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
 
         filename_base = str(filtered_table.iloc[0].filename)
         file_ID = str(filtered_table.iloc[0].file_ID)
 
-        logger.info(
-            f"retrieving {filename_base} from Google Drive ID {file_ID}")
+        logger.info(f"retrieving {cl.file(filename_base)} from Google Drive ID {cl.name(file_ID)}")
         filename = join(self.temporary_directory, filename_base)
 
         google_drive_file = self.drive.CreateFile(metadata={"id": file_ID})
         google_drive_file.GetContentFile(filename=filename)
 
-        logger.info(f"temporary file: {filename}")
+        logger.info(f"creating temporary file: {cl.file(filename)}")
+        self.filenames[key] = filename
 
         yield filename
 
-        logger.info(f"removing temporary file: {filename}")
-        os.remove(filename)
+        # logger.info(f"removing temporary file: {filename}")
+        # os.remove(filename)
 
 
 def generate_patch(polygon, affine):
     if isinstance(polygon, MultiPolygon):
         polygon = list(polygon)[0]
 
-    polygon_indices = [
-        ~affine * coords for coords in polygon.exterior.coords]
+    polygon_indices = [~affine * coords for coords in polygon.exterior.coords]
     patch = Polygon(polygon_indices, fill=None, color="black", linewidth=1)
 
     return patch
 
 
 def inventory(source_directory):
-    # logger.info(f"searching data: {source_directory}")
     date_directories = sorted(glob(join(source_directory, "*")))
-    date_directories = [
-        directory for directory in date_directories if isdir(directory)]
-    dates_available = [datetime.strptime(
-        basename(directory), "%Y.%m.%d").date() for directory in date_directories]
-    years_available = list(
-        set(sorted([date_step.year for date_step in dates_available])))
+    date_directories = [directory for directory in date_directories if isdir(directory)]
+    dates_available = [datetime.strptime(basename(directory), "%Y.%m.%d").date() for directory in date_directories]
+    years_available = list(set(sorted([date_step.year for date_step in dates_available])))
 
     return years_available, dates_available
 
 
 def generate_stack(
-        ROI_name,
+        ROI_name: str,
         ROI_latlon,
-        year,
-        ROI_acres,
-        source_directory,
-        subset_directory,
-        dates_available,
-        stack_filename,
-        target_CRS=None):
+        year: int,
+        ROI_acres: float,
+        input_datastore: DataSource,
+        subset_directory: str,
+        dates_available: List[date],
+        stack_filename: str,
+        target_CRS: str = None):
     if target_CRS is None:
         target_CRS = WGS84
 
-    # logger.info(f"year: {year}")
-
     if exists(stack_filename):
-        # logger.info(f"loading stack: {stack_filename}")
-        logger.info(f"loading stack: {stack_filename}\n")
+        logger.info(f"loading stack: {cl.file(stack_filename)}")
 
         with h5py.File(stack_filename, "r") as stack_file:
             ET_stack = np.array(stack_file["ET"])
@@ -196,8 +227,6 @@ def generate_stack(
             affine = Affine(*list(stack_file["affine"]))
 
         return ET_stack, PET_stack, affine
-
-    # logger.info(f"generating stack")
 
     ET_sparse_stack = None
     ESI_sparse_stack = None
@@ -209,15 +238,12 @@ def generate_stack(
         if date_step.year == year
     ]
 
-    # logger.info("dates_in_year:")
-    # logger.info(dates_in_year)
+    dates_in_year = sorted(set(dates_in_year))
 
     if len(dates_in_year) == 0:
         raise ValueError(f"no dates for year: {year}")
 
     for date_step in dates_in_year:
-        # logger.info(f"date: {date_step.strftime('%Y-%m-%d')}")
-
         if not exists(subset_directory):
             makedirs(subset_directory)
 
@@ -226,35 +252,49 @@ def generate_stack(
         ESI_subset_filename = join(
             subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ESI_subset.tif")
 
-        source_raster_directory = join(
-            source_directory, date_step.strftime("%Y.%m.%d"))
+        # source_raster_directory = join(
+        #     input_datastore, date_step.strftime("%Y.%m.%d"))
 
         try:
             ET_subset, affine = generate_subset(
-                source_raster_directory,
-                ROI_latlon,
-                ROI_acres,
-                "ET",
+                input_datastore=input_datastore,
+                acquisition_date=date_step,
+                ROI_name=ROI_name,
+                ROI_latlon=ROI_latlon,
+                ROI_acres=ROI_acres,
+                variable_name="ET",
                 subset_filename=ET_subset_filename,
                 target_CRS=target_CRS
             )
+        except BlankOutput as e:
+            logger.warning(e)
+            continue
+        except FileUnavailable as e:
+            logger.warning(e)
+            continue
         except Exception as e:
-            logger.info(e)
-            # logger.info(f"problem generating ET subset for date: {date_step.strftime('%Y-%m-%d')}")
+            logger.exception(e)
             continue
 
         try:
             ESI_subset, affine = generate_subset(
-                source_raster_directory,
-                ROI_latlon,
-                ROI_acres,
-                "ESI",
+                input_datastore=input_datastore,
+                acquisition_date=date_step,
+                ROI_name=ROI_name,
+                ROI_latlon=ROI_latlon,
+                ROI_acres=ROI_acres,
+                variable_name="ESI",
                 subset_filename=ESI_subset_filename,
                 target_CRS=target_CRS
             )
+        except BlankOutput as e:
+            logger.warning(e)
+            continue
+        except FileUnavailable as e:
+            logger.warning(e)
+            continue
         except Exception as e:
-            logger.info(e)
-            # logger.info(f"problem generating ESI subset for date: {date_step.strftime('%Y-%m-%d')}")
+            logger.exception(e)
             continue
 
         subset_shape = ESI_subset.shape
@@ -287,15 +327,11 @@ def generate_stack(
 
     if ET_sparse_stack is None:
         raise ValueError("no ET stack generated")
-        # texts("no ET stack generated\n")
 
     if ESI_sparse_stack is None:
         raise ValueError("no ESI stack generated")
-        # texts("no ESI stack generated\n")
 
     PET_sparse_stack = ET_sparse_stack / ESI_sparse_stack
-
-    # logger.info(f"interpolating ET stack for year: {year}")
     ET_stack = interpolate_stack(ET_sparse_stack)
     PET_stack = interpolate_stack(PET_sparse_stack)
 
@@ -304,7 +340,6 @@ def generate_stack(
     if not exists(stack_directory):
         makedirs(stack_directory)
 
-    # logger.info(f"writing stack: {stack_filename}")
     with h5py.File(stack_filename, "w") as stack_file:
         stack_file["ET"] = ET_stack
         stack_file["PET"] = PET_stack
@@ -376,16 +411,11 @@ def process_monthly(
         monthly_means_directory, f"{year}_monthly_means.csv")
 
     if exists(monthly_means_filename):
-        # logger.info(f"loading monthly means: {monthly_means_filename}")
         monthly_means_df = pd.read_csv(monthly_means_filename)
     else:
         days, rows, cols = ET_stack.shape
         subset_shape = (rows, cols)
-        # logger.info("rasterizing ROI")
-        mask = geometry_mask([ROI_latlon], subset_shape,
-                             subset_affine, invert=True)
-
-        # logger.info(f"processing monthly values for year: {year}")
+        mask = geometry_mask([ROI_latlon], subset_shape, subset_affine, invert=True)
         monthly_means = []
 
         for j, month in enumerate(range(3, 11)):
@@ -396,27 +426,15 @@ def process_monthly(
                 monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
             if exists(ET_monthly_filename):
-                # logger.info(f"loading monthly file: {ET_monthly_filename}")
                 with rasterio.open(ET_monthly_filename, "r") as f:
                     ET_monthly = f.read(1)
             else:
                 start = datetime(year, month, 1).date()
-                # logger.info("start date: " + start.strftime("%Y-%m-%d"))
                 start_index = start.timetuple().tm_yday
-                # logger.info(f"start index: {start_index}")
                 end = datetime(year, month + 1, 1).date()
-                # logger.info("end date: " + end.strftime("%Y-%m-%d"))
                 end_index = end.timetuple().tm_yday
-                # logger.info(f"end index: {end_index}")
                 ET_month_stack = ET_stack[start_index:end_index, :, :]
                 ET_monthly = np.nansum(ET_month_stack, axis=0)
-
-                # plt.imshow(ET_monthly)
-                # plt.colorbar()
-                # plt.title(f"{year:04d}-{month:02d}")
-                # plt.show()
-
-                # logger.info(f"writing ET monthly file: {ET_monthly_filename}")
 
                 profile = {
                     "driver": "GTiff",
@@ -435,27 +453,15 @@ def process_monthly(
                                         f"{year:04d}_{month:02d}_{ROI_name}_PET_monthly_sum.tif")
 
             if exists(PET_monthly_filename):
-                # logger.info(f"loading monthly file: {PET_monthly_filename}")
                 with rasterio.open(PET_monthly_filename, "r") as f:
                     PET_monthly = f.read(1)
             else:
                 start = datetime(year, month, 1).date()
-                # logger.info("start date: " + start.strftime("%Y-%m-%d"))
                 start_index = start.timetuple().tm_yday
-                # logger.info(f"start index: {start_index}")
                 end = datetime(year, month + 1, 1).date()
-                # logger.info("end date: " + end.strftime("%Y-%m-%d"))
                 end_index = end.timetuple().tm_yday
-                # logger.info(f"end index: {end_index}")
                 PET_month_stack = PET_stack[start_index:end_index, :, :]
                 PET_monthly = np.nansum(PET_month_stack, axis=0)
-
-                # plt.imshow(PET_monthly)
-                # plt.colorbar()
-                # plt.title(f"{year:04d}-{month:02d}")
-                # plt.show()
-
-                # logger.info(f"writing PET monthly file: {PET_monthly_filename}")
 
                 profile = {
                     "driver": "GTiff",
@@ -480,7 +486,6 @@ def process_monthly(
 
         monthly_means_df = pd.DataFrame(
             monthly_means, columns=["Year", "Month", "ET", "PET"])
-        # logger.info(f"writing monthly means: {monthly_means_filename}")
         monthly_means_df.to_csv(monthly_means_filename)
 
     return monthly_means_df
@@ -522,25 +527,13 @@ def calculate_percent_nan(
         dest2.write(out_image)
 
     roi_mask = raster_geometry_mask(a_subset, ROI_for_nan, invert=True)
-    # logger.info(f"roi_mask:")
-    # logger.info(roi_mask)
     open_mask = (rasterio.open(subset_directory + "/masked_area.tif"))
-    # logger.info(f"open_mask:")
-    # logger.info(open_mask)
     area_mask = open_mask.read()
-    # logger.info(f"area_mask:")
-    # logger.info(area_mask)
-    # area = np.count_nonzero((area_mask[0][roi_mask[0]]))
     area = np.count_nonzero(((area_mask[0][roi_mask[0]])) == 0)
-    # logger.info(f"area:")
-    # logger.info(area)
-
     ET_subset = rasterio.open(nan_subsets + "/" + listdir(nan_subsets)[0])
     base_name = basename(ET_subset.name)
     file_name = splitext(base_name)[0]
-    subset_in_mskdir = (rasterio.open(
-        nan_subsets + '/' + file_name + ".tif"))
-
+    subset_in_mskdir = (rasterio.open(nan_subsets + '/' + file_name + ".tif"))
     percent_nan = []
     msk_subsets = glob(join(nan_subsets, '*.tif'))
 
@@ -549,8 +542,7 @@ def calculate_percent_nan(
             return (src.read())
 
     array_list = [read_file(x) for x in msk_subsets]
-    # logger.info(f"array_list:")
-    # logger.info(array_list)
+
     for subsets in array_list:
         nan = np.count_nonzero((np.isnan(subsets[0][roi_mask[0]])))
         count_nan = []
@@ -642,9 +634,7 @@ def generate_figure(
     grid = plt.GridSpec(3, 4, wspace=0.4, hspace=0.3)
 
     for i, month in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
-        # logger.info(f"rendering month: {month} sub-figure: {i}")
         subfigure_title = datetime(year, month, 1).date().strftime("%Y-%m")
-        # logger.info(f"sub-figure title: {subfigure_title}")
         ET_monthly_filename = join(
             monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
@@ -652,14 +642,12 @@ def generate_figure(
             raise IOError(
                 f"monthly sum file not found: {ET_monthly_filename}")
 
-        # logger.info(f"loading monthly file: {ET_monthly_filename}")
         with rasterio.open(ET_monthly_filename, "r") as f:
             monthly = f.read(1)
 
         ax = plt.subplot(grid[int(i / 4), i % 4])
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
-        # logger.info(f"min: {np.nanmin(monthly)} mean: {np.nanmean(monthly)} max: {np.nanmax(monthly)}")
 
         ET_COLORS = [
             "#f6e8c3",
@@ -709,32 +697,30 @@ def generate_figure(
                 verticalalignment='bottom', horizontalalignment='right', fontsize=5)
     plt.tight_layout()
 
-    logger.info("saving figure: {figure_filename}")
+    logger.info(f"saving figure for year {cl.time(year)} ROI {cl.place(ROI_name)}: {cl.file(figure_filename)}")
     plt.savefig(figure_filename, dpi=300)
 
 
 def water_rights(
         ROI,
-        input_directory,
-        output_directory,
-        start_year=None,
-        end_year=None,
-        ROI_name=None,
-        source_directory=None,
-        figure_directory=None,
-        working_directory=None,
-        subset_directory=None,
-        nan_subset_directory=None,
-        stack_directory=None,
-        reference_directory=None,
-        monthly_sums_directory=None,
-        monthly_means_directory=None,
-        monthly_nan_directory=None,
-        target_CRS=None,
-        remove_working_directory=None):
+        input_datastore: DataSource,
+        output_directory: str,
+        start_year: int = None,
+        end_year: int = None,
+        ROI_name: str = None,
+        figure_directory: str = None,
+        working_directory: str = None,
+        subset_directory: str = None,
+        nan_subset_directory: str = None,
+        stack_directory: str = None,
+        monthly_sums_directory: str = None,
+        monthly_means_directory: str = None,
+        monthly_nan_directory: str = None,
+        target_CRS: str = None,
+        remove_working_directory: bool = True):
     ROI_base = splitext(basename(ROI))[0]
     DEFAULT_FIGURE_DIRECTORY = Path(f"{output_directory}/figures")
-    DEFAULT_SOURCE_DIRECTORY = Path(f"{input_directory}")
+    DEFAULT_SOURCE_DIRECTORY = Path(f"{input_datastore}")
     DEFAULT_SUBSET_DIRECTORY = Path(f"{output_directory}/subset/{ROI_base}")
     DEFAULT_NAN_SUBSET_DIRECTORY = Path(
         f"{output_directory}/nan_subsets/{ROI_base}")
@@ -750,9 +736,6 @@ def water_rights(
 
     if working_directory is None:
         working_directory = ROI_name
-
-    if remove_working_directory is None:
-        remove_working_directory = True
 
     if subset_directory is None:
         subset_directory = join(
@@ -777,9 +760,6 @@ def water_rights(
         monthly_nan_directory = join(
             working_directory, DEFAULT_MONTHLY_NAN_DIRECTORY)
 
-    if source_directory is None:
-        source_directory = DEFAULT_SOURCE_DIRECTORY
-
     if figure_directory is None:
         figure_directory = DEFAULT_FIGURE_DIRECTORY
 
@@ -792,7 +772,8 @@ def water_rights(
     ROI_for_nan = list((gpd.read_file(ROI).to_crs(WGS84)).geometry)
     ROI_acres = round(ROI_area(ROI, working_directory), 2)
 
-    years_available, dates_available = inventory(source_directory)
+    # FIXME convert inventory function to DataSource method
+    years_available, dates_available = input_datastore.inventory()
     monthly_means = []
 
     if start_year is None:
@@ -807,7 +788,7 @@ def water_rights(
         years_x = [*range(int(start_year), int(end_year) + 1)]
 
     for i, year in enumerate(years_x):
-        logger.info(f"processing: {year}")
+        logger.info(f"processing year {cl.time(year)} at ROI {cl.name(ROI_name)}")
 
         stack_filename = join(
             stack_directory, f"{year:04d}_{ROI_name}_stack.h5")
@@ -819,15 +800,15 @@ def water_rights(
                 ROI_latlon=ROI_latlon,
                 year=year,
                 ROI_acres=ROI_acres,
-                source_directory=source_directory,
+                input_datastore=input_datastore,
                 subset_directory=subset_directory,
                 dates_available=dates_available,
                 stack_filename=stack_filename,
                 target_CRS=target_CRS
             )
         except Exception as e:
-            logger.info(e)
-            logger.info(f"unable to generate stack for year: {year}")
+            logger.exception(e)
+            logger.warning(f"unable to generate stack for year {cl.time(year)} at ROI {cl.name(ROI_name)}")
             continue
 
         monthly_means.append(process_monthly(
@@ -842,26 +823,20 @@ def water_rights(
             monthly_means_directory=monthly_means_directory
         ))
 
-        logger.info("Calculating uncertainty\n")
-
         calculate_percent_nan(
             ROI_for_nan,
             subset_directory,
             nan_subset_directory,
             monthly_nan_directory)
 
-        logger.info("Generating figure\n")
-
         nan_means = []
         nd = pd.read_csv(f"{monthly_nan_directory}/{year}.csv")
         nan_means.append(nd)
-        logger.info(f"application nan means: \n {nan_means}")
 
         month_means = []
         mm = pd.read_csv(
             f"{monthly_means_directory}/{year}_monthly_means.csv")
         month_means.append(mm)
-        logger.info(f"application monthly means: \n {month_means}")
 
         idx = {'Months': [3, 4, 5, 6, 7, 8, 9, 10]}
         df1 = pd.DataFrame(idx, columns=['Months'])
@@ -872,10 +847,9 @@ def water_rights(
         main_df = pd.merge(left=main_dfa, right=nd,
                            how='left', left_on="Months", right_on="month")
         main_df = main_df.replace(np.nan, 100)
-        logger.info(f'main_df: {main_df}')
 
         monthly_means_df = pd.concat(month_means, axis=0)
-        logger.info("monthly_means_df:")
+
         mean = np.nanmean(monthly_means_df["ET"])
         sd = np.nanstd(monthly_means_df["ET"])
         vmin = max(mean - 2 * sd, 0)
@@ -884,7 +858,7 @@ def water_rights(
         today = dt.today()
         date = str(today)
 
-        logger.info(f"generating figure for year: {year}")
+        logger.info(f"generating figure for year {cl.time(year)} ROI {cl.place(ROI_name)}")
 
         figure_output_directory = join(figure_directory, ROI_name)
 
@@ -895,7 +869,7 @@ def water_rights(
             figure_output_directory, f"{year}_{ROI_name}.png")
 
         if exists(figure_filename):
-            logger.info(f"figure already exists: {figure_filename}")
+            logger.info(f"figure already exists: {cl.file(figure_filename)}")
             continue
 
         try:
@@ -913,26 +887,41 @@ def water_rights(
                 figure_filename
             )
         except Exception as e:
-            logger.info(e)
-            logger.info(f"unable to generate figure for year: {year}")
+            logger.exception(e)
+            logger.warning(f"unable to generate figure for year: {year}")
             continue
 
 
-def water_rights_visualizer(boundary_filename: str, input_directory: str, output_directory: str, start_year: int = None,
-                            end_year: int = None):
-    logger.info(f"boundary file: {boundary_filename}")
-    logger.info(f"input directory: {input_directory}")
-    logger.info(f"output directory: {output_directory}")
+def water_rights_visualizer(
+        boundary_filename: str,
+        input_datastore: DataSource,
+        output_directory: str,
+        start_year: int = START_YEAR,
+        end_year: int = None):
+    if not exists(boundary_filename):
+        raise IOError(f"boundary filename not found: {boundary_filename}")
 
-    working_directory = f"{output_directory}"
+    logger.info(f"boundary file: {cl.file(boundary_filename)}")
+
+    if isinstance(input_datastore, FilepathSource):
+        logger.info(f"input directory: {cl.dir(input_datastore.directory)}")
+    elif isinstance(input_datastore, GoogleSource):
+        logger.info(f"using Google Drive for input data")
+    else:
+        raise ValueError("invalid data source")
+
+    makedirs(output_directory, exist_ok=True)
+    logger.info(f"output directory: {cl.dir(output_directory)}")
+
+    working_directory = output_directory
     chdir(working_directory)
-    logger.info(f"working directory: {working_directory}")
+    logger.info(f"working directory: {cl.dir(working_directory)}")
 
     ROI_base = splitext(basename(boundary_filename))[0]
     DEFAULT_ROI_DIRECTORY = Path(f"{boundary_filename}")
     ROI_name = Path(f"{DEFAULT_ROI_DIRECTORY}")
 
-    logger.info(f"target: {ROI_name}")
+    logger.info(f"target: {cl.place(ROI_name)}")
 
     ROI = ROI_name
     BUFFER_METERS = 2000
@@ -945,12 +934,11 @@ def water_rights_visualizer(boundary_filename: str, input_directory: str, output
     if isfile(ROI):
         water_rights(
             ROI,
-            input_directory=input_directory,
+            input_datastore=input_datastore,
             output_directory=output_directory,
             start_year=start_year,
             end_year=end_year,
             ROI_name=None,
-            source_directory=None,
             figure_directory=None,
             working_directory=None,
             subset_directory=None,
@@ -959,8 +947,7 @@ def water_rights_visualizer(boundary_filename: str, input_directory: str, output
             monthly_sums_directory=None,
             monthly_means_directory=None,
             monthly_nan_directory=None,
-            target_CRS=None,
-            remove_working_directory=None)
+            target_CRS=None)
 
     elif isdir(ROI):
         for items in scandir(ROI):
@@ -968,12 +955,11 @@ def water_rights_visualizer(boundary_filename: str, input_directory: str, output
                 roi_name = abspath(items)
                 water_rights(
                     roi_name,
-                    input_directory=input_directory,
+                    input_datastore=input_datastore,
                     output_directory=output_directory,
                     start_year=start_year,
                     end_year=end_year,
                     ROI_name=None,
-                    source_directory=None,
                     figure_directory=None,
                     working_directory=None,
                     subset_directory=None,
@@ -982,10 +968,9 @@ def water_rights_visualizer(boundary_filename: str, input_directory: str, output
                     monthly_sums_directory=None,
                     monthly_means_directory=None,
                     monthly_nan_directory=None,
-                    target_CRS=None,
-                    remove_working_directory=None)
+                    target_CRS=None)
     else:
-        logger.info("Not a valid file")
+        logger.warning(f"invalid ROI: {ROI}")
 
 
 def select_tiles(target_geometry_latlon):
@@ -995,46 +980,49 @@ def select_tiles(target_geometry_latlon):
     selected_tiles_df = tiles_df[selection]
     tiles = [item[2:] for item in list(selected_tiles_df["name"])]
 
+    tiles = sorted(set(tiles))
+
     return tiles
 
 
 def generate_subset(
-        raster_directory,
+        input_datastore: DataSource,
+        acquisition_date: Union[date, str],
+        ROI_name: str,
         ROI_latlon,
-        ROI_acres,
-        variable_name,
-        subset_filename,
-        cell_size=None,
-        buffer_size=None,
-        target_CRS=None):
+        ROI_acres: float,
+        variable_name: str,
+        subset_filename: str,
+        cell_size: float = None,
+        buffer_size: float = None,
+        target_CRS: str = None):
     roi_size = round(ROI_acres, 2)
 
     if roi_size <= 4:
-        BUFFER_DEGREES = 0.005
+        buffer_degrees = 0.005
     elif 4 < roi_size <= 10:
-        BUFFER_DEGREES = 0.005
+        buffer_degrees = 0.005
     elif 10 < roi_size <= 30:
         roi_filter = roi_size / 4
-        BUFFER_DEGREES = roi_filter / 1000
+        buffer_degrees = roi_filter / 1000
     elif 30 < roi_size <= 60:
         roi_filter = roi_size / 6
-        BUFFER_DEGREES = roi_filter / 1000
+        buffer_degrees = roi_filter / 1000
     else:
         roi_filter = roi_size / 8
-        BUFFER_DEGREES = roi_filter / 1000
+        buffer_degrees = roi_filter / 1000
 
     if cell_size is None:
         cell_size = CELL_SIZE_DEGREES
 
     if buffer_size is None:
-        buffer_size = BUFFER_DEGREES
+        buffer_size = buffer_degrees
 
     if target_CRS is None:
         target_CRS = WGS84
 
     if exists(subset_filename):
-        logger.info(
-            f"loading existing {variable_name} subset file: {subset_filename}")
+        logger.info(f"loading existing {cl.name(variable_name)} subset file: {cl.file(subset_filename)}")
 
         with rasterio.open(subset_filename, "r") as f:
             subset = f.read(1)
@@ -1042,10 +1030,9 @@ def generate_subset(
 
         return subset, affine
 
-    logger.info(f"generating {variable_name} subset")
-
     tiles = select_tiles(ROI_latlon)
-    logger.info(f"tiles: {tiles}")
+    logger.info(
+        f"generating subset for date {cl.time(acquisition_date)} variable {cl.name(variable_name)} ROI {cl.name(ROI_name)} from tiles: {', '.join(tiles)}")
     ROI_projected = gpd.GeoDataFrame(
         {}, geometry=[ROI_latlon], crs=WGS84).to_crs(target_CRS).geometry[0]
     centroid = ROI_projected.centroid
@@ -1071,69 +1058,52 @@ def generate_subset(
         (target_rows, target_cols), np.nan, dtype=np.float32)
 
     for tile in tiles:
-        pattern = join(raster_directory, "**",
-                       f"*_{tile}_*_{variable_name}.tif")
-        logger.info(f"searching pattern: {pattern}")
-        matches = sorted(glob(pattern, recursive=True))
+        with input_datastore.get_filename(tile=tile, variable_name=variable_name, acquisition_date=acquisition_date) as input_filename:
+            with rasterio.open(input_filename, "r") as input_file:
+                source_CRS = input_file.crs
+                input_affine = input_file.transform
 
-        if len(matches) == 0:
-            logger.info(f"no files found for tile: {tile}")
-            files_found = sorted(
-                glob(join(raster_directory, '**', '*'), recursive=True))
-            tiles_found = sorted(
-                set([splitext(basename(filename))[0].split("_")[2] for filename in files_found]))
-            logger.info(f"files found: {', '.join(tiles_found)}")
-            continue
+                ul = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_max)], crs=target_CRS).to_crs(
+                    source_CRS).geometry[0]
+                col_ul, row_ul = ~input_affine * (ul.x, ul.y)
+                col_ul = int(col_ul)
+                row_ul = int(row_ul)
 
-        input_filename = matches[0]
-        logger.info(f"{tile}: {input_filename}")
+                ur = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_max)], crs=target_CRS).to_crs(
+                    source_CRS).geometry[0]
+                col_ur, row_ur = ~input_affine * (ur.x, ur.y)
+                col_ur = int(col_ur)
+                row_ur = int(row_ur)
 
-        with rasterio.open(input_filename, "r") as input_file:
-            source_CRS = input_file.crs
-            input_affine = input_file.transform
+                lr = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_min)], crs=target_CRS).to_crs(
+                    source_CRS).geometry[0]
+                col_lr, row_lr = ~input_affine * (lr.x, lr.y)
+                col_lr = int(col_lr)
+                row_lr = int(row_lr)
 
-            ul = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_max)], crs=target_CRS).to_crs(
-                source_CRS).geometry[0]
-            col_ul, row_ul = ~input_affine * (ul.x, ul.y)
-            col_ul = int(col_ul)
-            row_ul = int(row_ul)
+                ll = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_min)], crs=target_CRS).to_crs(
+                    source_CRS).geometry[0]
+                col_ll, row_ll = ~input_affine * (ll.x, ll.y)
+                col_ll = int(col_ll)
+                row_ll = int(row_ll)
 
-            ur = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_max)], crs=target_CRS).to_crs(
-                source_CRS).geometry[0]
-            col_ur, row_ur = ~input_affine * (ur.x, ur.y)
-            col_ur = int(col_ur)
-            row_ur = int(row_ur)
+                col_min = min(col_ul, col_ll)
+                col_min = max(col_min, 0)
+                col_max = max(col_ur, col_lr)
 
-            lr = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_min)], crs=target_CRS).to_crs(
-                source_CRS).geometry[0]
-            col_lr, row_lr = ~input_affine * (lr.x, lr.y)
-            col_lr = int(col_lr)
-            row_lr = int(row_lr)
+                row_min = min(row_ul, row_ur)
+                row_min = max(row_min, 0)
+                row_max = max(row_ll, row_lr)
 
-            ll = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_min)], crs=target_CRS).to_crs(
-                source_CRS).geometry[0]
-            col_ll, row_ll = ~input_affine * (ll.x, ll.y)
-            col_ll = int(col_ll)
-            row_ll = int(row_ll)
+                window = (row_min, row_max), (col_min, col_max)
 
-            col_min = min(col_ul, col_ll)
-            col_min = max(col_min, 0)
-            col_max = max(col_ur, col_lr)
+                if row_min < 0 or col_min < 0 or row_max <= row_min or col_max <= col_min:
+                    logger.info(f"raster does not intersect target surface: {cl.file(input_filename)}")
+                    continue
 
-            row_min = min(row_ul, row_ur)
-            row_min = max(row_min, 0)
-            row_max = max(row_ll, row_lr)
-
-            window = (row_min, row_max), (col_min, col_max)
-
-            if row_min < 0 or col_min < 0 or row_max <= row_min or col_max <= col_min:
-                logger.info(
-                    f"raster does not intersect target surface: {input_filename}")
-                continue
-
-            window = Window.from_slices(*window)
-            source_subset = input_file.read(1, window=window)
-            source_affine = window_transform(window, input_affine)
+                window = Window.from_slices(*window)
+                source_subset = input_file.read(1, window=window)
+                source_affine = window_transform(window, input_affine)
 
         target_surface = np.full(
             (target_rows, target_cols), np.nan, dtype=np.float32)
@@ -1152,7 +1122,7 @@ def generate_subset(
         output_raster = np.where(
             np.isnan(output_raster), target_surface, output_raster)
     if np.all(np.isnan(output_raster)):
-        raise ValueError("blank output raster")
+        raise BlankOutput(f"blank output raster for date {acquisition_date} variable {variable_name} ROI {ROI_name} from tiles: {', '.join(tiles)}")
 
     if not exists(subset_filename):
         subset_profile = {
@@ -1178,9 +1148,11 @@ def main(argv=sys.argv):
     input_directory = argv[2]
     output_directory = argv[3]
 
+    input_datastore = FilepathSource(input_directory)
+
     water_rights_visualizer(
         boundary_filename=boundary_filename,
-        input_directory=input_directory,
+        input_datastore=input_datastore,
         output_directory=output_directory
     )
 
