@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import tempfile
+import time
 from abc import abstractmethod
 from datetime import date as dt
 from datetime import datetime, date
@@ -126,7 +127,9 @@ class GoogleSource(DataSource):
             drive = google_drive_login()
 
         if temporary_directory is None:
-            temporary_directory = tempfile.gettempdir()
+            temporary_directory = "temp"
+
+        makedirs(temporary_directory, exist_ok=True)
 
         if ID_table_filename is None:
             ID_table_filename = join(
@@ -170,20 +173,24 @@ class GoogleSource(DataSource):
 
         filename_base = str(filtered_table.iloc[0].filename)
         file_ID = str(filtered_table.iloc[0].file_ID)
-
-        logger.info(f"retrieving {cl.file(filename_base)} from Google Drive ID {cl.name(file_ID)}")
         filename = join(self.temporary_directory, filename_base)
-
+        logger.info(f"retrieving {cl.file(filename_base)} from Google Drive ID {cl.name(file_ID)} to file: {cl.file(filename)}")
+        start_time = time.perf_counter()
         google_drive_file = self.drive.CreateFile(metadata={"id": file_ID})
         google_drive_file.GetContentFile(filename=filename)
+        end_time = time.perf_counter()
+        duration_seconds = end_time - start_time
 
-        logger.info(f"creating temporary file: {cl.file(filename)}")
+        if not exists(filename):
+            raise IOError(f"unable to retrieve file: {filename}")
+
+        logger.info(f"temporary file retrieved from Google Drive in {cl.time(duration_seconds)} seconds: {cl.file(filename)}")
         self.filenames[key] = filename
 
         yield filename
 
-        # logger.info(f"removing temporary file: {filename}")
-        # os.remove(filename)
+        logger.info(f"removing temporary file: {filename}")
+        os.remove(filename)
 
 
 def generate_patch(polygon, affine):
@@ -914,7 +921,7 @@ def water_rights_visualizer(
     logger.info(f"output directory: {cl.dir(output_directory)}")
 
     working_directory = output_directory
-    chdir(working_directory)
+    # chdir(working_directory)
     logger.info(f"working directory: {cl.dir(working_directory)}")
 
     ROI_base = splitext(basename(boundary_filename))[0]

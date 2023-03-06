@@ -8,15 +8,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 KEY_FILENAME = join(abspath(dirname(__file__)), "google_drive_key.txt")
-# KEY_FILENAME = join("~", ".water_rights", "google_drive_key.txt")
+CLIENT_SECRETS_FILENAME = join(abspath(dirname(__file__)), "client_secrets.json")
 
-def google_drive_login(key_filename: str = None) -> GoogleDrive:
+def google_drive_login(key_filename: str = None, client_secrets_filename: str = None) -> GoogleDrive:
     if key_filename is None:
         key_filename = KEY_FILENAME
+
+    if client_secrets_filename is None:
+        client_secrets_filename = CLIENT_SECRETS_FILENAME
 
     gauth = GoogleAuth()
     # Try to load saved client credentials
     gauth.settings["get_refresh_token"] = True
+    gauth.settings["client_config_file"] = client_secrets_filename
 
     logger.info(f"loading credentials: {key_filename}")
     gauth.LoadCredentialsFile(key_filename)
