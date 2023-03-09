@@ -4,6 +4,7 @@ channels:
 dependencies:
   - astropy
   - affine
+  - boto3
   - h5py
   - gdal
   - geojson
