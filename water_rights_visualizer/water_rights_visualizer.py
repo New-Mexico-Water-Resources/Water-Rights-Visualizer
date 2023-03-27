@@ -5,14 +5,14 @@ import csv
 import logging
 import os
 import sys
-import tempfile
 import time
 from abc import abstractmethod
 from datetime import date as dt
 from datetime import datetime, date
 from glob import glob
-from os import makedirs, scandir, listdir, remove, chdir
+from os import makedirs, scandir, listdir, remove
 from os.path import basename, isdir, abspath, dirname, splitext
+from os.path import expanduser
 from os.path import join, exists, isfile
 from pathlib import Path
 from typing import Union, List
@@ -20,6 +20,7 @@ from typing import Union, List
 import geojson
 import geopandas as gpd
 import h5py
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -39,10 +40,9 @@ from rasterio.windows import transform as window_transform
 from scipy.interpolate import interp1d
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Point
-import matplotlib as mpl
 
-from water_rights_visualizer.google_drive import google_drive_login
 import cl
+from water_rights_visualizer.google_drive import google_drive_login
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +65,10 @@ UTM = "+proj=utm +zone=13 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
 class FileUnavailable(IOError):
     pass
 
+
 class BlankOutput(ValueError):
     pass
+
 
 class DataSource:
     @abstractmethod
@@ -80,6 +82,8 @@ class DataSource:
 
 class FilepathSource(DataSource):
     def __init__(self, directory: str):
+        directory = abspath(expanduser(directory))
+
         if not exists(directory):
             raise IOError(f"directory not found: {directory}")
 
@@ -95,36 +99,54 @@ class FilepathSource(DataSource):
 
     def inventory(self):
         date_directory_pattern = join(self.directory, "*")
-        logger.info(f"searching for date directories with pattern: {cl.val(date_directory_pattern)}")
+        logger.info(
+            f"searching for date directories with pattern: {cl.val(date_directory_pattern)}")
         date_directories = sorted(glob(date_directory_pattern))
-        date_directories = [directory for directory in date_directories if isdir(directory)]
-        logger.info(f"found {cl.val(len(date_directories))} date directories under {cl.dir(self.directory)}")
-        dates_available = [datetime.strptime(basename(directory), "%Y.%m.%d").date() for directory in date_directories]
-        years_available = list(set(sorted([date_step.year for date_step in dates_available])))
-        logger.info(f"counted {cl.val(len(years_available))} year available in date directories")
+        date_directories = [
+            directory for directory in date_directories if isdir(directory)]
+        logger.info(
+            f"found {cl.val(len(date_directories))} date directories under {cl.dir(self.directory)}")
+        dates_available = [datetime.strptime(
+            basename(directory), "%Y.%m.%d").date() for directory in date_directories]
+        years_available = list(
+            set(sorted([date_step.year for date_step in dates_available])))
+        logger.info(
+            f"counted {cl.val(len(years_available))} year available in date directories")
 
         return years_available, dates_available
 
     @contextlib.contextmanager
     def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
         raster_directory = self.date_directory(acquisition_date)
-        pattern = join(raster_directory, "**", f"*_{tile}_*_{variable_name}.tif")
+        pattern = join(raster_directory, "**",
+                       f"*_{tile}_*_{variable_name}.tif")
         logger.info(f"searching pattern: {cl.val(pattern)}")
         matches = sorted(glob(pattern, recursive=True))
 
         if len(matches) == 0:
-            raise FileUnavailable(f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
+            raise FileUnavailable(
+                f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
 
         input_filename = matches[0]
-        logger.info(f"file for tile {cl.place(tile)} variable {cl.name(variable_name)} date {cl.time(acquisition_date)}: {cl.file(input_filename)}")
+        logger.info(
+            f"file for tile {cl.place(tile)} variable {cl.name(variable_name)} date {cl.time(acquisition_date)}: {cl.file(input_filename)}")
 
         yield input_filename
 
 
 class GoogleSource(DataSource):
-    def __init__(self, drive: GoogleDrive = None, temporary_directory: str = None, ID_table_filename: str = None):
+    def __init__(
+            self,
+            drive: GoogleDrive = None,
+            temporary_directory: str = None,
+            ID_table_filename: str = None,
+            key_filename: str = None,
+            client_secrets_filename: str = None):
         if drive is None:
-            drive = google_drive_login()
+            drive = google_drive_login(
+                key_filename=key_filename,
+                client_secrets_filename=client_secrets_filename
+            )
 
         if temporary_directory is None:
             temporary_directory = "temp"
@@ -143,7 +165,8 @@ class GoogleSource(DataSource):
         self.filenames = {}
 
     def inventory(self):
-        dates_available = [parser.parse(str(d)).date() for d in self.ID_table.date]
+        dates_available = [parser.parse(str(d)).date()
+                           for d in self.ID_table.date]
         years_available = list(
             set(sorted([date_step.year for date_step in dates_available])))
 
@@ -169,12 +192,14 @@ class GoogleSource(DataSource):
             "%Y-%m-%d") == acquisition_date, axis=1)]
 
         if len(filtered_table) == 0:
-            raise FileUnavailable(f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
+            raise FileUnavailable(
+                f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
 
         filename_base = str(filtered_table.iloc[0].filename)
         file_ID = str(filtered_table.iloc[0].file_ID)
         filename = join(self.temporary_directory, filename_base)
-        logger.info(f"retrieving {cl.file(filename_base)} from Google Drive ID {cl.name(file_ID)} to file: {cl.file(filename)}")
+        logger.info(
+            f"retrieving {cl.file(filename_base)} from Google Drive ID {cl.name(file_ID)} to file: {cl.file(filename)}")
         start_time = time.perf_counter()
         google_drive_file = self.drive.CreateFile(metadata={"id": file_ID})
         google_drive_file.GetContentFile(filename=filename)
@@ -184,7 +209,8 @@ class GoogleSource(DataSource):
         if not exists(filename):
             raise IOError(f"unable to retrieve file: {filename}")
 
-        logger.info(f"temporary file retrieved from Google Drive in {cl.time(duration_seconds)} seconds: {cl.file(filename)}")
+        logger.info(
+            f"temporary file retrieved from Google Drive in {cl.time(duration_seconds)} seconds: {cl.file(filename)}")
         self.filenames[key] = filename
 
         yield filename
@@ -195,7 +221,7 @@ class GoogleSource(DataSource):
 
 def generate_patch(polygon, affine):
     if isinstance(polygon, MultiPolygon):
-        polygon = list(polygon)[0]
+        polygon = list(polygon.geoms)[0]
 
     polygon_indices = [~affine * coords for coords in polygon.exterior.coords]
     patch = Polygon(polygon_indices, fill=None, color="black", linewidth=1)
@@ -205,9 +231,12 @@ def generate_patch(polygon, affine):
 
 def inventory(source_directory):
     date_directories = sorted(glob(join(source_directory, "*")))
-    date_directories = [directory for directory in date_directories if isdir(directory)]
-    dates_available = [datetime.strptime(basename(directory), "%Y.%m.%d").date() for directory in date_directories]
-    years_available = list(set(sorted([date_step.year for date_step in dates_available])))
+    date_directories = [
+        directory for directory in date_directories if isdir(directory)]
+    dates_available = [datetime.strptime(
+        basename(directory), "%Y.%m.%d").date() for directory in date_directories]
+    years_available = list(
+        set(sorted([date_step.year for date_step in dates_available])))
 
     return years_available, dates_available
 
@@ -422,7 +451,8 @@ def process_monthly(
     else:
         days, rows, cols = ET_stack.shape
         subset_shape = (rows, cols)
-        mask = geometry_mask([ROI_latlon], subset_shape, subset_affine, invert=True)
+        mask = geometry_mask([ROI_latlon], subset_shape,
+                             subset_affine, invert=True)
         monthly_means = []
 
         for j, month in enumerate(range(3, 11)):
@@ -704,7 +734,8 @@ def generate_figure(
                 verticalalignment='bottom', horizontalalignment='right', fontsize=5)
     plt.tight_layout()
 
-    logger.info(f"saving figure for year {cl.time(year)} ROI {cl.place(ROI_name)}: {cl.file(figure_filename)}")
+    logger.info(
+        f"saving figure for year {cl.time(year)} ROI {cl.place(ROI_name)}: {cl.file(figure_filename)}")
     plt.savefig(figure_filename, dpi=300)
 
 
@@ -795,7 +826,8 @@ def water_rights(
         years_x = [*range(int(start_year), int(end_year) + 1)]
 
     for i, year in enumerate(years_x):
-        logger.info(f"processing year {cl.time(year)} at ROI {cl.name(ROI_name)}")
+        logger.info(
+            f"processing year {cl.time(year)} at ROI {cl.name(ROI_name)}")
 
         stack_filename = join(
             stack_directory, f"{year:04d}_{ROI_name}_stack.h5")
@@ -815,7 +847,8 @@ def water_rights(
             )
         except Exception as e:
             logger.exception(e)
-            logger.warning(f"unable to generate stack for year {cl.time(year)} at ROI {cl.name(ROI_name)}")
+            logger.warning(
+                f"unable to generate stack for year {cl.time(year)} at ROI {cl.name(ROI_name)}")
             continue
 
         monthly_means.append(process_monthly(
@@ -865,7 +898,8 @@ def water_rights(
         today = dt.today()
         date = str(today)
 
-        logger.info(f"generating figure for year {cl.time(year)} ROI {cl.place(ROI_name)}")
+        logger.info(
+            f"generating figure for year {cl.time(year)} ROI {cl.place(ROI_name)}")
 
         figure_output_directory = join(figure_directory, ROI_name)
 
@@ -901,21 +935,38 @@ def water_rights(
 
 def water_rights_visualizer(
         boundary_filename: str,
-        input_datastore: DataSource,
         output_directory: str,
+        input_directory: str = None,
+        google_drive_temporary_directory: str = None,
+        google_drive_key_filename: str = None,
+        google_drive_client_secrets_filename: str = None,
         start_year: int = START_YEAR,
         end_year: int = None):
+    boundary_filename = abspath(expanduser(boundary_filename))
+    output_directory = abspath(expanduser(output_directory))
+
     if not exists(boundary_filename):
         raise IOError(f"boundary filename not found: {boundary_filename}")
 
     logger.info(f"boundary file: {cl.file(boundary_filename)}")
 
-    if isinstance(input_datastore, FilepathSource):
-        logger.info(f"input directory: {cl.dir(input_datastore.directory)}")
-    elif isinstance(input_datastore, GoogleSource):
-        logger.info(f"using Google Drive for input data")
+    # if isinstance(input_datastore, FilepathSource):
+    #     logger.info(f"input directory: {cl.dir(input_datastore.directory)}")
+    # elif isinstance(input_datastore, GoogleSource):
+    #     logger.info(f"using Google Drive for input data")
+    # else:
+    #     raise ValueError("invalid data source")
+
+    if google_drive_temporary_directory is not None:
+        input_datastore = GoogleSource(
+            temporary_directory=google_drive_temporary_directory,
+            key_filename=google_drive_key_filename,
+            client_secrets_filename=google_drive_client_secrets_filename
+        )
+    elif input_directory is not None:
+        input_datastore = FilepathSource(directory=input_directory)
     else:
-        raise ValueError("invalid data source")
+        raise ValueError("no input data source given")
 
     makedirs(output_directory, exist_ok=True)
     logger.info(f"output directory: {cl.dir(output_directory)}")
@@ -1029,7 +1080,8 @@ def generate_subset(
         target_CRS = WGS84
 
     if exists(subset_filename):
-        logger.info(f"loading existing {cl.name(variable_name)} subset file: {cl.file(subset_filename)}")
+        logger.info(
+            f"loading existing {cl.name(variable_name)} subset file: {cl.file(subset_filename)}")
 
         with rasterio.open(subset_filename, "r") as f:
             subset = f.read(1)
@@ -1065,7 +1117,8 @@ def generate_subset(
         (target_rows, target_cols), np.nan, dtype=np.float32)
 
     for tile in tiles:
-        with input_datastore.get_filename(tile=tile, variable_name=variable_name, acquisition_date=acquisition_date) as input_filename:
+        with input_datastore.get_filename(tile=tile, variable_name=variable_name,
+                                          acquisition_date=acquisition_date) as input_filename:
             with rasterio.open(input_filename, "r") as input_file:
                 source_CRS = input_file.crs
                 input_affine = input_file.transform
@@ -1105,7 +1158,8 @@ def generate_subset(
                 window = (row_min, row_max), (col_min, col_max)
 
                 if row_min < 0 or col_min < 0 or row_max <= row_min or col_max <= col_min:
-                    logger.info(f"raster does not intersect target surface: {cl.file(input_filename)}")
+                    logger.info(
+                        f"raster does not intersect target surface: {cl.file(input_filename)}")
                     continue
 
                 window = Window.from_slices(*window)
@@ -1129,7 +1183,8 @@ def generate_subset(
         output_raster = np.where(
             np.isnan(output_raster), target_surface, output_raster)
     if np.all(np.isnan(output_raster)):
-        raise BlankOutput(f"blank output raster for date {acquisition_date} variable {variable_name} ROI {ROI_name} from tiles: {', '.join(tiles)}")
+        raise BlankOutput(
+            f"blank output raster for date {acquisition_date} variable {variable_name} ROI {ROI_name} from tiles: {', '.join(tiles)}")
 
     if not exists(subset_filename):
         subset_profile = {
@@ -1151,16 +1206,43 @@ def generate_subset(
 
 
 def main(argv=sys.argv):
-    boundary_filename = argv[1]
-    input_directory = argv[2]
-    output_directory = argv[3]
+    if "--boundary-filename" in argv:
+        boundary_filename = str(argv[argv.index("--boundary-filename") + 1])
+    else:
+        boundary_filename = None
 
-    input_datastore = FilepathSource(input_directory)
+    if "--output-directory" in argv:
+        output_directory = str(argv[argv.index("--output-directory") + 1])
+    else:
+        output_directory = None
+
+    if "--input-directory" in argv:
+        input_directory = str(argv[argv.index("--input-directory") + 1])
+    else:
+        input_directory = None
+
+    if "--google-drive-temporary-directory" in argv:
+        google_drive_temporary_directory = str(argv[argv.index("--google-drive-temporary-directory") + 1])
+    else:
+        google_drive_temporary_directory = None
+
+    if "--google-drive-key-filename" in argv:
+        google_drive_key_filename = str(argv[argv.index("--google-drive-key-filename") + 1])
+    else:
+        google_drive_key_filename = None
+
+    if "--google-drive-client-secrets-filename" in argv:
+        google_drive_client_secrets_filename = str(argv[argv.index("--google-drive-client-secrets-filename") + 1])
+    else:
+        google_drive_client_secrets_filename = None
 
     water_rights_visualizer(
         boundary_filename=boundary_filename,
-        input_datastore=input_datastore,
-        output_directory=output_directory
+        output_directory=output_directory,
+        input_directory=input_directory,
+        google_drive_temporary_directory=google_drive_temporary_directory,
+        google_drive_key_filename=google_drive_key_filename,
+        google_drive_client_secrets_filename=google_drive_client_secrets_filename
     )
 
 

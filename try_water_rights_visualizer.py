@@ -1,9 +1,9 @@
 from water_rights_visualizer import water_rights_visualizer, FilepathSource, GoogleSource
 import cl
 
-boundary_filename = "/Users/halverso/Desktop/water_rights_testing/water.right.1.geojson"
-output_directory = "/Users/halverso/Desktop/water_rights_testing/output"
-temporary_directory = "/Users/halverso/Desktop/water_rights_testing/temp"
+boundary_filename = "~/water_rights_testing/water.right.1.geojson"
+output_directory = "~/water_rights_testing/output"
+temporary_directory = "~/water_rights_testing/temp"
 
 # input_directory = "/Users/halverso/Library/CloudStorage/GoogleDrive-halverso@jpl.caltech.edu/Shared drives/NMOSE Water Rights/Landsat"
 # input_datastore = FilepathSource(input_directory)
