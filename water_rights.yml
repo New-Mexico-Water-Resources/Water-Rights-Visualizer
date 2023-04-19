@@ -1,6 +1,5 @@
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - astropy
   - affine
@@ -11,7 +10,7 @@ dependencies:
   - geopandas
   - jupyter
   - matplotlib
-  - numpy<=1.21
+  - numpy
   - pandas
   - pillow
   - pydrive2
@@ -21,7 +20,7 @@ dependencies:
   - scikit-image
   - scipy
   - seaborn
-  - shapely<2.0.0
+  - shapely
   - termcolor
   - tk
   - pip:
