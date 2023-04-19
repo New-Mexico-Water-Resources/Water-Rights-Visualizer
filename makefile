@@ -20,7 +20,8 @@ create-blank-env:
 	-conda run -n base mamba create -n water_rights
 
 update-env-mamba:
-	-conda run -n water_rights mamba env update --file water_rights.yml
+	-mamba env update -n water_rights -f water_rights.yml
+#	-conda run -n water_rights mamba env update --file water_rights.yml
 
 environment:
 	make mamba
