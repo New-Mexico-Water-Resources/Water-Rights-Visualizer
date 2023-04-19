@@ -11,6 +11,9 @@ s3 = session.resource("s3")
 bucket = s3.Bucket("jpl-nmw-testbucket")
 
 for i, (date,granule_ID,filename,file_ID,tile,variable) in df.iterrows():
+    if not "012013" in filename:
+        continue
+
     print(filename)
     google_drive_file = drive.CreateFile(metadata={"id": file_ID})
     google_drive_file.GetContentFile(filename=filename)
