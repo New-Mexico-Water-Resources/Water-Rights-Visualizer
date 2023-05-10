@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 drive = google_drive_login()
 df = pd.read_csv("google_drive_file_IDs.csv")
-session = boto3.Session(profile_name="saml-pub")
+# session = boto3.Session(profile_name="saml-pub")
+session = boto3.Session()
 s3 = session.resource("s3")
 bucket = s3.Bucket("jpl-nmw-testbucket")
 
