@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "Rectangle",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { }, "geometry": { "type": "Polygon", "coordinates": [ [ [ -107.375498860098475, 32.525300546129202 ], [ -107.367141192669365, 32.525300546129202 ], [ -107.367141192669365, 32.52186361927 ], [ -107.375586835545093, 32.52186361927 ], [ -107.375498860098475, 32.525300546129202 ] ] ] } }
+]
+}
