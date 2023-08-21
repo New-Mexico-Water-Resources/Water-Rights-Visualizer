@@ -6,7 +6,7 @@ Mony Sea, California State University Northridge
 
 Holland Hatch, Chapman University
 
-Analise Jensen, Chapman University
+Annalise Jensen, Chapman University
 
 Zoe von Allmen, Chapman University
 
