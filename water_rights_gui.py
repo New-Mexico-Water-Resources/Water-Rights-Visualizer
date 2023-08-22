@@ -789,8 +789,8 @@ def submit():
         y = df["PET"]
         y2 = df["ET"]
         ci = df["percent_nan"]
-        sns.lineplot(x, y, ax=ax, color="blue", label="PET")
-        sns.lineplot(x, y2, ax=ax, color="green", label="ET")
+        sns.lineplot(x=x, y=y, ax=ax, color="blue", label="PET")
+        sns.lineplot(x=x, y=y2, ax=ax, color="green", label="ET")
         ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1)
         ax.fill_between(x, (y2 - ci), (y2 + ci), color='g', alpha=.1)
         plt.legend(labels=['ET'], loc ='upper right')
@@ -917,8 +917,6 @@ def submit():
             years_x = [start]
         else:
             years_x = [*range(int(start), int(end)+1)]
-            
-        
         
         for i, year in enumerate(years_x):
             print(f"processing: {year}")
@@ -1255,12 +1253,13 @@ def clear_text():
 
 def add_image(filepath):
     global im_resize
+    print(f"opening image: {filepath}")
     im = PIL.Image.open(filepath)
-    im = im.resize((375, 225), PIL.Image.ANTIALIAS)
+    im = im.resize((375, 225), PIL.Image.BICUBIC)
     im_resize = PIL.ImageTk.PhotoImage(im)
     image.image_create('1.0',image = im_resize)
-    root.image.see('1.0')
-    root.update()
+    # root.image.see('1.0')
+    # root.update()
 
 def get_path(path):
     

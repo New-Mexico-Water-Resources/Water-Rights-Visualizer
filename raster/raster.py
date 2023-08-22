@@ -55,7 +55,7 @@ from rasterio.windows import Window
 from scipy.ndimage import zoom
 from scipy.ndimage.interpolation import shift
 from scipy.spatial import cKDTree as KDTree
-from shapely.geometry import Point, LinearRing, asMultiPoint
+from shapely.geometry import Point, LinearRing, MultiPoint
 from shapely.geometry.base import BaseGeometry, CAP_STYLE, JOIN_STYLE, geom_factory
 from shapely.ops import transform as shapely_transform
 from six import string_types
@@ -282,14 +282,14 @@ class SpatialGeometry:
         return UTM_proj4
 
 
-class VectorGeometry(SpatialGeometry, shapely.geometry.base.BaseGeometry):
+class VectorGeometry(SpatialGeometry):
     def contain(self, other, crs: CRS = None, **kwargs) -> VectorGeometry:
         return self.__class__(other, crs=crs, **kwargs)
 
     def to_crs(self, crs: Union[CRS, str]) -> VectorGeometry:
         crs = CRS(crs)
         result = self.contain(
-            shapely.ops.transform(Transformer.from_crs(self.crs, crs, always_xy=True).transform, self),
+            shapely.ops.transform(Transformer.from_crs(self.crs, crs, always_xy=True).transform, self.geometry),
             crs=crs)
         return result
 
@@ -353,23 +353,35 @@ class MultiVectorGeometry(VectorGeometry):
     pass
 
 
-class Point(shapely.geometry.Point, SingleVectorGeometry):
-    def __init__(self, init: Any, *args, crs: Union[CRS, str] = WGS84, **kwargs):
-        if crs is None and isinstance(init, VectorGeometry):
-            crs = init.crs
+class Point(SingleVectorGeometry):
+    def __init__(self, *args, crs: Union[CRS, str] = WGS84):
+        if isinstance(args[0], Point):
+            geometry = args[0].geometry
+            crs = args[0].crs
+        else:
+            geometry = shapely.geometry.Point(*args)
 
-        shapely.geometry.Point.__init__(self, init, *args, **kwargs)
         VectorGeometry.__init__(self, crs=crs)
+
+        self.geometry = geometry
 
     @property
     def latlon(self) -> Point:
         return self.contain(
-            gpd.GeoDataFrame({}, geometry=[self], crs=self.crs).to_crs(WGS84).geometry[0],
+            gpd.GeoDataFrame({}, geometry=[self.geometry], crs=str(self.crs)).to_crs(str(WGS84)).geometry[0],
             crs=CRS(WGS84))
 
     @property
     def centroid(self) -> Point:
         return self
+
+    @property
+    def x(self):
+        return self.geometry.x
+
+    @property
+    def y(self):
+        return self.geometry.y
 
     def buffer(
             self,
@@ -382,7 +394,7 @@ class Point(shapely.geometry.Point, SingleVectorGeometry):
             single_sided=False) -> Polygon:
         return Polygon(
             shapely.geometry.Point.buffer(
-                self,
+                self.geometry,
                 distance=distance,
                 resolution=resolution,
                 quadsegs=quadsegs,
@@ -395,42 +407,58 @@ class Point(shapely.geometry.Point, SingleVectorGeometry):
         )
 
 
-class MultiPoint(MultiVectorGeometry, shapely.geometry.MultiPoint):
-    def __init__(self, *args, crs: Union[CRS, str] = WGS84, **kwargs):
-        shapely.geometry.MultiPoint.__init__(self, *args, **kwargs)
+class MultiPoint(MultiVectorGeometry):
+    def __init__(self, points, crs: Union[CRS, str] = WGS84):
+        if isinstance(points[0], MultiPoint):
+            geometry = points[0].geometry
+            crs = points[0].crs
+        else:
+            geometry = shapely.geometry.MultiPoint(points)
+
         VectorGeometry.__init__(self, crs=crs)
 
-    def shape_factory(self, *args):
-        return wrap_geometry(super(MultiPoint, self).shape_factory(*args), crs=self.crs)
+        self.geometry = geometry
 
+class Polygon(SingleVectorGeometry):
+    def __init__(self, *args, crs: Union[CRS, str] = WGS84):
+        if isinstance(args[0], Polygon):
+            geometry = args[0].geometry
+            crs = args[0].crs
+        else:
+            geometry = shapely.geometry.Polygon(*args)
 
-class LineString(SingleVectorGeometry, shapely.geometry.LineString):
-    def __init__(self, *args, crs: Union[CRS, str] = WGS84, **kwargs):
-        shapely.geometry.LineString.__init__(self, *args, **kwargs)
         VectorGeometry.__init__(self, crs=crs)
 
-
-class MultiLineString(MultiVectorGeometry, shapely.geometry.MultiLineString):
-    def __init__(self, *args, crs: Union[CRS, str] = WGS84, **kwargs):
-        shapely.geometry.MultiLineString.__init__(self, *args, **kwargs)
-        VectorGeometry.__init__(self, crs=crs)
-
-    def shape_factory(self, *args):
-        return wrap_geometry(super(MultiLineString, self).shape_factory(*args), crs=self.crs)
-
-
-class Polygon(SingleVectorGeometry, shapely.geometry.Polygon):
-    def __init__(self, init: Any, *args, crs: Union[CRS, str] = WGS84, **kwargs):
-        if crs is None and isinstance(init, Polygon):
-            crs = init.crs
-
-        shapely.geometry.Polygon.__init__(self, init, *args, **kwargs)
-        VectorGeometry.__init__(self, crs=crs)
+        self.geometry = geometry
 
     @property
     def centroid(self) -> Point:
         """Returns the geometric center of the object"""
-        return Point(geom_factory(self.impl['centroid'](self)), crs=self.crs)
+        return Point(self.geometry.centroid, crs=self.crs)
+
+    @property
+    def exterior(self):
+        return self.geometry.exterior
+
+    @property
+    def is_empty(self):
+        return self.geometry.is_empty
+
+    @property
+    def geom_type(self):
+        return self.geometry.geom_type
+
+    @property
+    def bounds(self):
+        return self.geometry.bounds
+
+    @property
+    def interiors(self):
+        return self.geometry.interiors
+
+    @property
+    def wkt(self):
+        return self.geometry.wkt
 
     @property
     def bbox(self) -> BBox:
@@ -447,16 +475,20 @@ class Polygon(SingleVectorGeometry, shapely.geometry.Polygon):
 
 
 class MultiPolygon(MultiVectorGeometry, shapely.geometry.MultiPolygon):
-    def __init__(self, *args, crs: Union[CRS, str] = WGS84, **kwargs):
-        shapely.geometry.MultiPolygon.__init__(self, *args, **kwargs)
+    def __init__(self, *args, crs: Union[CRS, str] = WGS84):
+        if isinstance(args[0], MultiPolygon):
+            geometry = args[0].geometry
+            crs = args[0].crs
+        else:
+            geometry = shapely.geometry.MultiPolygon(*args)
+
         VectorGeometry.__init__(self, crs=crs)
 
-    def shape_factory(self, *args):
-        return wrap_geometry(super(MultiPolygon, self).shape_factory(*args), crs=self.crs)
+        self.geometry = geometry
 
     @property
     def bbox(self) -> BBox:
-        return BBox(*self.bounds, crs=self.crs)
+        return BBox(*self.geometry.bounds, crs=self.crs)
 
 def wrap_geometry(geometry: Any, crs: Union[CRS, str] = None) -> SpatialGeometry:
     if isinstance(geometry, SpatialGeometry):
@@ -1232,7 +1264,7 @@ class RasterGeometry(SpatialGeometry):
 
         epsilon = 1e-14
 
-        antimeridian_wedge = Polygon([
+        antimeridian_wedge = shapely.geometry.Polygon([
             (epsilon, -np.pi),
             (epsilon ** 2, -epsilon),
             (0, epsilon),
@@ -1241,7 +1273,7 @@ class RasterGeometry(SpatialGeometry):
             (epsilon, -np.pi)
         ])
 
-        feature_shape = self.boundary_latlon
+        feature_shape = self.boundary_latlon.geometry
         sign = 2. * (0.5 * (feature_shape.bounds[1] + feature_shape.bounds[3]) >= 0.) - 1.
         polar_shape = shapely_transform(to_polar, feature_shape)
 
@@ -1253,10 +1285,13 @@ class RasterGeometry(SpatialGeometry):
         if isinstance(geometry, RasterGeometry):
             geometry = geometry.get_boundary(crs=self.crs)
 
+        if hasattr(geometry, "geometry"):
+            geometry = geometry.geometry
+
         if not isinstance(geometry, BaseGeometry):
             raise ValueError("invalid geometry for intersection")
 
-        result = self.boundary.intersects(geometry)
+        result = self.boundary.geometry.intersects(geometry)
 
         return result
 
@@ -1769,7 +1804,7 @@ class RasterGeometry(SpatialGeometry):
     @property
     def pixel_centroids(self) -> MultiPoint:
         x, y = self.xy
-        pixel_centroids = wrap_geometry(asMultiPoint(np.stack([x.flatten(), y.flatten()], axis=1)), crs=self.crs)
+        pixel_centroids = wrap_geometry(MultiPoint(np.stack([x.flatten(), y.flatten()], axis=1)), crs=self.crs)
 
         return pixel_centroids
 
@@ -3487,7 +3522,7 @@ class Raster:
     def resample(
             self,
             target_geometry: RasterGeometry,
-            fill_value=None,
+            nodata: Any = None,
             search_radius_meters: float = None,
             kd_tree: KDTree = None,
             **kwargs) -> Raster:
@@ -3497,8 +3532,11 @@ class Raster:
         This function should only be used at commensurate scales.
         For disparate scales, use swath_to_swath.
         """
-        if fill_value is None:
-            fill_value = self.nodata
+        if nodata is None:
+            nodata = self.nodata
+
+        if nodata is np.nan and "int" in str(self.dtype):
+            raise ValueError("cannot use NaN as nodata value for integer layer")
 
         if kd_tree is None:
             kd_tree = KDTree(
@@ -3510,7 +3548,7 @@ class Raster:
 
         output_raster = kd_tree.resample(
             source=self.array,
-            fill_value=fill_value,
+            fill_value=nodata,
             **kwargs
         )
 
@@ -3579,12 +3617,19 @@ class Raster:
     def to_grid(
             self,
             grid: RasterGrid,
+            search_radius_meters = None,
             resampling: str = None,
             kd_tree: KDTree = None,
             nodata: Any = None,
             **kwargs) -> Raster:
         if not isinstance(grid, RasterGrid):
             raise TypeError(f"target geometry must be a RasterGrid object, not {type(grid)}")
+
+        if nodata is None:
+            nodata = self.nodata
+
+        if nodata is np.nan and "int" in str(self.dtype):
+            raise ValueError("cannot use NaN as nodata value for integer layer")
 
         if resampling is None:
             resampling = "nearest"
@@ -3596,10 +3641,11 @@ class Raster:
             if resampling == "nearest":
                 return self.resample(
                     target_geometry=grid,
+                    search_radius_meters=search_radius_meters,
                     kd_tree=kd_tree
                 )
             else:
-                return self.resample(target_geometry=self.geometry.grid).to_geometry(grid, resampling=resampling)
+                return self.resample(target_geometry=self.geometry.grid, search_radius_meters=search_radius_meters, nodata=nodata).to_geometry(grid, resampling=resampling, search_radius_meters=search_radius_meters, nodata=nodata)
 
 
         # create source array
@@ -3685,12 +3731,19 @@ class Raster:
             kd_tree: KDTree = None,
             nodata: Any = None,
             **kwargs) -> Raster:
+        if nodata is None:
+            nodata = self.nodata
+
+        if nodata is np.nan and "int" in str(self.dtype):
+            raise ValueError("cannot use NaN as nodata value for integer layer")
+
         if self.geometry == target_geometry:
             return self
 
         if isinstance(target_geometry, RasterGrid):
             return self.to_grid(
                 target_geometry,
+                search_radius_meters=search_radius_meters,
                 resampling=resampling,
                 kd_tree=kd_tree,
                 nodata=nodata,
@@ -3763,7 +3816,7 @@ class Raster:
             nodata = self.nodata
 
             try:
-                if dtype != np.float32 and np.isnan(nodata):
+                if dtype != np.float32 and nodata is np.nan:
                     nodata = None
             except:
                 nodata = None
@@ -3909,10 +3962,12 @@ class Raster:
             remove_XML: bool = True,
             **kwargs):
         filename = abspath(expanduser(filename))
-        temporary_filename = filename.replace(".tif", "temp.tif")
+        temporary_filename = filename.replace(".tif", ".temp.tif")
 
         if exists(temporary_filename):
             os.remove(temporary_filename)
+
+        # print(f"writing temporary GeoTIFF: {temporary_filename}")
 
         self.to_geotiff(
             filename=temporary_filename,
@@ -3920,11 +3975,18 @@ class Raster:
             overwrite=True
         )
 
-        os.system(
-            f'gdal_translate "{temporary_filename}" "{filename}" -co TILED=YES -co COPY_SRC_OVERVIEWS=YES -co COMPRESS={compression.upper()}')
+        if not exists(temporary_filename):
+            raise IOError(f"unable to create temporary GeoTIFF: {temporary_filename}")
 
-        if exists(filename):
-            os.remove(temporary_filename)
+        # print(f"temporary file exists: {exists(temporary_filename)}")
+
+        command = f'gdal_translate "{temporary_filename}" "{filename}" -co TILED=YES -co COPY_SRC_OVERVIEWS=YES -co COMPRESS={compression.upper()}'
+        # print(command)
+        os.system(command)
+
+        # print(f"final file exists: {exists(filename)}")
+
+        os.remove(temporary_filename)
 
         XML_filename = f"{filename}.aux.xml"
 
@@ -4103,6 +4165,9 @@ class Raster:
                 facecolor = "black"
             else:
                 facecolor = "white"
+        
+        if cmap is None:
+            cmap = self.cmap
 
         with plt.style.context(style):
             if fig is None or ax is None:
@@ -4218,7 +4283,6 @@ class Raster:
 
             ax.get_xaxis().set_major_formatter(tick_formatter)
             ax.get_yaxis().set_major_formatter(tick_formatter)
-            # plt.xticks(rotation='-90')
             plt.xticks(rotation=-90)
 
             divider = make_axes_locatable(ax)
@@ -4313,26 +4377,51 @@ class Raster:
 
         if cmap is None:
             cmap = self.cmap
+        
+        if str(self.array.dtype) == "bool":
+            # data = self.array.astype(np.uint8)
+            vmin = 0
+            vmax = 1
+
+            if cmap is None:
+                cmap = colors.ListedColormap(["black", "white"])
+
+        elif np.issubdtype(self.array.dtype, np.integer) and np.all(tuple(np.unique(self.array)) == (0, 1)):
+            # data = self.array.astype(np.uint8)
+            vmin = 0
+            vmax = 1
+
+            if cmap is None:
+                cmap = colors.ListedColormap(["black", "white"])
+        elif len(np.unique(self.array)) < 10:
+            vmin = None
+            vmax = None
+        else:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                minimum = np.nanmin(self.array)
+                maximum = np.nanmax(self.array)
+                mean = np.nanmean(self.array)
+                sd = np.nanstd(self.array)
+
+            vmin = max(mean - 2 * sd, minimum)
+            vmax = min(mean + 2 * sd, maximum)
+
+        if cmap is None:
+            if self.cmap is None:
+                cmap = "jet"
+            else:
+                cmap = self.cmap
 
         if isinstance(cmap, str):
             cmap = plt.get_cmap(cmap)
 
-        if str(self.array.dtype) == "bool" or (
-                np.issubdtype(self.array.dtype, np.integer) and np.all(np.unique(self.array) == (0, 1))):
-            if cmap is None:
-                cmap = DEFAULT_BINARY_CMAP
-
-            image_array_norm = cmap(np.uint8(self.array))
-        elif str(self.array.dtype).startswith("float"):
-            if cmap is None:
-                cmap = DEFAULT_CONTINUOUS_CMAP
-
-            image_array_norm = cmap(np.array(self.percentilecut))
-        else:
-            if cmap is None:
-                cmap = DEFAULT_CONTINUOUS_CMAP
-
+        if len(np.unique(self.array)) == 1:
+            image_array_norm = np.full(self.shape, 0)
+        elif vmin is None and vmax is None:
             image_array_norm = cmap(np.array(self.minmaxstretch))
+        else:
+            image_array_norm = cmap(np.array(self.clip(vmin, vmax).minmaxstretch))
 
         image_array_int = np.uint8(image_array_norm * 255)
         pillow_image = PIL.Image.fromarray(image_array_int)
@@ -4521,8 +4610,7 @@ class MultiRaster(Raster):
 
             ax.get_xaxis().set_major_formatter(tick_formatter)
             ax.get_yaxis().set_major_formatter(tick_formatter)
-            # plt.xticks(rotation='-90')
-            plt.xticks(rotation=-90)
+            plt.xticks(rotation='-90')
 
             if hide_ticks:
                 ax.xaxis.set_visible(False)
