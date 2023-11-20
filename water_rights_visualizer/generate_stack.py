@@ -1,5 +1,6 @@
 from typing import List
-from os.path import exists, join, makedirs, dirname
+from os import makedirs
+from os.path import exists, join, dirname
 from logging import getLogger
 from datetime import datetime, date
 import numpy as np
