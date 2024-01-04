@@ -1258,7 +1258,7 @@ def add_image(filepath):
     im = im.resize((375, 225), PIL.Image.BICUBIC)
     im_resize = PIL.ImageTk.PhotoImage(im)
     image.image_create('1.0',image = im_resize)
-    # root.image.see('1.0')
+    # root.image_panel.see('1.0')
     # root.update()
 
 def get_path(path):

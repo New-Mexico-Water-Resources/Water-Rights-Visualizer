@@ -18,7 +18,7 @@ def interpolate_stack(stack: np.ndarray) -> np.ndarray:
     # Initialize an array to hold the interpolated stack
     filled_stack = np.full((days, rows, cols), np.nan, dtype=np.float32)
 
-    # Loop over each pixel in the image
+    # Loop over each pixel in the image_panel
     for row in range(rows):
         for col in range(cols):
             # Get the time series for the current pixel

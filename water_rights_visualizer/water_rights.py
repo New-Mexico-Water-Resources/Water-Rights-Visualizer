@@ -3,6 +3,9 @@ from datetime import datetime, date
 from os import makedirs
 from os.path import splitext, basename, join, exists
 from pathlib import Path
+from tkinter import Tk, Text
+from tkinter.scrolledtext import ScrolledText
+
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -15,29 +18,33 @@ from .generate_figure import generate_figure
 from .calculate_percent_nan import calculate_percent_nan
 from .generate_stack import generate_stack
 from .inventory import inventory
+from .display_image_tk import display_image_tk
+from .display_text_tk import display_text_tk
 
 logger = logging.getLogger(__name__)
 
-def water_rights(texts, text, root, add_image,
-                 ROI,
-                 start,
-                 end,
-                 # acres,
-                 output,
-                 source_path,
-                 ROI_name=None,
-                 source_directory=None,
-                 figure_directory=None,
-                 working_directory=None,
-                 subset_directory=None,
-                 nan_subset_directory=None,
-                 stack_directory=None,
-                 reference_directory=None,
-                 monthly_sums_directory=None,
-                 monthly_means_directory=None,
-                 monthly_nan_directory=None,
-                 target_CRS=None,
-                 remove_working_directory=None):
+def water_rights(
+        ROI,
+        start,
+        end,
+        output,
+        source_path,
+        ROI_name=None,
+        source_directory=None,
+        figure_directory=None,
+        working_directory=None,
+        subset_directory=None,
+        nan_subset_directory=None,
+        stack_directory=None,
+        reference_directory=None,
+        monthly_sums_directory=None,
+        monthly_means_directory=None,
+        monthly_nan_directory=None,
+        target_CRS=None,
+        remove_working_directory=None,
+        root: Tk = None,
+        text_panel: ScrolledText = None,
+        image_panel: Text = None):
     ROI_base = splitext(basename(ROI))[0]
     DEFAULT_FIGURE_DIRECTORY = Path(f"{output}/figures")
     DEFAULT_SOURCE_DIRECTORY = Path(f"{source_path}")
@@ -86,17 +93,29 @@ def water_rights(texts, text, root, add_image,
 
     if start == end:
         str_time = datetime.now().strftime("%H%M")
-        texts(f"Start Time:{str_time}\n")
+
+        display_text_tk(
+            text=f"Start Time:{str_time}\n",
+            text_panel=text_panel,
+            root=root
+        )
+
         display_text01 = io.StringIO(f"Generating ET for {ROI_name}:\n{start}\n")
         output01 = display_text01.getvalue()
-        text.insert(1.0, output01)
+        text_panel.insert(1.0, output01)
         root.update()
     else:
         str_time = datetime.now().strftime("%H%M")
-        texts(f"Start Time:{str_time}\n")
+
+        display_text_tk(
+            text=f"Start Time:{str_time}\n",
+            text_panel=text_panel,
+            root=root
+        )
+
         display_text01 = io.StringIO(f"Generating ET for {ROI_name}:\n{start} - {end}\n")
         output01 = display_text01.getvalue()
-        text.insert(1.0, output01)
+        text_panel.insert(1.0, output01)
         root.update()
 
     logger.info(f"ROI name: {ROI_name}")
@@ -114,13 +133,24 @@ def water_rights(texts, text, root, add_image,
         years_x = [*range(int(start), int(end) + 1)]
 
     for i, year in enumerate(years_x):
-        logger.info(f"processing: {year}")
-        texts(f"Processing: {year}\n")
+        message = f"processing: {year}"
+        logger.info(message)
+
+        display_text_tk(
+            text="{message}\n",
+            text_panel=text_panel,
+            root=root
+        )
 
         stack_filename = join(stack_directory, f"{year:04d}_{ROI_name}_stack.h5")
 
         try:
-            texts(f"loading stack: {stack_filename}\n")
+            display_text_tk(
+                text=f"loading stack: {stack_filename}\n",
+                text_panel=text_panel,
+                root=root
+            )
+
             ET_stack, PET_stack, affine = generate_stack(
                 ROI_name=ROI_name,
                 ROI_latlon=ROI_latlon,
@@ -149,15 +179,24 @@ def water_rights(texts, text, root, add_image,
             monthly_means_directory=monthly_means_directory
         ))
 
-        texts("Calculating uncertainty\n")
+        display_text_tk(
+            text="Calculating uncertainty\n",
+            text_panel=text_panel,
+            root=root
+        )
 
         calculate_percent_nan(
             ROI_for_nan,
             subset_directory,
             nan_subset_directory,
-            monthly_nan_directory)
+            monthly_nan_directory
+        )
 
-        texts("Generating figure\n")
+        display_text_tk(
+            text="Generating figure\n",
+            text_panel=text_panel,
+            root=root
+        )
 
         nan_means = []
         nd = pd.read_csv(f"{monthly_nan_directory}/{year}.csv")
@@ -177,19 +216,14 @@ def water_rights(texts, text, root, add_image,
         main_df = pd.merge(left=main_dfa, right=nd, how='left', left_on="Months", right_on="month")
         main_df = main_df.replace(np.nan, 100)
         logger.info(f'main_df: {main_df}')
-
         monthly_means_df = pd.concat(month_means, axis=0)
         logger.info("monthly_means_df:")
         mean = np.nanmean(monthly_means_df["ET"])
         sd = np.nanstd(monthly_means_df["ET"])
         vmin = max(mean - 2 * sd, 0)
         vmax = mean + 2 * sd
-
         today = str(date.today())
-        # creation_date= str(today)
-
         logger.info(f"generating figure for year: {year}")
-
         figure_output_directory = join(figure_directory, ROI_name)
 
         if not exists(figure_output_directory):
@@ -199,8 +233,18 @@ def water_rights(texts, text, root, add_image,
 
         if exists(figure_filename):
             logger.info(f"figure already exists: {figure_filename}")
-            texts(f"figure exists in working directory\n")
-            add_image(figure_filename)
+
+            display_text_tk(
+                text=f"figure exists in working directory\n",
+                text_panel=text_panel,
+                root=root
+            )
+
+            display_image_tk(
+                filename=figure_filename,
+                image_panel=image_panel
+            )
+
             continue
 
         try:
@@ -216,10 +260,12 @@ def water_rights(texts, text, root, add_image,
                 main_df=main_df,
                 monthly_sums_directory=monthly_sums_directory,
                 figure_filename=figure_filename,
-                texts=texts,
-                add_image=add_image
+                root=root,
+                text_panel=text_panel,
+                image_panel=image_panel
             )
         except Exception as e:
             logger.exception(e)
             logger.info(f"unable to generate figure for year: {year}")
+
             continue

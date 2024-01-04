@@ -84,8 +84,8 @@ def submit():
         source_path = entry_filepath.get()
     except FileNotFoundError:
         clear_text()
-        print("Not a valid Landsat filepath  ")
-        texts("Not a valid Landsat filepath  ")
+        print("Not a valid Landsat filename  ")
+        texts("Not a valid Landsat filename  ")
         return
 
 
@@ -171,8 +171,8 @@ def submit():
         chdir(working_directory)
     except FileNotFoundError:
         clear_text()
-        print("Invalid output directory filepath   ")
-        texts("Invalid output directory filepath   ")
+        print("Invalid output directory filename   ")
+        texts("Invalid output directory filename   ")
         return
 
     ROI_base = splitext(basename(roi_path))[0]
@@ -436,8 +436,8 @@ def submit():
                 pass
         except YearAvailableError:
             clear_text()
-            print(f"No data found for year: {year}, check Landsat filepath and year availability  ")
-            texts(f"No data found for year: {year}, check Landsat filepath and year availability  ")
+            print(f"No data found for year: {year}, check Landsat filename and year availability  ")
+            texts(f"No data found for year: {year}, check Landsat filename and year availability  ")
             return
 
 
@@ -1239,9 +1239,9 @@ image.pack()
 # s.configure("blue.Horizontal.TProgressbar", foreground='blue', background='blue')
 # progress = ttk.Progressbar(root, style="blue.Horizontal.TProgressbar", orient="horizontal", length=400, mode="determinate", maximum=80)
 # #progress.pack(pady = 40)
-# # display_text = io.StringIO("text\n")
+# # display_text = io.StringIO("text_panel\n")
 # # output = display_text.getvalue()
-# # text.insert(END, output)
+# # text_panel.insert(END, output)
 
 def texts(sometexts):
     display_text = io.StringIO(f"{sometexts}")

@@ -1,18 +1,23 @@
-from os.path import join, exists
 from datetime import datetime, date
-from typing import Callable
-import pandas as pd
-from affine import Affine
-from shapely.geometry import Polygon
-import rasterio
-import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
-import seaborn as sns
 from logging import getLogger
+from os.path import join, exists
+from tkinter import Text, Tk
+from tkinter.scrolledtext import ScrolledText
 
+import matplotlib.pyplot as plt
+import pandas as pd
+import rasterio
+import seaborn as sns
+from affine import Affine
+from matplotlib.colors import LinearSegmentedColormap
+from shapely.geometry import Polygon
+
+from .display_image_tk import display_image_tk
+from .display_text_tk import display_text_tk
 from .generate_patch import generate_patch
 
 logger = getLogger(__name__)
+
 
 def generate_figure(
         ROI_name: str,
@@ -26,11 +31,11 @@ def generate_figure(
         main_df: pd.DataFrame,
         monthly_sums_directory: str,
         figure_filename: str,
-        texts: Callable = lambda: None,
-        add_image: Callable = lambda: None):
-    
+        root: Tk = None,
+        text_panel: ScrolledText = None,
+        image_panel: Text = None):
     fig = plt.figure()
-    fig.suptitle((f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize = 14)
+    fig.suptitle((f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize=14)
     grid = plt.GridSpec(3, 4, wspace=0.4, hspace=0.3)
 
     for i, month in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
@@ -48,7 +53,7 @@ def generate_figure(
         ax = plt.subplot(grid[int(i / 4), i % 4])
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
-        
+
         ET_COLORS = [
             "#f6e8c3",
             "#d8b365",
@@ -65,7 +70,7 @@ def generate_figure(
 
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-    fig.colorbar(im, cax=cbar_ax, ticks=[], label= f'Low                                                            High')
+    fig.colorbar(im, cax=cbar_ax, ticks=[], label=f'Low                                                            High')
 
     ax = plt.subplot(grid[2, :])
     df = main_df[main_df["Year"] == year]
@@ -77,27 +82,46 @@ def generate_figure(
     sns.lineplot(x=x, y=y2, ax=ax, color="green", label="ET")
     ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1)
     ax.fill_between(x, (y2 - ci), (y2 + ci), color='g', alpha=.1)
-    plt.legend(labels=['ET'], loc ='upper right')
+    plt.legend(labels=['ET'], loc='upper right')
     ax.legend(loc='upper left', fontsize=6)
     ax.set(xlabel="Month", ylabel="ET (mm)")
     ymin = min(min(main_df["ET"]), min(main_df["ET"]))
     ymax = max(max(main_df["PET"]), max(main_df["PET"]))
     ylim = (int(ymin), int(ymax + 10))
     ax.set(ylim=ylim)
-    ax.set_yticks([int(ymin), int(ymax)+10])
+    ax.set_yticks([int(ymin), int(ymax) + 10])
     ax.set_yticklabels(['Low', 'High'])
-    
-    plt.title(f"Area of Interest Average Monthly Water Use", fontsize = 10)
-    caption =  "ET and PET calculated by the PT-JPL retrieval: Fisher et al. (2008) with Landsat data"
+
+    plt.title(f"Area of Interest Average Monthly Water Use", fontsize=10)
+    caption = "ET and PET calculated by the PT-JPL retrieval: Fisher et al. (2008) with Landsat data"
     caption2 = f"Visualization created {creation_date}"
-    plt.figtext(0.48, 0.001, caption, wrap = True, verticalalignment = 'bottom', horizontalalignment = 'center', fontsize = 5)
-    plt.figtext(0.93, 0.001, caption2, wrap = True, verticalalignment = 'bottom', horizontalalignment = 'right', fontsize = 5)
+    plt.figtext(0.48, 0.001, caption, wrap=True, verticalalignment='bottom', horizontalalignment='center', fontsize=5)
+    plt.figtext(0.93, 0.001, caption2, wrap=True, verticalalignment='bottom', horizontalalignment='right', fontsize=5)
     plt.tight_layout()
 
-    texts(f"Figure saved\n")
+    display_text_tk(
+        text=f"Figure saved\n",
+        text_panel=text_panel,
+        root=root
+    )
+
     end_time = datetime.now().strftime("%H%M")
-    texts(f"End Time:{end_time}\n")
-    texts("\n")
+
+    display_text_tk(
+        text=f"End Time:{end_time}\n",
+        text_panel=text_panel,
+        root=root
+    )
+
+    display_text_tk(
+        text="\n",
+        text_panel=text_panel,
+        root=root
+    )
+
     plt.savefig(figure_filename, dpi=300)
-    
-    add_image(figure_filename)
+
+    display_image_tk(
+        filename=figure_filename,
+        image_panel=image_panel
+    )

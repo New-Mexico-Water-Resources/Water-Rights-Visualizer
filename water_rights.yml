@@ -18,7 +18,7 @@ dependencies:
   - pyresample
   - python=3.9
   - rasterio>1.0.0
-  - scikit-image
+  - scikit-image_panel
   - scipy
   - seaborn
   - shapely

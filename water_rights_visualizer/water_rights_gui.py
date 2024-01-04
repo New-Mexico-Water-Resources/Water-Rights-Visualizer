@@ -1,19 +1,16 @@
-import io
+import logging
 import sys
-from os import chdir, scandir
-from os.path import splitext, basename, isfile, isdir, abspath, join, dirname, exists
-from pathlib import Path
+from os.path import isfile, isdir, abspath, join, dirname, exists
 from tkinter import Tk, Canvas, font as font, PhotoImage, Label, Frame, scrolledtext, NORMAL, Text, filedialog, END, Entry, Button
 
 import PIL.Image
 import PIL.ImageTk
 
-import logging
-
 from .get_path import get_path
-from .water_rights import water_rights
+from .submit_button_tk import submit_button_tk
 
 logger = logging.getLogger(__name__)
+
 
 def water_rights_gui(
         boundary_filename: str,
@@ -21,84 +18,6 @@ def water_rights_gui(
         input_directory: str,
         start_year: str,
         end_year: str):
-    def submit():
-        year_list = []
-        source_path = entry_filepath.get()
-        roi_path = entry_roi.get()
-
-        try:
-            start = int(entry_start.get())
-            year_list.append(start)
-        except ValueError:
-            logger.info("Input a valid year")
-            texts("Input a valid year")
-
-        try:
-            end = int(entry_end.get())
-            year_list.append(end)
-        except ValueError:
-            end = entry_start.get()
-
-        output = output_path.get()
-
-        logger.info(year_list)
-
-        working_directory = f"{output}"
-        chdir(working_directory)
-
-        ROI_base = splitext(basename(roi_path))[0]
-        DEFAULT_ROI_DIRECTORY = Path(f"{roi_path}")
-        ROI_name = Path(f"{DEFAULT_ROI_DIRECTORY}")
-        ROI = ROI_name
-
-        if isfile(ROI) == True:
-            water_rights(texts, text, root, add_image,
-                         ROI,
-                         start,
-                         end,
-                         # acres,
-                         output,
-                         source_path,
-                         ROI_name=None,
-                         source_directory=None,
-                         figure_directory=None,
-                         working_directory=None,
-                         subset_directory=None,
-                         nan_subset_directory=None,
-                         stack_directory=None,
-                         monthly_sums_directory=None,
-                         monthly_means_directory=None,
-                         monthly_nan_directory=None,
-                         target_CRS=None,
-                         remove_working_directory=None)
-
-        elif isdir(ROI) == True:
-            for items in scandir(ROI):
-                if items.name.endswith(".geojson"):
-                    roi_name = abspath(items)
-                    water_rights(texts, text, root, add_image,
-                                 roi_name,
-                                 start,
-                                 end,
-                                 # acres,
-                                 output,
-                                 source_path,
-                                 ROI_name=None,
-                                 source_directory=None,
-                                 figure_directory=None,
-                                 working_directory=None,
-                                 subset_directory=None,
-                                 nan_subset_directory=None,
-                                 stack_directory=None,
-                                 monthly_sums_directory=None,
-                                 monthly_means_directory=None,
-                                 monthly_nan_directory=None,
-                                 target_CRS=None,
-                                 remove_working_directory=None)
-        else:
-            texts("Not a valid file")
-            logger.info("Not a valid file")
-
     HEIGHT = 600
     WIDTH = 700
 
@@ -132,21 +51,13 @@ def water_rights_gui(
         img_frame = Frame(root, bg='mediumturquoise', bd=4)
         img_frame.place(relx=0.675, rely=0.5, relwidth=0.60, relheight=0.4, anchor='n')
 
-    text = scrolledtext.ScrolledText(low_frame, width=200, height=200)
-    text.config(state=NORMAL)
-    text.pack()
+    text_panel = scrolledtext.ScrolledText(low_frame, width=200, height=200)
+    text_panel.config(state=NORMAL)
+    text_panel.pack()
 
-    image = Text(img_frame, width=200, height=200)
-    image.config(state=NORMAL)
-    image.pack()
-
-    def texts(sometexts):
-        display_text = io.StringIO(f"{sometexts}")
-        output = display_text.getvalue()
-        text.insert('1.0', output)
-        root.update()
-
-        return "break"
+    image_panel = Text(img_frame, width=200, height=200)
+    image_panel.config(state=NORMAL)
+    image_panel.pack()
 
     def browse_data(i):
 
@@ -261,20 +172,18 @@ def water_rights_gui(
         output_path.delete(0, 'end')
 
     def clear_text():
-        image.delete(1.0, END)
-        text.delete(1.0, END)
+        image_panel.delete(1.0, END)
+        text_panel.delete(1.0, END)
         progress.set(0)
         root.update()
 
-    def add_image(filepath):
-        global im_resize
-        logger.info(f"opening image: {filepath}")
-        im = PIL.Image.open(filepath)
-        im = im.resize((375, 225), PIL.Image.BICUBIC)
-        im_resize = PIL.ImageTk.PhotoImage(im)
-        image.image_create('1.0', image=im_resize)
-        # root.image.see('1.0')
-        # root.update()
+    # def add_image(filename):
+    #     global im_resize
+    #     logger.info(f"opening image_panel: {filename}")
+    #     im = PIL.Image.open(filename)
+    #     im = im.resize((375, 225), PIL.Image.BICUBIC)
+    #     im_resize = PIL.ImageTk.PhotoImage(im)
+    #     image_panel.image_create('1.0', image_panel=im_resize)
 
     # GEOJSON/ROI FILEPATH
     entry_roi = Entry(root, font=10, bd=2)
@@ -284,7 +193,6 @@ def water_rights_gui(
     else:
         entry_roi.insert(END, boundary_filename)
 
-    # entry_roi.insert(END, "C:/Users/CashOnly/Desktop/PT-JPL/ROI_477/2035.geojson")
     entry_roi['font'] = myFont
     entry_roi.place(relx=0.36, rely=0.1, relwidth=.66, relheight=0.05, anchor='n')
 
@@ -351,12 +259,12 @@ def water_rights_gui(
         entry_end.insert(0, end_year)
 
     # Clear Texts
-    clear_text = Button(root, text='Clear Board', width=10, command=clear_text)
+    clear_text = Button(root, text='Clear Board', width=10, command=lambda: clear_text())
     clear_text['font'] = myFont
     clear_text.place(relx=0.825, rely=0.4, relheight=0.05)
 
     # SUBMIT BUTTON
-    submit_button = Button(root, text="Submit", width=10, command=submit)
+    submit_button = Button(root, text="Submit", width=10, command=lambda: submit_button_tk(root, text_panel, image_panel, entry_filepath, entry_roi, entry_start, entry_end, output_path))
     submit_button['font'] = myFont
     submit_button.place(relx=0.670, rely=0.4, relheight=0.05)
 
