@@ -335,7 +335,7 @@ def submit():
             raise ValueError(f"no dates for year: {year}")
 
         for date_step in dates_in_year:
-            #print(f"date: {date_step.strftime('%Y-%m-%d')}")
+            #print(f"creation_date: {date_step.strftime('%Y-%m-%d')}")
 
             if not exists(subset_directory):
                 makedirs(subset_directory)
@@ -356,7 +356,7 @@ def submit():
                 )
             except Exception as e:
                 print(e)
-                #print(f"problem generating ET subset for date: {date_step.strftime('%Y-%m-%d')}")
+                #print(f"problem generating ET subset for creation_date: {date_step.strftime('%Y-%m-%d')}")
                 continue
 
             try:
@@ -370,7 +370,7 @@ def submit():
                 )
             except Exception as e:
                 print(e)
-                #print(f"problem generating ESI subset for date: {date_step.strftime('%Y-%m-%d')}")
+                #print(f"problem generating ESI subset for creation_date: {date_step.strftime('%Y-%m-%d')}")
                 continue
 
             subset_shape = ESI_subset.shape
@@ -509,11 +509,11 @@ def submit():
                         ET_monthly = f.read(1)
                 else:
                     start = datetime(year, month, 1).date()
-                    #print("start date: " + start.strftime("%Y-%m-%d"))
+                    #print("start creation_date: " + start.strftime("%Y-%m-%d"))
                     start_index = start.timetuple().tm_yday
                     #print(f"start index: {start_index}")
                     end = datetime(year, month + 1, 1).date()
-                    #print("end date: " + end.strftime("%Y-%m-%d"))
+                    #print("end creation_date: " + end.strftime("%Y-%m-%d"))
                     end_index = end.timetuple().tm_yday
                     #print(f"end index: {end_index}")
                     ET_month_stack = ET_stack[start_index:end_index, :, :]
@@ -548,11 +548,11 @@ def submit():
                         PET_monthly = f.read(1)
                 else:
                     start = datetime(year, month, 1).date()
-                    #print("start date: " + start.strftime("%Y-%m-%d"))
+                    #print("start creation_date: " + start.strftime("%Y-%m-%d"))
                     start_index = start.timetuple().tm_yday
                     #print(f"start index: {start_index}")
                     end = datetime(year, month + 1, 1).date()
-                    #print("end date: " + end.strftime("%Y-%m-%d"))
+                    #print("end creation_date: " + end.strftime("%Y-%m-%d"))
                     end_index = end.timetuple().tm_yday
                     #print(f"end index: {end_index}")
                     PET_month_stack = PET_stack[start_index:end_index, :, :]

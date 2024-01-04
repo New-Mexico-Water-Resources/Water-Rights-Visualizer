@@ -1,3 +1,4 @@
+import logging
 from os import makedirs
 from os.path import join, exists
 from datetime import datetime
@@ -7,6 +8,8 @@ import pandas as pd
 from affine import Affine
 import rasterio
 from rasterio.features import geometry_mask
+
+logger = logging.getLogger(__name__)
 
 def process_monthly(
         ET_stack: np.ndarray,
@@ -18,6 +21,7 @@ def process_monthly(
         year: int,
         monthly_sums_directory: str,
         monthly_means_directory: str) -> pd.DataFrame:
+    logger.info("generating monthly means")
     monthly_means_filename = join(monthly_means_directory, f"{year}_monthly_means.csv")
     
     if exists(monthly_means_filename):
@@ -44,11 +48,11 @@ def process_monthly(
                     ET_monthly = f.read(1)
             else:
                 start = datetime(year, month, 1).date()
-                #logger.info("start date: " + start.strftime("%Y-%m-%d"))
+                #logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
                 start_index = start.timetuple().tm_yday
                 #logger.info(f"start index: {start_index}")
                 end = datetime(year, month + 1, 1).date()
-                #logger.info("end date: " + end.strftime("%Y-%m-%d"))
+                #logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
                 end_index = end.timetuple().tm_yday
                 #logger.info(f"end index: {end_index}")
                 ET_month_stack = ET_stack[start_index:end_index, :, :]
@@ -76,11 +80,11 @@ def process_monthly(
                     PET_monthly = f.read(1)
             else:
                 start = datetime(year, month, 1).date()
-                #logger.info("start date: " + start.strftime("%Y-%m-%d"))
+                #logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
                 start_index = start.timetuple().tm_yday
                 #logger.info(f"start index: {start_index}")
                 end = datetime(year, month + 1, 1).date()
-                #logger.info("end date: " + end.strftime("%Y-%m-%d"))
+                #logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
                 end_index = end.timetuple().tm_yday
                 #logger.info(f"end index: {end_index}")
                 PET_month_stack = PET_stack[start_index:end_index, :, :]

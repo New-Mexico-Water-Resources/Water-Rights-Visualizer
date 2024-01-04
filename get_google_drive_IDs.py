@@ -26,7 +26,7 @@ else:
         date_directory_ID_rows.append([d, date_directory_ID])
 
     date_directory_IDs = pd.DataFrame(
-        date_directory_ID_rows, columns=["date", "ID"])
+        date_directory_ID_rows, columns=["creation_date", "ID"])
 
     date_directory_IDs.to_csv("date_directory_IDs.csv", index=False)
 
@@ -53,7 +53,7 @@ else:
                 [d, granule_ID, granule_directory_ID])
 
     granule_directory_IDs = pd.DataFrame(granule_directory_ID_rows, columns=[
-        "date", "granule_ID", "granule_directory_ID"])
+        "creation_date", "granule_ID", "granule_directory_ID"])
 
     date_directory_IDs.to_csv("granule_directory_IDs.csv", index=False)
 
@@ -79,6 +79,6 @@ else:
             file_ID_rows.append([d, granule_ID, filename, file_ID])
 
     file_IDs = pd.DataFrame(file_ID_rows, columns=[
-                            "date", "granule_ID", "filename", "file_ID"])
+                            "creation_date", "granule_ID", "filename", "file_ID"])
 
     file_IDs.to_csv("file_IDs.csv", index=False)

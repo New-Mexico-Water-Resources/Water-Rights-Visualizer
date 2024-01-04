@@ -1,4 +1,5 @@
-from water_rights_visualizer import FilepathSource, GoogleSource
+from water_rights_visualizer.google_source import GoogleSource
+from water_rights_visualizer.file_path_source import FilepathSource
 import cl
 
 input_directory = "/Users/halverso/Library/CloudStorage/GoogleDrive-halverso@jpl.caltech.edu/Shared drives/NMOSE Water Rights/Landsat"

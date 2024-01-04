@@ -1,4 +1,6 @@
-from water_rights_visualizer import water_rights_visualizer, FilepathSource, GoogleSource
+from water_rights_visualizer import water_rights_visualizer
+from water_rights_visualizer.google_source import GoogleSource
+from water_rights_visualizer.file_path_source import FilepathSource
 import cl
 
 boundary_filename = "~/water_rights_testing/water.right.1.geojson"

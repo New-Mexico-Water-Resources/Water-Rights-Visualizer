@@ -29,8 +29,12 @@ def generate_stack(
         target_CRS = WGS84
 
     if exists(stack_filename):
+        logger.info(f"loading existing stack: {stack_filename}")
+
         with h5py.File(stack_filename, "r") as stack_file:
+            logger.info(f"loading ET: {stack_filename}")
             ET_stack = np.array(stack_file["ET"])
+            logger.info(f"loading PET: {stack_filename}")
             PET_stack = np.array(stack_file["PET"])
             affine = Affine(*list(stack_file["affine"]))
 
