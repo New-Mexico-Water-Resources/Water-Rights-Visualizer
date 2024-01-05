@@ -1,39 +1,36 @@
 import logging
 import sys
 from os.path import isfile, isdir, abspath, join, dirname, exists
-from tkinter import Tk, Canvas, font as font, PhotoImage, Label, Frame, scrolledtext, NORMAL, Text, filedialog, END, Entry, Button
+from tkinter import Tk, Canvas, font as font, PhotoImage, Label, Frame, scrolledtext, NORMAL, Text, filedialog, END, \
+    Entry, Button
 
 import PIL.Image
 import PIL.ImageTk
 
+from .constants import CANVAS_HEIGHT_TK, CANVAS_WIDTH_TK
+from .browse_batch_tk import browse_batch
+from .browse_data_tk import browse_data
+from .browse_output_tk import browse_output
+from .browse_roi_tk import browse_roi
 from .get_path import get_path
 from .submit_button_tk import submit_button_tk
 
 logger = logging.getLogger(__name__)
 
-
-def water_rights_gui(
+def water_rights_gui_tk(
         boundary_filename: str,
         output_directory: str,
         input_directory: str,
         start_year: str,
         end_year: str):
-    HEIGHT = 600
-    WIDTH = 700
-
     root = Tk()
     root.title("JPL-NMOSE ET visualizer")
     root.geometry("700x600")
     root.resizable(0, 0)
-
-    canvas = Canvas(root, height=HEIGHT, width=WIDTH)
+    canvas = Canvas(root, height=CANVAS_HEIGHT_TK, width=CANVAS_WIDTH_TK)
     canvas.pack()
-
     myFont = font.Font(family='Helvetica', size=12)
-
     imgpath = join(dirname(abspath(sys.argv[0])), "img4.png")
-
-    # imgpath = "/Users/seamony/Desktop/WR_GUI/img4.png"
 
     if exists(imgpath) == True:
         img = PhotoImage(file=imgpath)
@@ -58,109 +55,6 @@ def water_rights_gui(
     image_panel = Text(img_frame, width=200, height=200)
     image_panel.config(state=NORMAL)
     image_panel.pack()
-
-    def browse_data(i):
-
-        phrase = i
-
-        if isdir(phrase) == True:
-            landsat_file = filedialog.askdirectory(initialdir=phrase, title="Select Landsat directory")
-            if landsat_file == phrase:
-                pass
-            elif len(landsat_file) < 1:
-                pass
-            else:
-                clear_data()
-                entry_filepath.insert(END, landsat_file)
-        else:
-            landsat_file = filedialog.askdirectory(initialdir="C:/Users/", title="Select Landsat directory")
-            if landsat_file == phrase:
-                pass
-            elif len(landsat_file) < 1:
-                pass
-            else:
-                clear_data()
-                entry_filepath.insert(END, landsat_file)
-
-    def browse_roi(i):
-
-        phrase = i
-
-        if isdir(phrase) == True:
-            roi_file = filedialog.askopenfilename(initialdir=phrase, title="Select geojson file")
-            if roi_file == phrase:
-                pass
-            elif len(roi_file) < 1:
-                pass
-            else:
-                clear_roi()
-                entry_roi.insert(END, roi_file)
-
-        elif isfile(phrase) == True:
-            roi_file = filedialog.askopenfilename(initialdir=phrase, title="Select geojson file")
-            if roi_file == phrase:
-                pass
-            elif len(roi_file) < 1:
-                pass
-            else:
-                clear_roi()
-                entry_roi.insert(END, roi_file)
-
-        else:
-            roi_file = filedialog.askopenfilename(initialdir="C:/Users/", title="Select geojson file")
-            if roi_file == phrase:
-                pass
-            elif len(roi_file) < 1:
-                pass
-            else:
-                clear_roi()
-                entry_roi.insert(END, roi_file)
-
-    def browse_batch(i):
-
-        phrase = i
-
-        if isdir(phrase) == True:
-            roi_batch = filedialog.askdirectory(initialdir=phrase, title="Select outpt directory")
-            if roi_batch == phrase:
-                pass
-            elif len(roi_batch) < 1:
-                pass
-            else:
-                clear_roi()
-                entry_roi.insert(END, roi_batch)
-        else:
-            roi_batch = filedialog.askdirectory(initialdir="C:/Users/", title="Select outpt directory")
-            if roi_batch == phrase:
-                pass
-            elif len(roi_batch) < 1:
-                pass
-            else:
-                clear_roi()
-                entry_roi.insert(END, roi_batch)
-
-    def browse_output(i):
-
-        phrase = i
-
-        if isdir(phrase) == True:
-            output_file = filedialog.askdirectory(initialdir=phrase, title="Select outpt directory")
-            if output_file == phrase:
-                pass
-            elif len(output_file) < 1:
-                pass
-            else:
-                clear_output()
-                output_path.insert(END, output_file)
-        else:
-            output_file = filedialog.askdirectory(initialdir="C:/Users/", title="Select outpt directory")
-            if output_file == phrase:
-                pass
-            elif len(output_file) < 1:
-                pass
-            else:
-                clear_output()
-                output_path.insert(END, output_file)
 
     def clear_roi():
         entry_roi.delete(0, 'end')
@@ -187,11 +81,15 @@ def water_rights_gui(
     entry_roi['font'] = myFont
     entry_roi.place(relx=0.36, rely=0.1, relwidth=.66, relheight=0.05, anchor='n')
 
-    roi_button = Button(root, text="Single", width=8, command=lambda: [browse_roi(get_path('Single', entry_filepath, entry_roi, output_path))])
+    roi_button = Button(root, text="Single", width=8, command=lambda: [browse_roi(clear_roi, entry_roi,
+                                                                                  get_path('Single', entry_filepath,
+                                                                                           entry_roi, output_path))])
     roi_button['font'] = myFont
     roi_button.place(relx=0.85, rely=0.1, relheight=0.05)
 
-    roi_batch = Button(root, text="Batch", width=8, command=lambda: [browse_batch(get_path('Batch', entry_filepath, entry_roi, output_path))])
+    roi_batch = Button(root, text="Batch", width=8, command=lambda: [browse_batch(clear_roi, entry_roi,
+                                                                                  get_path('Batch', entry_filepath,
+                                                                                           entry_roi, output_path))])
     roi_batch['font'] = myFont
     roi_batch.place(relx=0.720, rely=0.1, relheight=0.05)
 
@@ -203,11 +101,14 @@ def water_rights_gui(
     else:
         entry_filepath.insert(END, input_directory)
 
-    # entry_filepath.insert(END, 'E:/Personal/ISC_DATA')
     entry_filepath['font'] = myFont
     entry_filepath.place(relx=0.41, rely=0.2, relwidth=.76, relheight=0.05, anchor='n')
 
-    filepath_button = Button(root, text="Search", width=10, command=lambda: [browse_data(get_path('Landsat', entry_filepath, entry_roi, output_path))])
+    filepath_button = Button(root, text="Search", width=10, command=lambda: [browse_data(clear_data, entry_filepath,
+                                                                                         get_path('Landsat',
+                                                                                                  entry_filepath,
+                                                                                                  entry_roi,
+                                                                                                  output_path))])
     filepath_button['font'] = myFont
     filepath_button.place(relx=0.825, rely=0.2, relheight=0.05)
 
@@ -223,7 +124,11 @@ def water_rights_gui(
     output_path['font'] = myFont
     output_path.place(relx=0.41, rely=0.3, relwidth=0.76, relheight=0.05, anchor='n')
 
-    output_button = Button(root, text="Search", width=10, command=lambda: [browse_output(get_path('Output', entry_filepath, entry_roi, output_path))])
+    output_button = Button(root, text="Search", width=10, command=lambda: [browse_output(clear_output, output_path,
+                                                                                         get_path('Output',
+                                                                                                  entry_filepath,
+                                                                                                  entry_roi,
+                                                                                                  output_path))])
     output_button['font'] = myFont
     output_button.place(relx=0.825, rely=0.3, relheight=0.05)
 
@@ -255,7 +160,9 @@ def water_rights_gui(
     clear_text.place(relx=0.825, rely=0.4, relheight=0.05)
 
     # SUBMIT BUTTON
-    submit_button = Button(root, text="Submit", width=10, command=lambda: submit_button_tk(root, text_panel, image_panel, entry_filepath, entry_roi, entry_start, entry_end, output_path))
+    submit_button = Button(root, text="Submit", width=10,
+                           command=lambda: submit_button_tk(root, text_panel, image_panel, entry_filepath, entry_roi,
+                                                            entry_start, entry_end, output_path))
     submit_button['font'] = myFont
     submit_button.place(relx=0.670, rely=0.4, relheight=0.05)
 

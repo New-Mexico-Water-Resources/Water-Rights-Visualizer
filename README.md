@@ -53,7 +53,7 @@ You should see the environment name `(water_rights)` in parentheses prepended to
 To launch the Water Rights Visualizer GUI, run the `water_rights_gui.py` script:
 
 ```bash
-(water_rights) $ python water_rights_gui.py
+(water_rights) $ python water_rights_gui_tk.py
 ```
 
 ## Deactivation

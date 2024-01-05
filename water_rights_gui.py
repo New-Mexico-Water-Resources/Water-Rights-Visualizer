@@ -3,7 +3,7 @@
 import sys
 from logging import getLogger
 
-from water_rights_visualizer.water_rights_gui import water_rights_gui
+from water_rights_visualizer.water_rights_gui_tk import water_rights_gui_tk
 
 logger = getLogger(__name__)
 
@@ -34,7 +34,7 @@ def main(argv=sys.argv):
     else:
         end_year = None
 
-    water_rights_gui(
+    water_rights_gui_tk(
         boundary_filename=boundary_filename,
         output_directory=output_directory,
         input_directory=input_directory,

@@ -12,5 +12,8 @@ BUFFER_DEGREES = 0.001
 CELL_SIZE_DEGREES = 0.0003
 CELL_SIZE_METERS = 30
 
+CANVAS_HEIGHT_TK = 600
+CANVAS_WIDTH_TK = 700
+
 WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 UTM = "+proj=utm +zone=13 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
