@@ -29,12 +29,6 @@ def calculate_percent_nan(
     Returns:
         None
     """
-    # Function implementation...
-def calculate_percent_nan(
-        ROI_for_nan: Polygon,
-        subset_directory: str,
-        nan_subset_directory: str,
-        monthly_nan_directory: str):
     # Creating the nan_subset_directory if it doesn't exist
     if not exists(nan_subset_directory):
         makedirs(nan_subset_directory)

@@ -32,21 +32,23 @@ def water_rights_gui_tk(
     myFont = font.Font(family='Helvetica', size=12)
     imgpath = join(dirname(abspath(sys.argv[0])), "img4.png")
 
-    if exists(imgpath) == True:
+    if exists(imgpath):
+        label_color = 'skyblue'
+        frame_color = 'skyblue'
         img = PhotoImage(file=imgpath)
-        background_label = Label(root, image=img)
-        background_label.place(relwidth=1, relheight=1)
-        low_frame = Frame(root, bg='skyblue', bd=4)
-        low_frame.place(relx=0.20, rely=0.5, relwidth=0.35, relheight=0.4, anchor='n')
-        img_frame = Frame(root, bg='skyblue', bd=4)
-        img_frame.place(relx=0.675, rely=0.5, relwidth=0.60, relheight=0.4, anchor='n')
     else:
-        background_label = Label(root, bg='lightseagreen')
-        background_label.place(relwidth=1, relheight=1)
-        low_frame = Frame(root, bg='mediumturquoise', bd=4)
-        low_frame.place(relx=0.20, rely=0.5, relwidth=0.35, relheight=0.4, anchor='n')
-        img_frame = Frame(root, bg='mediumturquoise', bd=4)
-        img_frame.place(relx=0.675, rely=0.5, relwidth=0.60, relheight=0.4, anchor='n')
+        label_color = 'lightseagreen'
+        frame_color = 'mediumturquoise'
+        img = None
+    
+    background_label = Label(root, image=img, bg=label_color)
+    background_label.place(relwidth=1, relheight=1)
+
+    low_frame = Frame(root, bg=frame_color, bd=4)
+    low_frame.place(relx=0.20, rely=0.5, relwidth=0.35, relheight=0.4, anchor='n')
+
+    img_frame = Frame(root, bg=frame_color, bd=4)
+    img_frame.place(relx=0.675, rely=0.5, relwidth=0.60, relheight=0.4, anchor='n')
 
     text_panel = scrolledtext.ScrolledText(low_frame, width=200, height=200)
     text_panel.config(state=NORMAL)

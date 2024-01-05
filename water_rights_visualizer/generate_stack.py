@@ -1,26 +1,28 @@
-from typing import List
+from datetime import date, datetime
+from logging import getLogger
 from os import makedirs
 from os.path import exists, join, dirname
-from logging import getLogger
-from datetime import datetime, date
+from typing import List
+
+import h5py
 import numpy as np
 from affine import Affine
-import h5py
-from shapely.geometry import Polygon
+from shapely import Polygon
 
+from .constants import WGS84
+from .data_source import DataSource
+from .errors import BlankOutput, FileUnavailable
 from .generate_subset import generate_subset
 from .interpolate_stack import interpolate_stack
-
-WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"  
 
 logger = getLogger(__name__)
 
 def generate_stack(
         ROI_name: str,
-        ROI_latlon: Polygon,
+        ROI_latlon,
         year: int,
         ROI_acres: float,
-        source_directory: str,
+        input_datastore: DataSource,
         subset_directory: str,
         dates_available: List[date],
         stack_filename: str,
@@ -69,6 +71,8 @@ def generate_stack(
         if date_step.year == year
     ]
 
+    dates_in_year = sorted(set(dates_in_year))
+
     if len(dates_in_year) == 0:
         raise ValueError(f"no dates for year: {year}")
 
@@ -83,18 +87,24 @@ def generate_stack(
         logger.info(f"ET subset file: {ET_subset_filename}")
         ESI_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ESI_subset.tif")
         logger.info(f"ESI subset file: {ESI_subset_filename}")
-        source_raster_directory = join(source_directory, date_step.strftime("%Y.%m.%d"))
-        logger.info(f"source raster directory: {source_raster_directory}")
 
         try:
             ET_subset, affine = generate_subset(
-                source_raster_directory,
-                ROI_latlon,
-                ROI_acres,
-                "ET",
+                input_datastore=input_datastore,
+                acquisition_date=date_step,
+                ROI_name=ROI_name,
+                ROI_latlon=ROI_latlon,
+                ROI_acres=ROI_acres,
+                variable_name="ET",
                 subset_filename=ET_subset_filename,
                 target_CRS=target_CRS
             )
+        except BlankOutput as e:
+            logger.warning(e)
+            continue
+        except FileUnavailable as e:
+            logger.warning(e)
+            continue
         except Exception as e:
             logger.exception(e)
             logger.info(f"problem generating ET subset for date: {date_step.strftime('%Y-%m-%d')}")
@@ -102,13 +112,21 @@ def generate_stack(
 
         try:
             ESI_subset, affine = generate_subset(
-                source_raster_directory,
-                ROI_latlon,
-                ROI_acres,
-                "ESI",
+                input_datastore=input_datastore,
+                acquisition_date=date_step,
+                ROI_name=ROI_name,
+                ROI_latlon=ROI_latlon,
+                ROI_acres=ROI_acres,
+                variable_name="ESI",
                 subset_filename=ESI_subset_filename,
                 target_CRS=target_CRS
             )
+        except BlankOutput as e:
+            logger.warning(e)
+            continue
+        except FileUnavailable as e:
+            logger.warning(e)
+            continue
         except Exception as e:
             logger.exception(e)
             logger.info(f"problem generating ESI subset for date: {date_step.strftime('%Y-%m-%d')}")
@@ -165,5 +183,5 @@ def generate_stack(
             affine.e,
             affine.f
         )
-    
+
     return ET_stack, PET_stack, affine

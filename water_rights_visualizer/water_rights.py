@@ -1,100 +1,61 @@
-import io
-from datetime import datetime, date
+import logging
+from datetime import datetime
 from os import makedirs
 from os.path import splitext, basename, join, exists
 from pathlib import Path
 from tkinter import Tk, Text
 from tkinter.scrolledtext import ScrolledText
 
+import geopandas as gpd
 import numpy as np
 import pandas as pd
-import geopandas as gpd
-import logging
 
-from .constants import WGS84, START_MONTH, END_MONTH
+import cl
 from .ROI_area import ROI_area
-from .process_monthly import process_monthly
-from .generate_figure import generate_figure
 from .calculate_percent_nan import calculate_percent_nan
-from .generate_stack import generate_stack
-from .inventory import inventory
+from .constants import WGS84, START_MONTH, END_MONTH, START_YEAR, END_YEAR
+from .data_source import DataSource
 from .display_image_tk import display_image_tk
 from .display_text_tk import display_text_tk
+from .generate_figure import generate_figure
+from .generate_stack import generate_stack
+from .process_monthly import process_monthly
 
 logger = logging.getLogger(__name__)
 
 def water_rights(
         ROI,
-        start,
-        end,
-        output,
-        source_path,
-        ROI_name=None,
-        source_directory=None,
-        figure_directory=None,
-        working_directory=None,
-        subset_directory=None,
-        nan_subset_directory=None,
-        stack_directory=None,
-        reference_directory=None,
-        monthly_sums_directory=None,
-        monthly_means_directory=None,
-        monthly_nan_directory=None,
-        target_CRS=None,
-        remove_working_directory=None,
-        start_month=START_MONTH,
-        end_month=END_MONTH,
+        input_datastore: DataSource,
+        output_directory: str,
+        start_year: int = START_YEAR,
+        end_year: int = END_YEAR,
+        start_month: int = START_MONTH,
+        end_month: int = END_MONTH,
+        ROI_name: str = None,
+        figure_directory: str = None,
+        working_directory: str = None,
+        subset_directory: str = None,
+        nan_subset_directory: str = None,
+        stack_directory: str = None,
+        monthly_sums_directory: str = None,
+        monthly_means_directory: str = None,
+        monthly_nan_directory: str = None,
+        target_CRS: str = None,
+        remove_working_directory: bool = True,
         root: Tk = None,
-        text_panel: ScrolledText = None,
-        image_panel: Text = None):
-    """
-    Process water rights data for a given region of interest (ROI).
-
-    Args:
-        ROI (str): Path to the region of interest shapefile.
-        start (str): Start date of the water rights data in the format 'YYYY-MM-DD'.
-        end (str): End date of the water rights data in the format 'YYYY-MM-DD'.
-        output (str): Path to the output directory.
-        source_path (str): Path to the directory containing the water rights data.
-        ROI_name (str, optional): Name of the region of interest. Defaults to None.
-        source_directory (str, optional): Path to the directory containing the water rights data. 
-            Defaults to None.
-        figure_directory (str, optional): Path to the directory to save figures. Defaults to None.
-        working_directory (str, optional): Path to the working directory. Defaults to None.
-        subset_directory (str, optional): Path to the directory to save subset data. Defaults to None.
-        nan_subset_directory (str, optional): Path to the directory to save subset data with NaN values. 
-            Defaults to None.
-        stack_directory (str, optional): Path to the directory to save stacked data. Defaults to None.
-        reference_directory (str, optional): Path to the directory containing reference data. 
-            Defaults to None.
-        monthly_sums_directory (str, optional): Path to the directory to save monthly sums data. 
-            Defaults to None.
-        monthly_means_directory (str, optional): Path to the directory to save monthly means data. 
-            Defaults to None.
-        monthly_nan_directory (str, optional): Path to the directory to save monthly data with NaN values. 
-            Defaults to None.
-        target_CRS (str, optional): Target coordinate reference system (CRS) for the output data. 
-            Defaults to None.
-        remove_working_directory (str, optional): Path to the directory to remove after processing. 
-            Defaults to None.
-        start_month (int, optional): Start month of the water rights data. Defaults to START_MONTH.
-        end_month (int, optional): End month of the water rights data. Defaults to END_MONTH.
-        root (Tk, optional): Root window of the GUI application. Defaults to None.
-        text_panel (ScrolledText, optional): Text panel widget of the GUI application. Defaults to None.
-        image_panel (Text, optional): Image panel widget of the GUI application. Defaults to None.
-
-    Returns:
-        None
-    """
+        image_panel: Text = None,
+        text_panel: ScrolledText = None):
     ROI_base = splitext(basename(ROI))[0]
-    DEFAULT_FIGURE_DIRECTORY = Path(f"{output}/figures")
-    DEFAULT_SOURCE_DIRECTORY = Path(f"{source_path}")
-    DEFAULT_SUBSET_DIRECTORY = Path(f"{output}/subset/{ROI_base}")
-    DEFAULT_NAN_SUBSET_DIRECTORY = Path(f"{output}/nan_subsets/{ROI_base}")
-    DEFAULT_MONTHLY_DIRECTORY = Path(f"{output}/monthly/{ROI_base}")
-    DEFAULT_STACK_DIRECTORY = Path(f"{output}/stack/{ROI_base}")
-    DEFAULT_MONTHLY_NAN_DIRECTORY = Path(f"{output}/monthly_nan/{ROI_base}")
-    DEFAULT_MONTHLY_MEANS_DIRECTORY = Path(f"{output}/monthly_means/{ROI_base}")
+    DEFAULT_FIGURE_DIRECTORY = Path(f"{output_directory}/figures")
+    DEFAULT_SUBSET_DIRECTORY = Path(f"{output_directory}/subset/{ROI_base}")
+    DEFAULT_NAN_SUBSET_DIRECTORY = Path(
+        f"{output_directory}/nan_subsets/{ROI_base}")
+    DEFAULT_MONTHLY_DIRECTORY = Path(f"{output_directory}/monthly/{ROI_base}")
+    DEFAULT_STACK_DIRECTORY = Path(f"{output_directory}/stack/{ROI_base}")
+    DEFAULT_MONTHLY_NAN_DIRECTORY = Path(
+        f"{output_directory}/monthly_nan/{ROI_base}")
+    DEFAULT_MONTHLY_MEANS_DIRECTORY = Path(
+        f"{output_directory}/monthly_means/{ROI_base}")
 
     if ROI_name is None:
         ROI_name = splitext(basename(ROI))[0]
@@ -123,41 +84,27 @@ def water_rights(
     if monthly_nan_directory is None:
         monthly_nan_directory = join(working_directory, DEFAULT_MONTHLY_NAN_DIRECTORY)
 
-    if source_directory is None:
-        source_directory = DEFAULT_SOURCE_DIRECTORY
-
     if figure_directory is None:
         figure_directory = DEFAULT_FIGURE_DIRECTORY
 
     if target_CRS is None:
         target_CRS = WGS84
 
-    if start == end:
-        str_time = datetime.now().strftime("%H%M")
+    str_time = datetime.now().strftime("%H%M")
 
-        display_text_tk(
-            text=f"Start Time:{str_time}\n",
-            text_panel=text_panel,
-            root=root
-        )
+    display_text_tk(
+        text=f"Start Time:{str_time}\n",
+        text_panel=text_panel,
+        root=root
+    )
 
-        display_text01 = io.StringIO(f"Generating ET for {ROI_name}:\n{start}\n")
-        output01 = display_text01.getvalue()
-        text_panel.insert(1.0, output01)
-        root.update()
-    else:
-        str_time = datetime.now().strftime("%H%M")
+    year_range = start_year if start_year == end_year else f"{start_year} - {end_year}"
 
-        display_text_tk(
-            text=f"Start Time:{str_time}\n",
-            text_panel=text_panel,
-            root=root
-        )
-
-        display_text01 = io.StringIO(f"Generating ET for {ROI_name}:\n{start} - {end}\n")
-        output01 = display_text01.getvalue()
-        text_panel.insert(1.0, output01)
-        root.update()
+    display_text_tk(
+        text=f"Generating ET for {ROI_name}:\n{year_range}\n",
+        text_panel=text_panel,
+        root=root
+    )
 
     logger.info(f"ROI name: {ROI_name}")
     logger.info(f"loading ROI: {ROI}")
@@ -165,17 +112,23 @@ def water_rights(
     ROI_for_nan = list((gpd.read_file(ROI).to_crs(WGS84)).geometry)
     ROI_acres = round(ROI_area(ROI, working_directory), 2)
 
-    years_available, dates_available = inventory(source_directory)
+    years_available, dates_available = input_datastore.inventory()
     monthly_means = []
 
-    if start == end:
-        years_x = [start]
+    if start_year is None:
+        start_year = sorted(years_available)[0]
+
+    if end_year is None:
+        end_year = sorted(years_available)[-1]
+
+    if start_year == end_year:
+        years_x = [start_year]
     else:
-        years_x = [*range(int(start), int(end) + 1)]
+        years_x = [*range(int(start_year), int(end_year) + 1)]
 
     for i, year in enumerate(years_x):
+        logger.info(f"processing year {cl.time(year)} at ROI {cl.name(ROI_name)}")
         message = f"processing: {year}"
-        logger.info(message)
 
         display_text_tk(
             text="{message}\n",
@@ -197,7 +150,7 @@ def water_rights(
                 ROI_latlon=ROI_latlon,
                 year=year,
                 ROI_acres=ROI_acres,
-                source_directory=source_directory,
+                input_datastore=input_datastore,
                 subset_directory=subset_directory,
                 dates_available=dates_available,
                 stack_filename=stack_filename,
@@ -205,7 +158,8 @@ def water_rights(
             )
         except Exception as e:
             logger.exception(e)
-            logger.info(f"unable to generate stack for year: {year}")
+            logger.warning(f"unable to generate stack for year {cl.time(year)} at ROI {cl.name(ROI_name)}")
+
             continue
 
         monthly_means.append(process_monthly(
@@ -263,8 +217,12 @@ def water_rights(
         sd = np.nanstd(monthly_means_df["ET"])
         vmin = max(mean - 2 * sd, 0)
         vmax = mean + 2 * sd
-        today = str(date.today())
-        logger.info(f"generating figure for year: {year}")
+
+        today = datetime.today()
+        date = str(today)
+
+        logger.info(f"generating figure for year {cl.time(year)} ROI {cl.place(ROI_name)}")
+
         figure_output_directory = join(figure_directory, ROI_name)
 
         if not exists(figure_output_directory):
@@ -273,7 +231,7 @@ def water_rights(
         figure_filename = join(figure_output_directory, f"{year}_{ROI_name}.png")
 
         if exists(figure_filename):
-            logger.info(f"figure already exists: {figure_filename}")
+            logger.info(f"figure already exists: {cl.file(figure_filename)}")
 
             display_text_tk(
                 text=f"figure exists in working directory\n",

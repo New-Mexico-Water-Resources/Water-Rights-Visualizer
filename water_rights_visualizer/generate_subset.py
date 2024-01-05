@@ -1,30 +1,31 @@
-from typing import List
+from datetime import date
+from logging import getLogger
+from os.path import exists
+from typing import Union
+
 import geopandas as gpd
+import numpy as np
 import rasterio
 from affine import Affine
-from os.path import exists, join, basename, splitext
-from glob import glob
-from logging import getLogger
-import numpy as np
-from shapely.geometry import Point, Polygon
 from rasterio.warp import reproject
-from rasterio.windows import Window, transform as window_transform
+from rasterio.windows import Window
+from rasterio.windows import transform as window_transform
+from shapely import Point
 
+import cl
+from .constants import *
+from .data_source import DataSource
+from .errors import BlankOutput
 from .select_tiles import select_tiles
-from .read_subset import read_subset
 
 logger = getLogger(__name__)
 
-WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
-UTM = "+proj=utm +zone=13 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-BUFFER_METERS = 2000
-CELL_SIZE_DEGREES = 0.0003
-CELL_SIZE_METERS = 30
-TILE_SELECTION_BUFFER_RADIUS_DEGREES = 0.01
 
 def generate_subset(
-        raster_directory: str,
-        ROI_latlon: Polygon,
+        input_datastore: DataSource,
+        acquisition_date: Union[date, str],
+        ROI_name: str,
+        ROI_latlon,
         ROI_acres: float,
         variable_name: str,
         subset_filename: str,
@@ -33,7 +34,7 @@ def generate_subset(
         target_CRS: str = None) -> (np.ndarray, Affine):
     """
     This function generates a subset of a raster based on a region of interest (ROI).
-    
+
     Parameters:
     raster_directory (str): The directory where the raster files are located.
     ROI_latlon (Polygon): The region of interest in latitude and longitude coordinates.
@@ -51,44 +52,44 @@ def generate_subset(
 
     logger.info(f"generating {variable_name} subset")
 
-    roi_size = round(ROI_acres, 2)        
+    roi_size = round(ROI_acres, 2)
 
     if roi_size <= 4:
-        BUFFER_DEGREES = 0.005
+        buffer_degrees = 0.005
     elif 4 < roi_size <= 10:
-        BUFFER_DEGREES = 0.005
+        buffer_degrees = 0.005
     elif 10 < roi_size <= 30:
         roi_filter = roi_size / 4
-        BUFFER_DEGREES = roi_filter / 1000
+        buffer_degrees = roi_filter / 1000
     elif 30 < roi_size <= 60:
         roi_filter = roi_size / 6
-        BUFFER_DEGREES = roi_filter / 1000
-    else: 
+        buffer_degrees = roi_filter / 1000
+    else:
         roi_filter = roi_size / 8
-        BUFFER_DEGREES = roi_filter / 1000
-    
+        buffer_degrees = roi_filter / 1000
+
     if cell_size is None:
         cell_size = CELL_SIZE_DEGREES
 
     if buffer_size is None:
-        buffer_size = BUFFER_DEGREES
+        buffer_size = buffer_degrees
 
     if target_CRS is None:
         target_CRS = WGS84
 
     if exists(subset_filename):
-        logger.info(f"loading existing {variable_name} subset file: {subset_filename}")
+        logger.info(f"loading existing {cl.name(variable_name)} subset file: {cl.file(subset_filename)}")
 
         with rasterio.open(subset_filename, "r") as f:
             subset = f.read(1)
             affine = f.transform
 
         return subset, affine
-    
+
     logger.info(f"generating {variable_name} subset")
 
     tiles = select_tiles(ROI_latlon)
-    logger.info(f"tiles: {tiles}")
+    logger.info(f"generating subset for date {cl.time(acquisition_date)} variable {cl.name(variable_name)} ROI {cl.name(ROI_name)} from tiles: {', '.join(tiles)}")
     ROI_projected = gpd.GeoDataFrame({}, geometry=[ROI_latlon], crs=WGS84).to_crs(target_CRS).geometry[0]
     centroid = ROI_projected.centroid
     x_min = centroid.x - buffer_size
@@ -107,26 +108,54 @@ def generate_subset(
 
     width_meters = x_max - x_min
     target_cols = int(width_meters / cell_size)
-    height_meters = (y_max - y_min) 
+    height_meters = (y_max - y_min)
     target_rows = int(height_meters / cell_size)
     output_raster = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
-    
-    for tile in tiles:
-        pattern = join(raster_directory, "**", f"*_{tile}_*_{variable_name}.tif")
-        logger.info(f"searching pattern: {pattern}")
-        matches = sorted(glob(pattern, recursive=True))
-        
-        if len(matches) == 0:
-            logger.info(f"no files found for tile: {tile}")
-            files_found = sorted(glob(join(raster_directory, '**', '*'), recursive=True))
-            tiles_found = sorted(set([splitext(basename(filename))[0].split("_")[2] for filename in files_found]))
-            logger.info(f"files found: {', '.join(tiles_found)}")
-            continue
-        
-        input_filename = matches[0]
-        logger.info(f"{tile}: {input_filename}")
 
-        source_subset, source_affine, source_CRS = read_subset(input_filename, x_min, y_min, x_max, y_max, target_CRS)
+    for tile in tiles:
+        with input_datastore.get_filename(tile=tile, variable_name=variable_name,
+                                          acquisition_date=acquisition_date) as input_filename:
+            with rasterio.open(input_filename, "r") as input_file:
+                source_CRS = input_file.crs
+                input_affine = input_file.transform
+
+                ul = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
+                col_ul, row_ul = ~input_affine * (ul.x, ul.y)
+                col_ul = int(col_ul)
+                row_ul = int(row_ul)
+
+                ur = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
+                col_ur, row_ur = ~input_affine * (ur.x, ur.y)
+                col_ur = int(col_ur)
+                row_ur = int(row_ur)
+
+                lr = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
+                col_lr, row_lr = ~input_affine * (lr.x, lr.y)
+                col_lr = int(col_lr)
+                row_lr = int(row_lr)
+
+                ll = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
+                col_ll, row_ll = ~input_affine * (ll.x, ll.y)
+                col_ll = int(col_ll)
+                row_ll = int(row_ll)
+
+                col_min = min(col_ul, col_ll)
+                col_min = max(col_min, 0)
+                col_max = max(col_ur, col_lr)
+
+                row_min = min(row_ul, row_ur)
+                row_min = max(row_min, 0)
+                row_max = max(row_ll, row_lr)
+
+                window = (row_min, row_max), (col_min, col_max)
+
+                if row_min < 0 or col_min < 0 or row_max <= row_min or col_max <= col_min:
+                    logger.info(f"raster does not intersect target surface: {cl.file(input_filename)}")
+                    continue
+
+                window = Window.from_slices(*window)
+                source_subset = input_file.read(1, window=window)
+                source_affine = window_transform(window, input_affine)
 
         target_surface = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
 
@@ -140,11 +169,12 @@ def generate_subset(
             dst_crs=target_CRS,
             dst_nodata=np.nan
         )
-        
+
         output_raster = np.where(np.isnan(output_raster), target_surface, output_raster)
+
     if np.all(np.isnan(output_raster)):
-        raise ValueError("blank output raster")
-    
+        raise BlankOutput(f"blank output raster for date {acquisition_date} variable {variable_name} ROI {ROI_name} from tiles: {', '.join(tiles)}")
+
     if not exists(subset_filename):
         subset_profile = {
             "driver": "GTiff",
@@ -156,8 +186,9 @@ def generate_subset(
             "height": target_rows,
             "count": 1
         }
-    
+
         logger.info("writing subset: {}".format(subset_filename))
+
         with rasterio.open(subset_filename, "w", **subset_profile) as input_file:
             input_file.write(output_raster.astype(np.float32), 1)
 
