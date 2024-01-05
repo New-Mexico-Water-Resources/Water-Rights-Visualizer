@@ -1,6 +1,9 @@
 *.pyc
+__pycache__
+.DS_Store
 google_drive_key.txt
 client_secrets.json
 water_rights_visualizer/google_drive_key.txt
 water_rights_visualizer/client_secrets.json
 try_water_rights_gui.sh
+
