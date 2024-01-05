@@ -12,6 +12,7 @@ from affine import Affine
 from matplotlib.colors import LinearSegmentedColormap
 from shapely.geometry import Polygon
 
+from .constants import START_MONTH, END_MONTH
 from .display_image_tk import display_image_tk
 from .display_text_tk import display_text_tk
 from .generate_patch import generate_patch
@@ -31,29 +32,59 @@ def generate_figure(
         main_df: pd.DataFrame,
         monthly_sums_directory: str,
         figure_filename: str,
+        start_month: int = START_MONTH,
+        end_month: int = END_MONTH,
         root: Tk = None,
         text_panel: ScrolledText = None,
         image_panel: Text = None):
+    """
+    Generate a figure displaying evapotranspiration data for a specific region of interest (ROI).
+
+    Args:
+        ROI_name (str): Name of the region of interest.
+        ROI_latlon (Polygon): Polygon representing the region of interest.
+        ROI_acres (float): Area of the region of interest in acres.
+        creation_date (date): Date of figure creation.
+        year (int): Year for which the evapotranspiration data is generated.
+        vmin (float): Minimum value for the color scale of the evapotranspiration data.
+        vmax (float): Maximum value for the color scale of the evapotranspiration data.
+        affine (Affine): Affine transformation for mapping coordinates to pixels.
+        main_df (pd.DataFrame): DataFrame containing the main data for generating the figure.
+        monthly_sums_directory (str): Directory path for the monthly sums data.
+        figure_filename (str): Filename for saving the generated figure.
+        start_month (int, optional): Starting month for the data. Defaults to START_MONTH.
+        end_month (int, optional): Ending month for the data. Defaults to END_MONTH.
+        root (Tk, optional): Root Tkinter window. Defaults to None.
+        text_panel (ScrolledText, optional): Text panel for displaying messages. Defaults to None.
+        image_panel (Text, optional): Image panel for displaying the generated figure. Defaults to None.
+    """
+    
+    # Create a new figure
     fig = plt.figure()
     fig.suptitle((f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize=14)
     grid = plt.GridSpec(3, 4, wspace=0.4, hspace=0.3)
 
-    for i, month in enumerate((3, 4, 5, 6, 7, 8, 9, 10)):
+    # Generate sub-figures for each month
+    for i, month in enumerate(range(start_month, end_month + 1)):
         logger.info(f"rendering month: {month} sub-figure: {i}")
         subfigure_title = datetime(year, month, 1).date().strftime("%Y-%m")
         logger.info(f"sub-figure title: {subfigure_title}")
         ET_monthly_filename = join(monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
+        # Check if the monthly sum file exists
         if not exists(ET_monthly_filename):
             raise IOError(f"monthly sum file not found: {ET_monthly_filename}")
 
+        # Read the monthly sum data from the file
         with rasterio.open(ET_monthly_filename, "r") as f:
             monthly = f.read(1)
 
+        # Create a subplot for the current month
         ax = plt.subplot(grid[int(i / 4), i % 4])
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
+        # Define the colors for the evapotranspiration data
         ET_COLORS = [
             "#f6e8c3",
             "#d8b365",
@@ -63,15 +94,18 @@ def generate_figure(
             "#1839c5"
         ]
 
+        # Create a colormap for the evapotranspiration data
         cmap = LinearSegmentedColormap.from_list("ET", ET_COLORS)
         im = ax.imshow(monthly, vmin=vmin, vmax=vmax, cmap=cmap)
         ax.add_patch(generate_patch(ROI_latlon, affine))
         ax.set_title(subfigure_title)
 
+    # Adjust the layout of the figure
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax, ticks=[], label=f'Low                                                            High')
 
+    # Create a subplot for the main data
     ax = plt.subplot(grid[2, :])
     df = main_df[main_df["Year"] == year]
     x = df["Month"]
@@ -92,6 +126,7 @@ def generate_figure(
     ax.set_yticks([int(ymin), int(ymax) + 10])
     ax.set_yticklabels(['Low', 'High'])
 
+    # Set the title and captions for the figure
     plt.title(f"Area of Interest Average Monthly Water Use", fontsize=10)
     caption = "ET and PET calculated by the PT-JPL retrieval: Fisher et al. (2008) with Landsat data"
     caption2 = f"Visualization created {creation_date}"
@@ -99,6 +134,7 @@ def generate_figure(
     plt.figtext(0.93, 0.001, caption2, wrap=True, verticalalignment='bottom', horizontalalignment='right', fontsize=5)
     plt.tight_layout()
 
+    # Display messages in the text panel
     display_text_tk(
         text=f"Figure saved\n",
         text_panel=text_panel,
@@ -119,8 +155,10 @@ def generate_figure(
         root=root
     )
 
+    # Save the figure to a file
     plt.savefig(figure_filename, dpi=300)
 
+    # Display the generated figure in the image panel
     display_image_tk(
         filename=figure_filename,
         image_panel=image_panel

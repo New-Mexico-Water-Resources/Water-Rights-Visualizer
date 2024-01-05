@@ -5,9 +5,21 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 
 KEY_FILENAME = join(abspath(dirname(__file__)), "google_drive_key.txt")
-# KEY_FILENAME = join("~", ".water_rights", "google_drive_key.txt")
 
 def google_drive_login(key_filename: str) -> GoogleDrive:
+    """
+    Logs in to Google Drive using the provided key filename and returns a GoogleDrive object.
+
+    Args:
+        key_filename (str): The filename of the key file used for authentication.
+
+    Returns:
+        GoogleDrive: The GoogleDrive object representing the authenticated session.
+
+    Raises:
+        None
+
+    """
     if key_filename is None:
         key_filename = KEY_FILENAME
 
@@ -24,7 +36,6 @@ def google_drive_login(key_filename: str) -> GoogleDrive:
         gauth.flow.params.update({'access_type': 'offline'})
         gauth.flow.params.update({'approval_prompt': 'force'})
         gauth.LocalWebserverAuth()
-        # gauth.CommandLineAuth()
     elif gauth.access_token_expired:
         # Refresh them if expired
         gauth.Refresh()
@@ -37,6 +48,7 @@ def google_drive_login(key_filename: str) -> GoogleDrive:
     gauth.SaveCredentialsFile(key_filename)
 
     drive = GoogleDrive(gauth)
+    return drive
 
 def main(argv=sys.argv):
     if "--key" in argv:

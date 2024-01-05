@@ -174,16 +174,7 @@ def water_rights_gui(
     def clear_text():
         image_panel.delete(1.0, END)
         text_panel.delete(1.0, END)
-        progress.set(0)
         root.update()
-
-    # def add_image(filename):
-    #     global im_resize
-    #     logger.info(f"opening image_panel: {filename}")
-    #     im = PIL.Image.open(filename)
-    #     im = im.resize((375, 225), PIL.Image.BICUBIC)
-    #     im_resize = PIL.ImageTk.PhotoImage(im)
-    #     image_panel.image_create('1.0', image_panel=im_resize)
 
     # GEOJSON/ROI FILEPATH
     entry_roi = Entry(root, font=10, bd=2)

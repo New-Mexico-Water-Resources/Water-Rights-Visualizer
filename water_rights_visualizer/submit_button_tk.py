@@ -19,6 +19,19 @@ def submit_button_tk(
         entry_start: Entry,
         entry_end: Entry,
         output_path: Entry):
+    """
+    Function to handle the submit button action in a Tkinter GUI.
+
+    Args:
+        root (Tk): The root Tkinter object.
+        text_panel (ScrolledText): The text panel widget.
+        image_panel (Text): The image panel widget.
+        entry_filepath (Entry): The entry widget for the file path.
+        entry_roi (Entry): The entry widget for the ROI path.
+        entry_start (Entry): The entry widget for the start year.
+        entry_end (Entry): The entry widget for the end year.
+        output_path (Entry): The entry widget for the output path.
+    """
     year_list = []
     source_path = entry_filepath.get()
     roi_path = entry_roi.get()
@@ -53,6 +66,7 @@ def submit_button_tk(
     ROI = ROI_name
 
     if isfile(ROI) == True:
+        # If ROI is a file, call water_rights function with the file path
         water_rights(
             ROI,
             start,
@@ -77,6 +91,7 @@ def submit_button_tk(
         )
 
     elif isdir(ROI) == True:
+        # If ROI is a directory, iterate over the files and call water_rights function for each .geojson file
         for items in scandir(ROI):
             if items.name.endswith(".geojson"):
                 roi_name = abspath(items)

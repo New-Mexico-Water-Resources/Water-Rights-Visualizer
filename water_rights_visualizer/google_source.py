@@ -17,6 +17,17 @@ from .google_drive import google_drive_login
 logger = logging.getLogger(__name__)
 
 class GoogleSource(DataSource):
+    """
+    A class representing a data source from Google Drive.
+
+    Args:
+        drive (GoogleDrive, optional): The GoogleDrive object to use for authentication. Defaults to None.
+        temporary_directory (str, optional): The directory to store temporary files. Defaults to None.
+        ID_table_filename (str, optional): The filename of the ID table. Defaults to None.
+        key_filename (str, optional): The filename of the key file. Defaults to None.
+        client_secrets_filename (str, optional): The filename of the client secrets file. Defaults to None.
+    """
+
     def __init__(
             self,
             drive: GoogleDrive = None,
@@ -24,6 +35,16 @@ class GoogleSource(DataSource):
             ID_table_filename: str = None,
             key_filename: str = None,
             client_secrets_filename: str = None):
+        """
+        Initializes a GoogleSource object.
+
+        Args:
+            drive (GoogleDrive, optional): The GoogleDrive object to use for authentication. Defaults to None.
+            temporary_directory (str, optional): The directory to store temporary files. Defaults to None.
+            ID_table_filename (str, optional): The filename of the ID table. Defaults to None.
+            key_filename (str, optional): The filename of the key file. Defaults to None.
+            client_secrets_filename (str, optional): The filename of the client secrets file. Defaults to None.
+        """
         if drive is None:
             drive = google_drive_login(
                 key_filename=key_filename,
@@ -45,57 +66,3 @@ class GoogleSource(DataSource):
         self.temporary_directory = temporary_directory
         self.ID_table = ID_table
         self.filenames = {}
-
-    def inventory(self):
-        dates_available = [parser.parse(str(d)).date()
-                           for d in self.ID_table.date]
-        years_available = list(
-            set(sorted([date_step.year for date_step in dates_available])))
-
-        return years_available, dates_available
-
-    @contextlib.contextmanager
-    def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
-        if isinstance(acquisition_date, str):
-            acquisition_date = parser.parse(acquisition_date).date()
-
-        key = f"{int(tile):06d}_{str(variable_name)}_{acquisition_date:%Y-%m-%d}"
-
-        if key in self.filenames:
-            return self.filenames[key]
-
-        if isinstance(acquisition_date, str):
-            acquisition_date = parser.parse(acquisition_date).date()
-
-        acquisition_date = acquisition_date.strftime("%Y-%m-%d")
-
-        filtered_table = self.ID_table[self.ID_table.apply(lambda row: row.tile == int(
-            tile) and row.variable == variable_name and parser.parse(str(row.date)).date().strftime(
-            "%Y-%m-%d") == acquisition_date, axis=1)]
-
-        if len(filtered_table) == 0:
-            raise FileUnavailable(
-                f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
-
-        filename_base = str(filtered_table.iloc[0].filename)
-        file_ID = str(filtered_table.iloc[0].file_ID)
-        filename = join(self.temporary_directory, filename_base)
-        logger.info(
-            f"retrieving {cl.file(filename_base)} from Google Drive ID {cl.name(file_ID)} to file: {cl.file(filename)}")
-        start_time = time.perf_counter()
-        google_drive_file = self.drive.CreateFile(metadata={"id": file_ID})
-        google_drive_file.GetContentFile(filename=filename)
-        end_time = time.perf_counter()
-        duration_seconds = end_time - start_time
-
-        if not exists(filename):
-            raise IOError(f"unable to retrieve file: {filename}")
-
-        logger.info(
-            f"temporary file retrieved from Google Drive in {cl.time(duration_seconds)} seconds: {cl.file(filename)}")
-        self.filenames[key] = filename
-
-        yield filename
-
-        logger.info(f"removing temporary file: {filename}")
-        os.remove(filename)

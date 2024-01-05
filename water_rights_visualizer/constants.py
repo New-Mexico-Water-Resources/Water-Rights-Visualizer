@@ -3,7 +3,9 @@ from os.path import join, abspath, dirname
 ARD_TILES_FILENAME = join(abspath(dirname(__file__)), "ARD_tiles.geojson")
 
 START_YEAR = 1985
-
+END_YEAR = 2020
+START_MONTH = 1
+END_MONTH = 12
 TILE_SELECTION_BUFFER_RADIUS_DEGREES = 0.01
 BUFFER_METERS = 2000
 BUFFER_DEGREES = 0.001

@@ -25,6 +25,23 @@ def generate_stack(
         dates_available: List[date],
         stack_filename: str,
         target_CRS: str = None) -> (np.ndarray, np.ndarray, Affine):
+    """
+    Generates a stack of data for a given region of interest (ROI) and year.
+
+    Args:
+        ROI_name (str): The name of the region of interest.
+        ROI_latlon (Polygon): The polygon representing the latitude and longitude coordinates of the ROI.
+        year (int): The year for which the stack is generated.
+        ROI_acres (float): The area of the ROI in acres.
+        source_directory (str): The directory containing the source data.
+        subset_directory (str): The directory where the generated subset will be saved.
+        dates_available (List[date]): A list of available dates for the data.
+        stack_filename (str): The filename of the generated stack.
+        target_CRS (str, optional): The target coordinate reference system (CRS) for the stack. Defaults to None.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray, Affine]: A tuple containing the generated stack, the interpolated stack, and the affine transformation.
+    """
     if target_CRS is None:
         target_CRS = WGS84
 

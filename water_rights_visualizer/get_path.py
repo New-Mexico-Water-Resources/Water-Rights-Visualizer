@@ -1,8 +1,9 @@
 import logging
+from tkinter import Entry
 
 logger = logging.getLogger(__name__)
 
-def get_path(path: str, entry_filepath, entry_roi, output_path) -> str:
+def get_path(path: str, entry_filepath: Entry, entry_roi: Entry, output_path: Entry) -> str:
 
     if path == 'Landsat':
         filepath = entry_filepath.get()

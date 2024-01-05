@@ -11,7 +11,7 @@ import pandas as pd
 import geopandas as gpd
 import logging
 
-from .constants import WGS84
+from .constants import WGS84, START_MONTH, END_MONTH
 from .ROI_area import ROI_area
 from .process_monthly import process_monthly
 from .generate_figure import generate_figure
@@ -42,9 +42,50 @@ def water_rights(
         monthly_nan_directory=None,
         target_CRS=None,
         remove_working_directory=None,
+        start_month=START_MONTH,
+        end_month=END_MONTH,
         root: Tk = None,
         text_panel: ScrolledText = None,
         image_panel: Text = None):
+    """
+    Process water rights data for a given region of interest (ROI).
+
+    Args:
+        ROI (str): Path to the region of interest shapefile.
+        start (str): Start date of the water rights data in the format 'YYYY-MM-DD'.
+        end (str): End date of the water rights data in the format 'YYYY-MM-DD'.
+        output (str): Path to the output directory.
+        source_path (str): Path to the directory containing the water rights data.
+        ROI_name (str, optional): Name of the region of interest. Defaults to None.
+        source_directory (str, optional): Path to the directory containing the water rights data. 
+            Defaults to None.
+        figure_directory (str, optional): Path to the directory to save figures. Defaults to None.
+        working_directory (str, optional): Path to the working directory. Defaults to None.
+        subset_directory (str, optional): Path to the directory to save subset data. Defaults to None.
+        nan_subset_directory (str, optional): Path to the directory to save subset data with NaN values. 
+            Defaults to None.
+        stack_directory (str, optional): Path to the directory to save stacked data. Defaults to None.
+        reference_directory (str, optional): Path to the directory containing reference data. 
+            Defaults to None.
+        monthly_sums_directory (str, optional): Path to the directory to save monthly sums data. 
+            Defaults to None.
+        monthly_means_directory (str, optional): Path to the directory to save monthly means data. 
+            Defaults to None.
+        monthly_nan_directory (str, optional): Path to the directory to save monthly data with NaN values. 
+            Defaults to None.
+        target_CRS (str, optional): Target coordinate reference system (CRS) for the output data. 
+            Defaults to None.
+        remove_working_directory (str, optional): Path to the directory to remove after processing. 
+            Defaults to None.
+        start_month (int, optional): Start month of the water rights data. Defaults to START_MONTH.
+        end_month (int, optional): End month of the water rights data. Defaults to END_MONTH.
+        root (Tk, optional): Root window of the GUI application. Defaults to None.
+        text_panel (ScrolledText, optional): Text panel widget of the GUI application. Defaults to None.
+        image_panel (Text, optional): Image panel widget of the GUI application. Defaults to None.
+
+    Returns:
+        None
+    """
     ROI_base = splitext(basename(ROI))[0]
     DEFAULT_FIGURE_DIRECTORY = Path(f"{output}/figures")
     DEFAULT_SOURCE_DIRECTORY = Path(f"{source_path}")
@@ -208,7 +249,7 @@ def water_rights(
         month_means.append(mm)
         logger.info(f"application monthly means: \n {month_means}")
 
-        idx = {'Months': [3, 4, 5, 6, 7, 8, 9, 10]}
+        idx = {'Months': range(start_month, end_month + 1)}
         df1 = pd.DataFrame(idx, columns=['Months'])
         df2 = pd.DataFrame(idx, columns=['Months'])
 
@@ -260,6 +301,8 @@ def water_rights(
                 main_df=main_df,
                 monthly_sums_directory=monthly_sums_directory,
                 figure_filename=figure_filename,
+                start_month=start_month,
+                end_month=end_month,
                 root=root,
                 text_panel=text_panel,
                 image_panel=image_panel
