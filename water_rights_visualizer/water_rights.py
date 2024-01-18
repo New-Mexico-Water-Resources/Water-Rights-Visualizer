@@ -162,7 +162,7 @@ def water_rights(
 
             continue
 
-        monthly_means.append(process_monthly(
+        monthly_means_df = process_monthly(
             ET_stack=ET_stack,
             PET_stack=PET_stack,
             ROI_latlon=ROI_latlon,
@@ -172,7 +172,9 @@ def water_rights(
             year=year,
             monthly_sums_directory=monthly_sums_directory,
             monthly_means_directory=monthly_means_directory
-        ))
+        )
+
+        monthly_means.append(monthly_means_df)
 
         display_text_tk(
             text="Calculating uncertainty\n",
@@ -196,12 +198,12 @@ def water_rights(
         nan_means = []
         nd = pd.read_csv(f"{monthly_nan_directory}/{year}.csv")
         nan_means.append(nd)
-        logger.info(f"application nan means: \n {nan_means}")
+        # logger.info(f"application nan means: \n {nan_means}")
 
         month_means = []
         mm = pd.read_csv(f"{monthly_means_directory}/{year}_monthly_means.csv")
         month_means.append(mm)
-        logger.info(f"application monthly means: \n {month_means}")
+        # logger.info(f"application monthly means: \n {month_means}")
 
         idx = {'Months': range(start_month, end_month + 1)}
         df1 = pd.DataFrame(idx, columns=['Months'])
@@ -210,9 +212,9 @@ def water_rights(
         main_dfa = pd.merge(left=df1, right=mm, how='left', left_on="Months", right_on="Month")
         main_df = pd.merge(left=main_dfa, right=nd, how='left', left_on="Months", right_on="month")
         main_df = main_df.replace(np.nan, 100)
-        logger.info(f'main_df: {main_df}')
+        # logger.info(f'main_df: {main_df}')
         monthly_means_df = pd.concat(month_means, axis=0)
-        logger.info("monthly_means_df:")
+        # logger.info("monthly_means_df:")
         mean = np.nanmean(monthly_means_df["ET"])
         sd = np.nanstd(monthly_means_df["ET"])
         vmin = max(mean - 2 * sd, 0)
@@ -246,11 +248,14 @@ def water_rights(
 
             continue
 
+        # print("main_df")
+        # print(main_df)
+
         try:
             generate_figure(
                 ROI_name=ROI_name,
                 ROI_latlon=ROI_latlon,
-                ROI_acres=ROI_latlon,
+                ROI_acres=ROI_acres,
                 creation_date=today,
                 year=year,
                 vmin=vmin,

@@ -739,10 +739,6 @@ def submit():
             main_df,
             monthly_sums_directory,
             figure_filename):
-        
-
-        
-       
         fig = plt.figure()
         fig.suptitle((f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize = 14)
         grid = plt.GridSpec(3, 4, wspace=0.4, hspace=0.3)

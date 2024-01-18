@@ -16,7 +16,8 @@ def generate_patch(polygon: Polygon, affine: Affine) -> Polygon:
     """
     # If the input polygon is a MultiPolygon, take the first polygon
     if isinstance(polygon, MultiPolygon):
-        polygon = list(polygon)[0]
+        # polygon = list(polygon)[0]
+        polygon = list(polygon.geoms)[0]
 
     # Apply the affine transformation to the coordinates of the polygon
     polygon_indices = [~affine * coords for coords in polygon.exterior.coords]

@@ -3,9 +3,7 @@
 import logging
 import sys
 from os import makedirs, scandir
-from os.path import basename, isdir, splitext
-from os.path import exists, isfile
-from os.path import expanduser
+from os.path import basename, isdir, splitext, abspath, exists, isfile, expanduser, join, dirname
 from pathlib import Path
 
 import matplotlib as mpl
@@ -21,6 +19,10 @@ logger = logging.getLogger(__name__)
 
 mpl.use("Agg")
 
+START_YEAR = 1985
+END_YEAR = 2020
+START_MONTH = 1
+END_MONTH = 12
 
 def water_rights_visualizer(
         boundary_filename: str,
@@ -30,8 +32,11 @@ def water_rights_visualizer(
         google_drive_temporary_directory: str = None,
         google_drive_key_filename: str = None,
         google_drive_client_secrets_filename: str = None,
+        remove_temporary_google_files: bool = None,
         start_year: int = START_YEAR,
-        end_year: int = None):
+        end_year: int = END_YEAR,
+        start_month: int = START_MONTH,
+        end_month: int = END_MONTH):
     boundary_filename = abspath(expanduser(boundary_filename))
     output_directory = abspath(expanduser(output_directory))
 
@@ -49,12 +54,15 @@ def water_rights_visualizer(
 
     if input_datastore is None:
         if google_drive_temporary_directory is not None:
+            logger.info(f"using Google Drive data source in directory: {google_drive_client_secrets_filename}")
             input_datastore = GoogleSource(
                 temporary_directory=google_drive_temporary_directory,
                 key_filename=google_drive_key_filename,
-                client_secrets_filename=google_drive_client_secrets_filename
+                client_secrets_filename=google_drive_client_secrets_filename,
+                remove_temporary_files=remove_temporary_google_files
             )
         elif input_directory is not None:
+            logger.info(f"using local file path data source in directory: {input_directory}")
             input_datastore = FilepathSource(directory=input_directory)
         else:
             raise ValueError("no input data source given")
@@ -87,6 +95,8 @@ def water_rights_visualizer(
             output_directory=output_directory,
             start_year=start_year,
             end_year=end_year,
+            start_month=start_month,
+            end_month=end_month,
             ROI_name=None,
             figure_directory=None,
             working_directory=None,
@@ -108,6 +118,8 @@ def water_rights_visualizer(
                     output_directory=output_directory,
                     start_year=start_year,
                     end_year=end_year,
+                    start_month=start_month,
+                    end_month=end_month,
                     ROI_name=None,
                     figure_directory=None,
                     working_directory=None,
