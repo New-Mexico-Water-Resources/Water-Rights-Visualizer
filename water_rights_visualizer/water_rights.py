@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 import cl
+from .file_path_source import FilepathSource
 from .ROI_area import ROI_area
 from .calculate_percent_nan import calculate_percent_nan
 from .constants import WGS84, START_MONTH, END_MONTH, START_YEAR, END_YEAR
@@ -25,13 +26,14 @@ logger = logging.getLogger(__name__)
 
 def water_rights(
         ROI,
-        input_datastore: DataSource,
-        output_directory: str,
+        input_datastore: DataSource = None,
+        output_directory: str = None,
         start_year: int = START_YEAR,
         end_year: int = END_YEAR,
         start_month: int = START_MONTH,
         end_month: int = END_MONTH,
         ROI_name: str = None,
+        input_directory: str = None,
         figure_directory: str = None,
         working_directory: str = None,
         subset_directory: str = None,
@@ -62,6 +64,12 @@ def water_rights(
 
     if working_directory is None:
         working_directory = ROI_name
+
+    if output_directory is None:
+        output_directory = working_directory
+
+    if input_datastore is None and input_directory is not None:
+        input_datastore = FilepathSource(directory=input_directory)
 
     if remove_working_directory is None:
         remove_working_directory = True
@@ -170,6 +178,8 @@ def water_rights(
             subset_affine=affine,
             CRS=target_CRS,
             year=year,
+            start_month=start_month,
+            end_month=end_month,
             monthly_sums_directory=monthly_sums_directory,
             monthly_means_directory=monthly_means_directory
         ))

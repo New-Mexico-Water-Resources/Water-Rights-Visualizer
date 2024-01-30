@@ -1,3 +1,7 @@
+from os.path import isdir, isfile
+from tkinter import filedialog
+from tkinter import *
+
 def browse_roi(clear_roi, entry_roi, i):
 
     phrase = i

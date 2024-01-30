@@ -8,6 +8,7 @@ import pandas as pd
 from affine import Affine
 import rasterio
 from rasterio.features import geometry_mask
+from dateutil.relativedelta import relativedelta
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,8 @@ def process_monthly(
         subset_affine: Affine,
         CRS: str,
         year: int,
+        start_month: int,
+        end_month: int,
         monthly_sums_directory: str,
         monthly_means_directory: str) -> pd.DataFrame:
     """
@@ -53,7 +56,8 @@ def process_monthly(
         logger.info(f"processing monthly values for year: {year}")
         monthly_means = []
 
-        for j, month in enumerate(range(3, 11)):
+        for j, month in enumerate(range(start_month, end_month + 1)):
+            logger.info(f"processing monthly values for month {month} year {year}")
             if not exists(monthly_sums_directory):
                 makedirs(monthly_sums_directory)
 
@@ -68,7 +72,7 @@ def process_monthly(
                 logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
                 start_index = start.timetuple().tm_yday
                 logger.info(f"start index: {start_index}")
-                end = datetime(year, month + 1, 1).date()
+                end = datetime(year, month, 1).date() + relativedelta(months=1)
                 logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
                 end_index = end.timetuple().tm_yday
                 logger.info(f"end index: {end_index}")
@@ -100,7 +104,7 @@ def process_monthly(
                 logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
                 start_index = start.timetuple().tm_yday
                 logger.info(f"start index: {start_index}")
-                end = datetime(year, month + 1, 1).date()
+                end = datetime(year, month, 1).date() + relativedelta(months=1)
                 logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
                 end_index = end.timetuple().tm_yday
                 logger.info(f"end index: {end_index}")

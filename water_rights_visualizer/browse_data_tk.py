@@ -1,3 +1,7 @@
+from os.path import isdir
+from tkinter import filedialog
+from tkinter import *
+
 def browse_data(clear_data, entry_filepath, i):
 
     phrase = i

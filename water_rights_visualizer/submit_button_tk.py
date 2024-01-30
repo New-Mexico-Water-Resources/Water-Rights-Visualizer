@@ -7,6 +7,7 @@ from tkinter.scrolledtext import ScrolledText
 
 from .water_rights import water_rights
 from .display_text_tk import display_text_tk
+from .constants import *
 
 logger = logging.getLogger(__name__)
 
@@ -65,16 +66,20 @@ def submit_button_tk(
     ROI_name = Path(f"{DEFAULT_ROI_DIRECTORY}")
     ROI = ROI_name
 
+    start_month = START_MONTH
+    end_month = END_MONTH
+
     if isfile(ROI) == True:
         # If ROI is a file, call water_rights function with the file path
         water_rights(
-            ROI,
-            start,
-            end,
-            output,
-            source_path,
+            ROI=ROI,
+            input_directory=source_path,
+            output_directory=output,
+            start_year=start,
+            end_year=end,
+            start_month=start_month,
+            end_month=end_month,
             ROI_name=None,
-            source_directory=None,
             figure_directory=None,
             working_directory=None,
             subset_directory=None,
