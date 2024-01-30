@@ -90,19 +90,24 @@ def calculate_percent_nan(
     
     # Looping through the array_list and calculating the percentage of NaN values
     for subsets in array_list:
-        nan = np.count_nonzero((np.isnan(subsets[0][roi_mask[0]])))
+        counted_nans = np.count_nonzero((np.isnan(subsets[0][roi_mask[0]])))
+        cell_count = len(subsets[0][roi_mask[0]].flatten())
         count_nan = []
-        count_nan.append(nan)
+        count_nan.append(counted_nans)
 
         for nans in count_nan:
-            if area == 0:
-                ratio_of_nan = (nans / 1)
-                percent_of_nan = ratio_of_nan * 100
-                percent_nan.append(percent_of_nan)
-            else:
-                ratio_of_nan = (nans / area)
-                percent_of_nan = ratio_of_nan * 100
-                percent_nan.append(percent_of_nan)
+            # if area == 0:
+            #     ratio_of_nan = (nans / 1)
+            #     percent_of_nan = ratio_of_nan * 100
+            #     percent_nan.append(percent_of_nan)
+            # else:
+            #     ratio_of_nan = (nans / area)
+            #     percent_of_nan = ratio_of_nan * 100
+            #     percent_nan.append(percent_of_nan)
+            percent_nan.append(nans / cell_count * 100)
+            
+            # print(f"nans: {nans}")
+            # print(f"percent_nan: {percent_nan}")
 
     # Extracting the dates from the file names
     dates = []

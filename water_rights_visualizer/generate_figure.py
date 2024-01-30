@@ -61,8 +61,15 @@ def generate_figure(
     
     # Create a new figure
     fig = plt.figure()
+    # print(f"ROI name: {ROI_name}")
+    # print(f"year: {year}")
+    # print(f"ROI_acres: {ROI_acres}")
     fig.suptitle((f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize=14)
-    grid = plt.GridSpec(3, 4, wspace=0.4, hspace=0.3)
+    
+    n_months = end_month - start_month + 1
+    grid_cols = int(n_months / 2)
+    
+    grid = plt.GridSpec(3, grid_cols, wspace=0.4, hspace=0.3)
 
     # Generate sub-figures for each month
     for i, month in enumerate(range(start_month, end_month + 1)):
@@ -80,7 +87,7 @@ def generate_figure(
             monthly = f.read(1)
 
         # Create a subplot for the current month
-        ax = plt.subplot(grid[int(i / 4), i % 4])
+        ax = plt.subplot(grid[int(i / grid_cols), i % grid_cols])
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
@@ -103,35 +110,45 @@ def generate_figure(
     # Adjust the layout of the figure
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-    fig.colorbar(im, cax=cbar_ax, ticks=[], label=f'Low                                                            High')
+    # fig.colorbar(im, cax=cbar_ax, ticks=[], label=f'Low                                                            High')
+    fig.colorbar(im, cax=cbar_ax, ticks=[], label=f'{round(vmin)} mm                                                      {round(vmax)} mm')
 
     # Create a subplot for the main data
     ax = plt.subplot(grid[2, :])
     df = main_df[main_df["Year"] == year]
+    # df = main_df[df["month" == month]]
+    # print(df)
     x = df["Month"]
+    # print(f"x (month): {x}")
     y = df["PET"]
+    # print(f"y (PET): {y}")
     y2 = df["ET"]
+    # print(f"y2 (ET): {y2}")
     ci = df["percent_nan"]
+    # print(f"ci (nan%): {ci}")
     sns.lineplot(x=x, y=y, ax=ax, color="blue", label="PET")
     sns.lineplot(x=x, y=y2, ax=ax, color="green", label="ET")
     ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1)
     ax.fill_between(x, (y2 - ci), (y2 + ci), color='g', alpha=.1)
     plt.legend(labels=['ET'], loc='upper right')
     ax.legend(loc='upper left', fontsize=6)
-    ax.set(xlabel="Month", ylabel="ET (mm)")
+    # ax.set(xlabel="Month", ylabel="ET (mm)")
+    ax.set(xlabel="Month", ylabel="")
     ymin = min(min(main_df["ET"]), min(main_df["ET"]))
     ymax = max(max(main_df["PET"]), max(main_df["PET"]))
     ylim = (int(ymin), int(ymax + 10))
     ax.set(ylim=ylim)
     ax.set_yticks([int(ymin), int(ymax) + 10])
-    ax.set_yticklabels(['Low', 'High'])
+    # ax.set_yticklabels(['Low', 'High'])
+    ax.set_yticklabels([f"{int(ymin)} mm", f"{int(ymax) + 10} mm"])
 
     # Set the title and captions for the figure
     plt.title(f"Area of Interest Average Monthly Water Use", fontsize=10)
-    caption = "ET and PET calculated by the PT-JPL retrieval: Fisher et al. (2008) with Landsat data"
-    caption2 = f"Visualization created {creation_date}"
+    # caption = "ET and PET calculated by the PT-JPL retrieval: Fisher et al. (2008) with Landsat data"
+    caption = f"ET and PET calculated from Landsat with PT-JPL (Fisher et al. 2008), created {creation_date.date()}"
+    # caption2 = f"Visualization created {creation_date}"
     plt.figtext(0.48, 0.001, caption, wrap=True, verticalalignment='bottom', horizontalalignment='center', fontsize=5)
-    plt.figtext(0.93, 0.001, caption2, wrap=True, verticalalignment='bottom', horizontalalignment='right', fontsize=5)
+    # plt.figtext(0.93, 0.001, caption2, wrap=True, verticalalignment='bottom', horizontalalignment='right', fontsize=5)
     plt.tight_layout()
 
     # Display messages in the text panel

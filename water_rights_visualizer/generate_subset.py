@@ -12,11 +12,14 @@ from rasterio.windows import Window
 from rasterio.windows import transform as window_transform
 from shapely import Point
 
+import raster as rt
+
 import cl
-from .constants import *
+from .constants import WGS84, CELL_SIZE_DEGREES
 from .data_source import DataSource
 from .errors import BlankOutput
 from .select_tiles import select_tiles
+from .colors import ET_COLORMAP
 
 logger = getLogger(__name__)
 
@@ -31,7 +34,8 @@ def generate_subset(
         subset_filename: str,
         cell_size: float = None,
         buffer_size: float = None,
-        target_CRS: str = None) -> (np.ndarray, Affine):
+        target_CRS: str = None,
+        allow_blank: bool = True) -> (np.ndarray, Affine):
     """
     This function generates a subset of a raster based on a region of interest (ROI).
 
@@ -49,6 +53,13 @@ def generate_subset(
     np.ndarray: The subsetted raster.
     Affine: The affine transformation for the subsetted raster.
     """
+    # if exists(subset_filename):
+    #     logger.info(f"subset file already exists: {subset_filename}")
+    #     subset = rt.Raster.open(subset_filename)
+    #     output_raster = subset.array
+    #     target_affine = subset.geometry.affine
+
+    #     return output_raster, target_affine
 
     logger.info(f"generating {variable_name} subset")
 
@@ -86,9 +97,12 @@ def generate_subset(
 
         return subset, affine
 
-    logger.info(f"generating {variable_name} subset")
-
+    # logger.info(f"generating {variable_name} subset")
     tiles = select_tiles(ROI_latlon)
+    
+    if len(tiles) == 0:
+        logger.warning(f"no tiles found for date {acquisition_date} variable {variable_name} ROI {ROI_name}")
+
     logger.info(f"generating subset for date {cl.time(acquisition_date)} variable {cl.name(variable_name)} ROI {cl.name(ROI_name)} from tiles: {', '.join(tiles)}")
     ROI_projected = gpd.GeoDataFrame({}, geometry=[ROI_latlon], crs=WGS84).to_crs(target_CRS).geometry[0]
     centroid = ROI_projected.centroid
@@ -172,24 +186,30 @@ def generate_subset(
 
         output_raster = np.where(np.isnan(output_raster), target_surface, output_raster)
 
-    if np.all(np.isnan(output_raster)):
+    if not allow_blank and np.all(np.isnan(output_raster)):
         raise BlankOutput(f"blank output raster for date {acquisition_date} variable {variable_name} ROI {ROI_name} from tiles: {', '.join(tiles)}")
 
     if not exists(subset_filename):
-        subset_profile = {
-            "driver": "GTiff",
-            "compress": "LZW",
-            "dtype": np.float32,
-            "transform": target_affine,
-            "crs": target_CRS,
-            "width": target_cols,
-            "height": target_rows,
-            "count": 1
-        }
+        # subset_profile = {
+        #     "driver": "GTiff",
+        #     "compress": "LZW",
+        #     "dtype": np.float32,
+        #     "transform": target_affine,
+        #     "crs": target_CRS,
+        #     "width": target_cols,
+        #     "height": target_rows,
+        #     "count": 1
+        # }
 
+        # logger.info("writing subset: {}".format(subset_filename))
+
+        # with rasterio.open(subset_filename, "w", **subset_profile) as input_file:
+        #     input_file.write(output_raster.astype(np.float32), 1)
+        # target_geometry = rt.RasterGeometry(crs=target_CRS, affine=target_affine)
+        
+        target_geometry = rt.RasterGrid.from_affine(target_affine, target_rows, target_cols, target_CRS)
+        target_raster = rt.Raster(array=output_raster, geometry=target_geometry, cmap=ET_COLORMAP)
         logger.info("writing subset: {}".format(subset_filename))
-
-        with rasterio.open(subset_filename, "w", **subset_profile) as input_file:
-            input_file.write(output_raster.astype(np.float32), 1)
+        target_raster.to_geotiff(subset_filename)
 
     return output_raster, target_affine
