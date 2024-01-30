@@ -1,0 +1,4 @@
+[console_scripts]
+list-google-drive = water_rights_visualizer.list_google_drive:main
+water-rights-tk = water_rights_visualizer.water_rights_gui_tk:main
+water-rights-visualizer = water_rights_visualizer.water_rights_visualizer:main

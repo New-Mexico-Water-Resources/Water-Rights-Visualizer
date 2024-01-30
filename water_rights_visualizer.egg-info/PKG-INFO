@@ -1,0 +1,113 @@
+Metadata-Version: 2.1
+Name: water_rights_visualizer
+Version: 0.1.2
+Summary: New Mexico Water Rights Visualizer
+Author: Gregory Halverson, Holland Hatch, Ben Jenson, Zoe von Allmen
+Author-email: Gregory.H.Halverson@jpl.nasa.gov
+Requires-Python: >=3.10
+Requires-Dist: astropy
+Requires-Dist: affine
+Requires-Dist: boto3
+Requires-Dist: h5py
+Requires-Dist: geojson
+Requires-Dist: geopandas
+Requires-Dist: jupyter
+Requires-Dist: matplotlib
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: pillow
+Requires-Dist: pydrive2
+Requires-Dist: pygeos
+Requires-Dist: pyresample
+Requires-Dist: rasterio>1.0.0
+Requires-Dist: scikit-image
+Requires-Dist: scipy
+Requires-Dist: seaborn
+Requires-Dist: shapely
+Requires-Dist: termcolor
+Requires-Dist: tk
+Requires-Dist: area
+
+# Water Rights Visualizer
+
+Gregory Halverson, Jet Propulsion Laboratory, [gregory.h.halverson@jpl.nasa.gov](mailto:gregory.h.halverson@jpl.nasa.gov)
+
+Mony Sea, California State University Northridge
+
+Holland Hatch, Chapman University
+
+Annalise Jensen, Chapman University
+
+Zoe von Allmen, Chapman University
+
+This repository contains the code for the ET Toolbox 7-day hindcast and 7-day forecast data production system.
+
+## Copyright
+
+Copyright 2022, by the California Institute of Technology. ALL RIGHTS RESERVED. United States Government Sponsorship acknowledged. Any commercial use must be negotiated with the Office of Technology Transfer at the California Institute of Technology.
+ 
+This software may be subject to U.S. export control laws. By accepting this software, the user agrees to comply with all applicable U.S. export laws and regulations. User has the responsibility to obtain export licenses, or other export authority as may be required before exporting such information to foreign countries or providing access to foreign persons.
+
+## Requirements
+
+This system was designed to work in a Linux-like environment and macOS using a conda environment.
+
+### `conda`
+
+The Water Rights Visualizer is designed to run in a Python 3 [`conda`](https://docs.conda.io/en/latest/miniconda.html) environment using [Miniconda](https://docs.conda.io/en/latest/miniconda.html) To use this environment, download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html). Make sure that your shell has been initialized for `conda`.
+
+You should see the base environment name `(base)` when running a shell with conda active.
+
+## Installation
+
+Use `make install` to produce the `water_rights` environment:
+
+```bash
+(base) $ make install
+```
+
+This should produce a conda environment called `water_rights` in your [Miniconda](https://docs.conda.io/en/latest/miniconda.html) installation.
+
+## Activation
+
+To use the pipeline, you must activate the `water_rights` environment:
+
+```bash
+(base) $ conda activate water_rights
+```
+
+You should see the environment name `(water_rights)` in parentheses prepended to the command line prompt.
+
+## Launch
+
+To launch the Water Rights Visualizer GUI, run the `water_rights_gui.py` script:
+
+```bash
+(water_rights) $ python water_rights_gui_tk.py
+```
+
+## Deactivation
+
+When you are done using the pipeline, you can deactivate the `water_rights` environment:
+
+```bash
+(water_rights) $ conda deactivate water_rights
+```
+
+You should see the environment name on the command line prompt change to `(base)`.
+
+## Updating
+
+To update your installation of the `water_rights` environment, rebuild with this command:
+
+```bash
+(base) $ make reinstall-hard
+```
+
+## Uninstallation
+
+```bash
+(base) $ make remove
+```
+
+
