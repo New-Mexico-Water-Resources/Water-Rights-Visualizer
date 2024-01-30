@@ -1,7 +1,7 @@
 import logging
 from os import makedirs
 from os.path import join, exists
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
 from shapely.geometry import Polygon
 import pandas as pd
@@ -9,6 +9,10 @@ from affine import Affine
 import rasterio
 from rasterio.features import geometry_mask
 from dateutil.relativedelta import relativedelta
+
+import raster as rt
+
+from .constants import START_MONTH, END_MONTH
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +24,10 @@ def process_monthly(
         subset_affine: Affine,
         CRS: str,
         year: int,
-        start_month: int,
-        end_month: int,
         monthly_sums_directory: str,
-        monthly_means_directory: str) -> pd.DataFrame:
+        monthly_means_directory: str,
+        start_month: int = START_MONTH,
+        end_month: int = END_MONTH) -> pd.DataFrame:
     """
     Process monthly values for a given year and generate monthly means.
 
@@ -63,70 +67,51 @@ def process_monthly(
 
             ET_monthly_filename = join(monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
-            if exists(ET_monthly_filename):
-                logger.info(f"loading monthly file: {ET_monthly_filename}")
-                with rasterio.open(ET_monthly_filename, "r") as f:
-                    ET_monthly = f.read(1)
-            else:
-                start = datetime(year, month, 1).date()
-                logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
-                start_index = start.timetuple().tm_yday
-                logger.info(f"start index: {start_index}")
-                end = datetime(year, month, 1).date() + relativedelta(months=1)
-                logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
-                end_index = end.timetuple().tm_yday
-                logger.info(f"end index: {end_index}")
-                ET_month_stack = ET_stack[start_index:end_index, :, :]
-                ET_monthly = np.nansum(ET_month_stack, axis=0)
+            start = datetime(year, month, 1).date()
+            logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
+            start_index = start.timetuple().tm_yday
+            logger.info(f"start index: {start_index}")
 
-                profile = {
-                    "driver": "GTiff",
-                    "count": 1,
-                    "width": cols,
-                    "height": rows,
-                    "compress": "LZW",
-                    "dtype": np.float32,
-                    "transform": subset_affine,
-                    "crs": CRS}
+            end = start + relativedelta(months=1)
+            logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
+            end_index = end.timetuple().tm_yday
+            logger.info(f"end index: {end_index}")
+            ET_month_stack = ET_stack[start_index:end_index, :, :]
+            ET_monthly = np.nansum(ET_month_stack, axis=0)
 
-                with rasterio.open(ET_monthly_filename, "w", **profile) as f:
-                    f.write(ET_monthly.astype(np.float32), 1)
+            logger.info(f"writing monthly ET: {ET_monthly_filename}")
+            subset_geometry = rt.RasterGrid.from_affine(subset_affine, rows, cols, CRS)
+            ET_monthly_raster = rt.Raster(array=ET_monthly, geometry=subset_geometry)
+            ET_monthly_raster.to_geotiff(ET_monthly_filename)
+
 
             PET_monthly_filename = join(monthly_sums_directory,
                                         f"{year:04d}_{month:02d}_{ROI_name}_PET_monthly_sum.tif")
 
-            if exists(PET_monthly_filename):
-                logger.info(f"loading monthly file: {PET_monthly_filename}")
-                with rasterio.open(PET_monthly_filename, "r") as f:
-                    PET_monthly = f.read(1)
-            else:
-                start = datetime(year, month, 1).date()
-                logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
-                start_index = start.timetuple().tm_yday
-                logger.info(f"start index: {start_index}")
-                end = datetime(year, month, 1).date() + relativedelta(months=1)
-                logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
-                end_index = end.timetuple().tm_yday
-                logger.info(f"end index: {end_index}")
-                PET_month_stack = PET_stack[start_index:end_index, :, :]
-                PET_monthly = np.nansum(PET_month_stack, axis=0)
 
-                profile = {
-                    "driver": "GTiff",
-                    "count": 1,
-                    "width": cols,
-                    "height": rows,
-                    "compress": "LZW",
-                    "dtype": np.float32,
-                    "transform": subset_affine,
-                    "crs": CRS}
-                
+            start = datetime(year, month, 1).date()
+            logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
+            start_index = start.timetuple().tm_yday
+            logger.info(f"start index: {start_index}")
 
-                with rasterio.open(PET_monthly_filename, "w", **profile) as f:
-                    f.write(PET_monthly.astype(np.float32), 1)
+            end = start + relativedelta(months=1)
+            logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
+            end_index = end.timetuple().tm_yday
+            logger.info(f"end index: {end_index}")
+            PET_month_stack = PET_stack[start_index:end_index, :, :]
+            PET_monthly = np.nansum(PET_month_stack, axis=0)
 
-            ET_monthly_mean = np.nanmean(ET_monthly[mask])
-            PET_monthly_mean = np.nanmean(PET_monthly[mask])
+            logger.info(f"writing monthly PET: {PET_monthly_filename}")
+            subset_geometry = rt.RasterGrid.from_affine(subset_affine, rows, cols, CRS)
+            PET_monthly_raster = rt.Raster(array=PET_monthly, geometry=subset_geometry)
+            PET_monthly_raster.to_geotiff(PET_monthly_filename)
+
+            ET_values = np.array(ET_monthly[mask]).flatten()
+            PET_values = np.array(PET_monthly[mask]).flatten()
+
+            ET_monthly_mean = np.nanmean(ET_values)
+            PET_monthly_mean = np.nanmean(PET_values)
+            
             monthly_means.append([year, month, ET_monthly_mean, PET_monthly_mean])
 
         if not exists(monthly_means_directory):
