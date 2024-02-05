@@ -5,6 +5,8 @@ import PIL
 
 logger = logging.getLogger(__name__)
 
+im_resize = None
+
 def display_image_tk(filename: str, image_panel: Text = None):
     """
     Display an image in a Tkinter Text widget.
@@ -29,3 +31,6 @@ def display_image_tk(filename: str, image_panel: Text = None):
         im_resize = PIL.ImageTk.PhotoImage(im)
         # Insert the image into the Text widget at the beginning
         image_panel.image_create('1.0', image=im_resize)
+        logger.info("image displayed")
+    
+    logger.info("finished display_image_tk")

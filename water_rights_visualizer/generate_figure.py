@@ -180,3 +180,5 @@ def generate_figure(
         filename=figure_filename,
         image_panel=image_panel
     )
+
+    logger.info("finished generating figure")

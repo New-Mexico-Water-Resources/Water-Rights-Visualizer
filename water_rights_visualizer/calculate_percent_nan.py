@@ -54,7 +54,9 @@ def calculate_percent_nan(
                     dest.write(out_image)
 
     # Opening the first ET subset file in the subset_directory
-    a_subset = rasterio.open(subset_directory + "/" + listdir(subset_directory)[0])
+    subset_filenames = sorted(glob(join(subset_directory, "*.tif")))
+    first_subset_filename = subset_filenames[0]
+    a_subset = rasterio.open(first_subset_filename)
 
     # Masking the area outside the ROI_for_nan polygon
     out_image, out_transform = mask(a_subset, ROI_for_nan, invert=True)

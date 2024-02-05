@@ -1,3 +1,4 @@
+import numpy as np
 from affine import Affine
 from shapely.geometry import MultiPolygon, Polygon
 from matplotlib.patches import Polygon
@@ -20,7 +21,7 @@ def generate_patch(polygon: Polygon, affine: Affine) -> Polygon:
         polygon = list(polygon.geoms)[0]
 
     # Apply the affine transformation to the coordinates of the polygon
-    polygon_indices = [~affine * coords for coords in polygon.exterior.coords]
+    polygon_indices = [~affine * coords[:2] for coords in polygon.exterior.coords]
 
     # Create a patch using the transformed coordinates
     patch = Polygon(polygon_indices, fill=None, color="black", linewidth=1)

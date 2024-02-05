@@ -36,7 +36,8 @@ def water_rights_visualizer(
         start_year: int = START_YEAR,
         end_year: int = END_YEAR,
         start_month: int = START_MONTH,
-        end_month: int = END_MONTH):
+        end_month: int = END_MONTH,
+        debug=False):
     boundary_filename = abspath(expanduser(boundary_filename))
     output_directory = abspath(expanduser(output_directory))
 
@@ -44,13 +45,6 @@ def water_rights_visualizer(
         raise IOError(f"boundary filename not found: {boundary_filename}")
 
     logger.info(f"boundary file: {cl.file(boundary_filename)}")
-
-    # if isinstance(input_datastore, FilepathSource):
-    #     logger.info(f"input directory: {cl.dir(input_datastore.directory)}")
-    # elif isinstance(input_datastore, GoogleSource):
-    #     logger.info(f"using Google Drive for input data")
-    # else:
-    #     raise ValueError("invalid data source")
 
     if input_datastore is None:
         if google_drive_temporary_directory is not None:
@@ -71,7 +65,6 @@ def water_rights_visualizer(
     logger.info(f"output directory: {cl.dir(output_directory)}")
 
     working_directory = output_directory
-    # chdir(working_directory)
     logger.info(f"working directory: {cl.dir(working_directory)}")
 
     ROI_base = splitext(basename(boundary_filename))[0]
@@ -106,7 +99,9 @@ def water_rights_visualizer(
             monthly_sums_directory=None,
             monthly_means_directory=None,
             monthly_nan_directory=None,
-            target_CRS=None)
+            target_CRS=None,
+            debug=debug
+        )
 
     elif isdir(ROI):
         for items in scandir(ROI):
@@ -129,7 +124,9 @@ def water_rights_visualizer(
                     monthly_sums_directory=None,
                     monthly_means_directory=None,
                     monthly_nan_directory=None,
-                    target_CRS=None)
+                    target_CRS=None,
+                    debug=debug
+                )
     else:
         logger.warning(f"invalid ROI: {ROI}")
 
@@ -165,15 +162,29 @@ def main(argv=sys.argv):
     else:
         google_drive_client_secrets_filename = None
 
+    if "--start-year" in argv:
+        start_year = str(argv[argv.index("--start-year") + 1])
+    else:
+        start_year = None
+
+    if "--end-year" in argv:
+        end_year = str(argv[argv.index("--end-year") + 1])
+    else:
+        end_year = None
+
+    debug = "--debug" in argv
+
     water_rights_visualizer(
         boundary_filename=boundary_filename,
         output_directory=output_directory,
         input_directory=input_directory,
         google_drive_temporary_directory=google_drive_temporary_directory,
         google_drive_key_filename=google_drive_key_filename,
-        google_drive_client_secrets_filename=google_drive_client_secrets_filename
+        google_drive_client_secrets_filename=google_drive_client_secrets_filename,
+        start_year=start_year,
+        end_year=end_year,
+        debug=debug
     )
-
 
 if __name__ == "__main__":
     sys.exit(main(argv=sys.argv))
