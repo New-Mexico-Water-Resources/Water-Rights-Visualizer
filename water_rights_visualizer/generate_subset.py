@@ -125,8 +125,6 @@ def generate_subset(
         crs=target_CRS
     )
 
-    # output_raster = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
-
     target_raster = None
 
     for tile in tiles:
@@ -138,76 +136,11 @@ def generate_subset(
         else:
             target_raster = rt.where(np.isnan(target_raster), tile_raster, target_raster)
 
-            # with rasterio.open(input_filename, "r") as input_file:
-                # source_CRS = input_file.crs
-                # input_affine = input_file.transform
-
-                # ul = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
-                # col_ul, row_ul = ~input_affine * (ul.x, ul.y)
-                # col_ul = int(col_ul)
-                # row_ul = int(row_ul)
-
-                # ur = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
-                # col_ur, row_ur = ~input_affine * (ur.x, ur.y)
-                # col_ur = int(col_ur)
-                # row_ur = int(row_ur)
-
-                # lr = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
-                # col_lr, row_lr = ~input_affine * (lr.x, lr.y)
-                # col_lr = int(col_lr)
-                # row_lr = int(row_lr)
-
-                # ll = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
-                # col_ll, row_ll = ~input_affine * (ll.x, ll.y)
-                # col_ll = int(col_ll)
-                # row_ll = int(row_ll)
-
-                # col_min = min(col_ul, col_ll)
-                # col_min = max(col_min, 0)
-                # col_max = max(col_ur, col_lr)
-
-                # row_min = min(row_ul, row_ur)
-                # row_min = max(row_min, 0)
-                # row_max = max(row_ll, row_lr)
-
-                # window = (row_min, row_max), (col_min, col_max)
-
-                # if row_min < 0 or col_min < 0 or row_max <= row_min or col_max <= col_min:
-                #     logger.info(f"raster does not intersect target surface: {cl.file(input_filename)}")
-                #     continue
-
-                # window = Window.from_slices(*window)
-                # source_subset = input_file.read(1, window=window)
-                # source_affine = window_transform(window, input_affine)
-
-        # target_surface = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
-
-        # reproject(
-        #     source_subset,
-        #     target_surface,
-        #     src_transform=source_affine,
-        #     src_crs=source_CRS,
-        #     src_nodata=np.nan,
-        #     dst_transform=target_affine,
-        #     dst_crs=target_CRS,
-        #     dst_nodata=np.nan
-        # )
-
-        # output_raster = np.where(np.isnan(output_raster), target_surface, output_raster)
-
-    # if not allow_blank and np.all(np.isnan(output_raster)):
     if not allow_blank and np.all(np.isnan(target_raster)):
         raise BlankOutput(f"blank output raster for date {acquisition_date} variable {variable_name} ROI {ROI_name} from tiles: {', '.join(tiles)}")
-
-    # if not exists(subset_filename):
-    #     target_geometry = rt.RasterGrid.from_affine(target_affine, target_rows, target_cols, target_CRS)
-    #     target_raster = rt.Raster(array=output_raster, geometry=target_geometry, cmap=ET_COLORMAP)
-    #     logger.info("writing subset: {}".format(subset_filename))
-    #     target_raster.to_geotiff(subset_filename)
 
     if not exists(subset_filename):
         logger.info("writing subset: {}".format(subset_filename))
         target_raster.to_geotiff(subset_filename)
 
-    # return output_raster, target_affine
     return target_raster
