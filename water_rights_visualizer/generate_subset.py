@@ -13,6 +13,7 @@ from rasterio.windows import transform as window_transform
 from shapely import Point
 
 import raster as rt
+from raster import Raster, RasterGrid
 
 import cl
 from .constants import WGS84, CELL_SIZE_DEGREES
@@ -35,7 +36,8 @@ def generate_subset(
         cell_size: float = None,
         buffer_size: float = None,
         target_CRS: str = None,
-        allow_blank: bool = True) -> (np.ndarray, Affine):
+        # allow_blank: bool = True) -> (np.ndarray, Affine):
+        allow_blank: bool = True) -> Raster:
     """
     This function generates a subset of a raster based on a region of interest (ROI).
 
@@ -115,12 +117,28 @@ def generate_subset(
     target_cols = int(width_meters / cell_size)
     height_meters = (y_max - y_min)
     target_rows = int(height_meters / cell_size)
-    output_raster = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
+
+    target_geometry = RasterGrid.from_affine(
+        affine=target_affine, 
+        rows=target_rows, 
+        cols=target_cols, 
+        crs=target_CRS
+    )
+
+    # output_raster = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
+
+    target_raster = None
 
     for tile in tiles:
-        with input_datastore.get_filename(tile=tile, variable_name=variable_name,
-                                          acquisition_date=acquisition_date) as input_filename:
-            with rasterio.open(input_filename, "r") as input_file:
+        with input_datastore.get_filename(tile=tile, variable_name=variable_name, acquisition_date=acquisition_date) as input_filename:
+            tile_raster = Raster.open(input_filename, geometry=target_geometry, cmap=ET_COLORMAP)
+        
+        if target_raster is None:
+            target_raster = tile_raster
+        else:
+            target_raster = rt.where(np.isnan(target_raster), tile_raster, target_raster)
+
+            # with rasterio.open(input_filename, "r") as input_file:
                 source_CRS = input_file.crs
                 input_affine = input_file.transform
 
@@ -162,28 +180,34 @@ def generate_subset(
                 source_subset = input_file.read(1, window=window)
                 source_affine = window_transform(window, input_affine)
 
-        target_surface = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
+        # target_surface = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
 
-        reproject(
-            source_subset,
-            target_surface,
-            src_transform=source_affine,
-            src_crs=source_CRS,
-            src_nodata=np.nan,
-            dst_transform=target_affine,
-            dst_crs=target_CRS,
-            dst_nodata=np.nan
-        )
+        # reproject(
+        #     source_subset,
+        #     target_surface,
+        #     src_transform=source_affine,
+        #     src_crs=source_CRS,
+        #     src_nodata=np.nan,
+        #     dst_transform=target_affine,
+        #     dst_crs=target_CRS,
+        #     dst_nodata=np.nan
+        # )
 
-        output_raster = np.where(np.isnan(output_raster), target_surface, output_raster)
+        # output_raster = np.where(np.isnan(output_raster), target_surface, output_raster)
 
-    if not allow_blank and np.all(np.isnan(output_raster)):
+    # if not allow_blank and np.all(np.isnan(output_raster)):
+    if not allow_blank and np.all(np.isnan(target_raster)):
         raise BlankOutput(f"blank output raster for date {acquisition_date} variable {variable_name} ROI {ROI_name} from tiles: {', '.join(tiles)}")
 
+    # if not exists(subset_filename):
+    #     target_geometry = rt.RasterGrid.from_affine(target_affine, target_rows, target_cols, target_CRS)
+    #     target_raster = rt.Raster(array=output_raster, geometry=target_geometry, cmap=ET_COLORMAP)
+    #     logger.info("writing subset: {}".format(subset_filename))
+    #     target_raster.to_geotiff(subset_filename)
+
     if not exists(subset_filename):
-        target_geometry = rt.RasterGrid.from_affine(target_affine, target_rows, target_cols, target_CRS)
-        target_raster = rt.Raster(array=output_raster, geometry=target_geometry, cmap=ET_COLORMAP)
         logger.info("writing subset: {}".format(subset_filename))
         target_raster.to_geotiff(subset_filename)
 
-    return output_raster, target_affine
+    # return output_raster, target_affine
+    return target_raster
