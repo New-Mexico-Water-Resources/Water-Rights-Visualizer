@@ -89,7 +89,8 @@ def generate_stack(
         logger.info(f"ESI subset file: {ESI_subset_filename}")
 
         try:
-            ET_subset, affine = generate_subset(
+            # ET_subset, affine = generate_subset(
+            ET_subset = generate_subset(
                 input_datastore=input_datastore,
                 acquisition_date=date_step,
                 ROI_name=ROI_name,
@@ -99,6 +100,8 @@ def generate_stack(
                 subset_filename=ET_subset_filename,
                 target_CRS=target_CRS
             )
+
+            affine = ET_subset.geometry.affine
         except BlankOutput as e:
             logger.warning(e)
             continue
@@ -111,7 +114,8 @@ def generate_stack(
             continue
 
         try:
-            ESI_subset, affine = generate_subset(
+            # ESI_subset, affine = generate_subset(
+            ESI_subset = generate_subset(
                 input_datastore=input_datastore,
                 acquisition_date=date_step,
                 ROI_name=ROI_name,
@@ -121,6 +125,8 @@ def generate_stack(
                 subset_filename=ESI_subset_filename,
                 target_CRS=target_CRS
             )
+
+            affine = ESI_subset.geometry.affine
         except BlankOutput as e:
             logger.warning(e)
             continue

@@ -139,46 +139,46 @@ def generate_subset(
             target_raster = rt.where(np.isnan(target_raster), tile_raster, target_raster)
 
             # with rasterio.open(input_filename, "r") as input_file:
-                source_CRS = input_file.crs
-                input_affine = input_file.transform
+                # source_CRS = input_file.crs
+                # input_affine = input_file.transform
 
-                ul = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
-                col_ul, row_ul = ~input_affine * (ul.x, ul.y)
-                col_ul = int(col_ul)
-                row_ul = int(row_ul)
+                # ul = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
+                # col_ul, row_ul = ~input_affine * (ul.x, ul.y)
+                # col_ul = int(col_ul)
+                # row_ul = int(row_ul)
 
-                ur = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
-                col_ur, row_ur = ~input_affine * (ur.x, ur.y)
-                col_ur = int(col_ur)
-                row_ur = int(row_ur)
+                # ur = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_max)], crs=target_CRS).to_crs(source_CRS).geometry[0]
+                # col_ur, row_ur = ~input_affine * (ur.x, ur.y)
+                # col_ur = int(col_ur)
+                # row_ur = int(row_ur)
 
-                lr = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
-                col_lr, row_lr = ~input_affine * (lr.x, lr.y)
-                col_lr = int(col_lr)
-                row_lr = int(row_lr)
+                # lr = gpd.GeoDataFrame({}, geometry=[Point(x_max, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
+                # col_lr, row_lr = ~input_affine * (lr.x, lr.y)
+                # col_lr = int(col_lr)
+                # row_lr = int(row_lr)
 
-                ll = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
-                col_ll, row_ll = ~input_affine * (ll.x, ll.y)
-                col_ll = int(col_ll)
-                row_ll = int(row_ll)
+                # ll = gpd.GeoDataFrame({}, geometry=[Point(x_min, y_min)], crs=target_CRS).to_crs(source_CRS).geometry[0]
+                # col_ll, row_ll = ~input_affine * (ll.x, ll.y)
+                # col_ll = int(col_ll)
+                # row_ll = int(row_ll)
 
-                col_min = min(col_ul, col_ll)
-                col_min = max(col_min, 0)
-                col_max = max(col_ur, col_lr)
+                # col_min = min(col_ul, col_ll)
+                # col_min = max(col_min, 0)
+                # col_max = max(col_ur, col_lr)
 
-                row_min = min(row_ul, row_ur)
-                row_min = max(row_min, 0)
-                row_max = max(row_ll, row_lr)
+                # row_min = min(row_ul, row_ur)
+                # row_min = max(row_min, 0)
+                # row_max = max(row_ll, row_lr)
 
-                window = (row_min, row_max), (col_min, col_max)
+                # window = (row_min, row_max), (col_min, col_max)
 
-                if row_min < 0 or col_min < 0 or row_max <= row_min or col_max <= col_min:
-                    logger.info(f"raster does not intersect target surface: {cl.file(input_filename)}")
-                    continue
+                # if row_min < 0 or col_min < 0 or row_max <= row_min or col_max <= col_min:
+                #     logger.info(f"raster does not intersect target surface: {cl.file(input_filename)}")
+                #     continue
 
-                window = Window.from_slices(*window)
-                source_subset = input_file.read(1, window=window)
-                source_affine = window_transform(window, input_affine)
+                # window = Window.from_slices(*window)
+                # source_subset = input_file.read(1, window=window)
+                # source_affine = window_transform(window, input_affine)
 
         # target_surface = np.full((target_rows, target_cols), np.nan, dtype=np.float32)
 
