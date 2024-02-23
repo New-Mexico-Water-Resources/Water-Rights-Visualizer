@@ -11,6 +11,11 @@ KEY_FILENAME = join(abspath(dirname(__file__)), "google_drive_key.txt")
 CLIENT_SECRETS_FILENAME = join(abspath(dirname(__file__)), "client_secrets.json")
 
 def google_drive_login(key_filename: str = None, client_secrets_filename: str = None) -> GoogleDrive:
+    """
+    Logs in to Google Drive using the provided key and client secrets filenames.
+    If no filenames are provided, default filenames will be used.
+    Returns an instance of GoogleDrive.
+    """
     if key_filename is None:
         key_filename = KEY_FILENAME
 
@@ -38,6 +43,7 @@ def google_drive_login(key_filename: str = None, client_secrets_filename: str = 
     else:
         # Initialize the saved creds
         gauth.Authorize()
+        
     # Save the current credentials to a file
     makedirs(dirname(key_filename), exist_ok=True)
     logger.info(f"saving credentials: {key_filename}")
