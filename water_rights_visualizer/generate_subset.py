@@ -53,14 +53,6 @@ def generate_subset(
     np.ndarray: The subsetted raster.
     Affine: The affine transformation for the subsetted raster.
     """
-    # if exists(subset_filename):
-    #     logger.info(f"subset file already exists: {subset_filename}")
-    #     subset = rt.Raster.open(subset_filename)
-    #     output_raster = subset.array
-    #     target_affine = subset.geometry.affine
-
-    #     return output_raster, target_affine
-
     logger.info(f"generating {variable_name} subset")
 
     roi_size = round(ROI_acres, 2)
@@ -97,7 +89,6 @@ def generate_subset(
 
         return subset, affine
 
-    # logger.info(f"generating {variable_name} subset")
     tiles = select_tiles(ROI_latlon)
     
     if len(tiles) == 0:
@@ -190,23 +181,6 @@ def generate_subset(
         raise BlankOutput(f"blank output raster for date {acquisition_date} variable {variable_name} ROI {ROI_name} from tiles: {', '.join(tiles)}")
 
     if not exists(subset_filename):
-        # subset_profile = {
-        #     "driver": "GTiff",
-        #     "compress": "LZW",
-        #     "dtype": np.float32,
-        #     "transform": target_affine,
-        #     "crs": target_CRS,
-        #     "width": target_cols,
-        #     "height": target_rows,
-        #     "count": 1
-        # }
-
-        # logger.info("writing subset: {}".format(subset_filename))
-
-        # with rasterio.open(subset_filename, "w", **subset_profile) as input_file:
-        #     input_file.write(output_raster.astype(np.float32), 1)
-        # target_geometry = rt.RasterGeometry(crs=target_CRS, affine=target_affine)
-        
         target_geometry = rt.RasterGrid.from_affine(target_affine, target_rows, target_cols, target_CRS)
         target_raster = rt.Raster(array=output_raster, geometry=target_geometry, cmap=ET_COLORMAP)
         logger.info("writing subset: {}".format(subset_filename))
