@@ -21,6 +21,9 @@ const run_directory_base = constants.run_directory_base;
 const html_path = path.join(path.dirname(__dirname), 'page');
 const port = constants.port;
 
+// const argv = process.argv.slice(2);
+// const demo_mode = argv[0] == "demo";
+
 
 console.log(`starting server on port ${port}`);
 console.log(`run directory: ${run_directory_base}`);
