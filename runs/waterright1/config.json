@@ -1,8 +1,0 @@
-{
-  "name": "waterright1",
-  "start_year": "1985",
-  "end_year": "1985",
-  "working_directory": "/Users/halverso/Projects/Water-Rights-Visualizer/runs/waterright1",
-  "geojson_filename": "/Users/halverso/Projects/Water-Rights-Visualizer/runs/waterright1/target.geojson",
-  "status_filename": "/Users/halverso/Projects/Water-Rights-Visualizer/runs/waterright1/status.txt"
-}
