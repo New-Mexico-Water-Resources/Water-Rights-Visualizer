@@ -37,6 +37,7 @@ def water_rights_visualizer(
         end_year: int = END_YEAR,
         start_month: int = START_MONTH,
         end_month: int = END_MONTH,
+        status_filename: str = None,
         debug=False):
     boundary_filename = abspath(expanduser(boundary_filename))
     output_directory = abspath(expanduser(output_directory))
@@ -100,6 +101,7 @@ def water_rights_visualizer(
             monthly_means_directory=None,
             monthly_nan_directory=None,
             target_CRS=None,
+            status_filename=status_filename,
             debug=debug
         )
 
@@ -125,6 +127,7 @@ def water_rights_visualizer(
                     monthly_means_directory=None,
                     monthly_nan_directory=None,
                     target_CRS=None,
+                    status_filename=status_filename,
                     debug=debug
                 )
     else:

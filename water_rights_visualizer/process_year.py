@@ -18,10 +18,11 @@ from .calculate_percent_nan import calculate_percent_nan
 from .constants import WGS84, START_MONTH, END_MONTH, START_YEAR, END_YEAR
 from .data_source import DataSource
 from .display_image_tk import display_image_tk
-from .display_text_tk import display_text_tk
+# from .display_text_tk import display_text_tk
 from .generate_figure import generate_figure
 from .generate_stack import generate_stack
 from .process_monthly import process_monthly
+from .write_status import write_status
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +54,14 @@ def process_year(
         root: Tk = None,
         image_panel: Text = None,
         text_panel: ScrolledText = None,
+        status_filename: str = None,
         debug: bool = False):
     logger.info(f"processing year {cl.time(year)} at ROI {cl.name(ROI_name)}")
     message = f"processing: {year}"
 
-    display_text_tk(
-        text="{message}\n",
+    write_status(
+        message="{message}\n",
+        status_filename=status_filename,
         text_panel=text_panel,
         root=root
     )
@@ -66,8 +69,9 @@ def process_year(
     stack_filename = join(stack_directory, f"{year:04d}_{ROI_name}_stack.h5")
 
     try:
-        display_text_tk(
-            text=f"loading stack: {stack_filename}\n",
+        write_status(
+            message==f"loading stack: {stack_filename}\n",
+            status_filename=status_filename,
             text_panel=text_panel,
             root=root
         )
@@ -108,8 +112,9 @@ def process_year(
 
     # monthly_means.append(monthly_means_df)
 
-    display_text_tk(
-        text="Calculating uncertainty\n",
+    write_status(
+        message="Calculating uncertainty\n",
+        status_filename=status_filename,
         text_panel=text_panel,
         root=root
     )
@@ -121,8 +126,9 @@ def process_year(
         monthly_nan_directory
     )
 
-    display_text_tk(
-        text="Generating figure\n",
+    write_status(
+        message=="Generating figure\n",
+        status_filename=status_filename,
         text_panel=text_panel,
         root=root
     )
@@ -167,8 +173,9 @@ def process_year(
     if exists(figure_filename):
         logger.info(f"figure already exists: {cl.file(figure_filename)}")
 
-        display_text_tk(
-            text=f"figure exists in working directory\n",
+        write_status(
+            message=f"figure exists in working directory\n",
+            status_filename=status_filename,
             text_panel=text_panel,
             root=root
         )
@@ -197,7 +204,8 @@ def process_year(
                 end_month=end_month,
                 root=root,
                 text_panel=text_panel,
-                image_panel=image_panel
+                image_panel=image_panel,
+                status_filename=status_filename
             )
         except Exception as e:
             logger.exception(e)

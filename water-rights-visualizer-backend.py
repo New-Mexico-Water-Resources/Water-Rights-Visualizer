@@ -6,6 +6,11 @@ import logging
 from time import sleep
 import json
 
+from water_rights_visualizer import water_rights_visualizer
+from water_rights_visualizer.google_source import GoogleSource
+from water_rights_visualizer.file_path_source import FilepathSource
+import cl
+
 logger = logging.getLogger(__name__)
 
 def write_status(status_filename: str, message: str):
@@ -35,20 +40,20 @@ def main(argv=sys.argv):
     status_filename = config["status_filename"]
     logger.info(f"status file: {status_filename}")
 
-    for year in range(start_year, end_year + 1):
-        write_status(status_filename, f"processing {name} {year}")
-        sleep(10)
-        image_filename_source = join("test_images", f"{year}_test_target.png")
+    temporary_directory = join(working_directory, "temp")
+    output_directory = join(working_directory, "output")
+    input_datastore = GoogleSource(temporary_directory=temporary_directory, remove_temporary_files=False)
 
-        if not exists(image_filename_source):
-            write_status(status_filename, f"no image produced for {name} for year {year}")
-            continue
+    # FIXME need to consolidate status update between web UI status file, desktop UI Tk text box, and console logger
 
-        image_directory = join(working_directory, "output", "figures")
-        makedirs(image_directory, exist_ok=True)
-        image_filename_destination = join(image_directory, f"{year}_{name}.png")
-        shutil.copy(image_filename_source, image_filename_destination)
-    
+    water_rights_visualizer(
+        boundary_filename=geojson_filename,
+        input_datastore=input_datastore,
+        output_directory=output_directory,
+        start_year=start_year,
+        end_year=end_year,
+    )
+
     write_status(status_filename, f"completed {name} from {start_year} to {end_year}")
 
 if __name__ == "__main__":
