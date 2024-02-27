@@ -1,6 +1,6 @@
 // Get the 'name' parameter from the URL
 var urlParams = new URLSearchParams(window.location.search);
-var name = urlParams.get('name');
+var run_name = urlParams.get('name');
 var start_year;
 var end_year;
 var status;
@@ -23,10 +23,10 @@ L.control.scale({
 }).addTo(map);
 
 // Set the value of the name textarea
-document.getElementById('name').value = name;
+document.getElementById('name').value = run_name;
 
 // Run a GET request on /start_year with the name parameter
-fetch(`/start_year?name=${name}`)
+fetch(`/start_year?name=${run_name}`)
     .then(response => response.text())
     .then(value => {
         // Store the response as start_year
@@ -35,7 +35,7 @@ fetch(`/start_year?name=${name}`)
     });
 
 // Run a GET request on /end_year with the name parameter
-fetch(`/end_year?name=${name}`)
+fetch(`/end_year?name=${run_name}`)
     .then(response => response.text())
     .then(value => {
         // Store the response as end_year
@@ -45,7 +45,7 @@ fetch(`/end_year?name=${name}`)
 
 function refresh_status() {
 // Run a GET request on /status with the name parameter
-fetch(`/status?name=${name}`)
+fetch(`/status?name=${run_name}`)
     .then(response => response.text())
     .then(value => {
         document.getElementById('status').value = value;
@@ -54,7 +54,7 @@ fetch(`/status?name=${name}`)
 };
 
 // Run a GET request on /geojson with the name parameter
-fetch(`/geojson?name=${name}`)
+fetch(`/geojson?name=${run_name}`)
     .then(response => response.text())
     .then(value => {
         geojson = JSON.parse(value);
@@ -80,7 +80,8 @@ function updateGallery(startYear, endYear) {
     const promises = [];
 
     for (let year = startYear; year <= endYear; year++) {
-        const promise = fetch(`/result?name=test_target&year=${year}`)
+        // FIXME change test_target to run name
+        const promise = fetch(`/result?name=${run_name}&year=${year}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('HTTP error ' + response.status);
@@ -115,46 +116,9 @@ refresh_status();
 var gallery_start_year;
 var gallery_end_year;
 
-// let intervalId = setInterval(() => {
-//     fetch(`/years_available?name=${name}`)
-//         .then(response => response.json())
-//         .then(years_available => {
-//             if (years_available.length > 0) {
-//                 var available_start_year = years_available[0];
-//                 var available_end_year = years_available[years_available.length - 1];
-
-//                 if (available_end_year != gallery_end_year) {
-//                     gallery_start_year = available_start_year;
-//                     gallery_end_year = available_end_year;
-//                     updateGallery(gallery_start_year, gallery_end_year);
-//                 }
-//             }
-//         });
-
-//     fetch(`/status?name=${name}`)
-//         .then(response => response.text())
-//         .then(status => {
-//             let currentTime = new Date().toLocaleTimeString();
-//             document.querySelector('#status').value = currentTime + '\n' + status;
-
-//             // Check if status starts with "completed"
-//             if (status.startsWith("completed")) {
-//                 // Create a new link element
-//                 var link = document.createElement('a');
-//                 link.href = `/download?name=${name}`; // Set the destination URL
-//                 link.textContent = `${name}.zip`; // Set the display text
-
-//                 // Append the link to the 'attributes' div
-//                 var attributesDiv = document.getElementById('attributes');
-//                 attributesDiv.appendChild(link);
-//                 clearInterval(intervalId);  // Stop the interval
-//             }
-//         });
-// }, 10000);
-
 // Define the function that you want to run
 function fetchData() {
-    fetch(`/years_available?name=${name}`)
+    fetch(`/years_available?name=${run_name}`)
         .then(response => response.json())
         .then(years_available => {
             if (years_available.length > 0) {
@@ -169,7 +133,7 @@ function fetchData() {
             }
         });
 
-    fetch(`/status?name=${name}`)
+    fetch(`/status?name=${run_name}`)
         .then(response => response.text())
         .then(status => {
             let currentTime = new Date().toLocaleTimeString();
@@ -179,8 +143,8 @@ function fetchData() {
             if (status.startsWith("completed")) {
                 // Create a new link element
                 var link = document.createElement('a');
-                link.href = `/download?name=${name}`; // Set the destination URL
-                link.textContent = `${name}.zip`; // Set the display text
+                link.href = `/download?name=${run_name}`; // Set the destination URL
+                link.textContent = `${run_name}.zip`; // Set the display text
 
                 // Append the link to the 'attributes' div
                 var attributesDiv = document.getElementById('attributes');

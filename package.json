@@ -4,7 +4,8 @@
   "description": "Web UI for the New Mexico water rights tool",
   "main": "server/server.js",
   "scripts": {
-    "server": "node server/server.js"
+    "server": "node server/server.js",
+    "demo": "node server/server.js demo"
   },
   "author": "Gregory Halverson",
   "license": "ISC",

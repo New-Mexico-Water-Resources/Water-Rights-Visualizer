@@ -15,7 +15,7 @@ def write_status(status_filename: str, message: str):
         file.write(message)
 
 def main(argv=sys.argv):
-    logger.info("running operational backend")
+    logger.info("running demo backend")
     config_filename = argv[1]
     logger.info(f"config file: {config_filename}")
 

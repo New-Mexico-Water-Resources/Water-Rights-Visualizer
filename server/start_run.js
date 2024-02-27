@@ -10,6 +10,9 @@ const constants = require('./constants');
 const project_directory = constants.project_directory;
 const run_directory_base = constants.run_directory_base;
 
+// const argv = process.argv.slice(2);
+// const demo_mode = argv[0] == "demo";
+
 router.post('/start_run', (req, res) => {
     var name = req.body.name;
     var start_year = req.body.startYear;

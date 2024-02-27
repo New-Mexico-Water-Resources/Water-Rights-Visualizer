@@ -18,9 +18,11 @@ router.get('/result', (req, res) => {
   console.log(`reading image from ${image_filename}`);
 
   if (fs.existsSync(image_filename)) {
+      console.log("responding with HTTP 200");
       res.status(200).sendFile(image_filename);
   } else {
-      res.status(404).send(`figure for ${name} ${year} is not available`);
+      console.log("responding with HTTP 204");
+      res.status(204).send(`figure for ${name} ${year} is not available`);
   }
 });
 
