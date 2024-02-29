@@ -14,8 +14,10 @@ from shapely.geometry import Polygon
 
 from .constants import START_MONTH, END_MONTH
 from .display_image_tk import display_image_tk
-from .display_text_tk import display_text_tk
+# from .display_text_tk import display_text_tk
 from .generate_patch import generate_patch
+
+from .write_status import write_status
 
 logger = getLogger(__name__)
 
@@ -36,7 +38,8 @@ def generate_figure(
         end_month: int = END_MONTH,
         root: Tk = None,
         text_panel: ScrolledText = None,
-        image_panel: Text = None):
+        image_panel: Text = None,
+        status_filename: str = None):
     """
     Generate a figure displaying evapotranspiration data for a specific region of interest (ROI).
 
@@ -152,22 +155,18 @@ def generate_figure(
     plt.tight_layout()
 
     # Display messages in the text panel
-    display_text_tk(
-        text=f"Figure saved\n",
+    write_status(
+        message=f"Figure saved\n",
+        status_filename=status_filename,
         text_panel=text_panel,
         root=root
     )
 
     end_time = datetime.now().strftime("%H%M")
 
-    display_text_tk(
-        text=f"End Time:{end_time}\n",
-        text_panel=text_panel,
-        root=root
-    )
-
-    display_text_tk(
-        text="\n",
+    write_status(
+        message=f"End Time:{end_time}\n",
+        status_filename=status_filename,
         text_panel=text_panel,
         root=root
     )

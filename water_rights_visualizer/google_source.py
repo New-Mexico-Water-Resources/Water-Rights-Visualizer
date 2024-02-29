@@ -120,13 +120,6 @@ class GoogleSource(DataSource):
         
         self.filenames[key] = filename
 
-        # preview_filename = filename.replace(".tif", ".jpeg")
-
-        # if not exists(preview_filename):
-        #     image = rt.Raster.open(filename)
-        #     logger.info(f"writing preview GeoJPEG: {preview_filename}")
-        #     image.to_geojpeg(preview_filename)
-
         yield filename
 
         if self.remove_temporary_files:

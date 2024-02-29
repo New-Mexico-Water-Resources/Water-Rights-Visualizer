@@ -6,13 +6,9 @@ import logging
 from time import sleep
 import json
 
+from water_rights_visualizer.write_status import write_status
+
 logger = logging.getLogger(__name__)
-
-def write_status(status_filename: str, message: str):
-    logger.info(message)
-
-    with open(status_filename, "w") as file:
-        file.write(message)
 
 def main(argv=sys.argv):
     logger.info("running demo backend")
@@ -36,12 +32,20 @@ def main(argv=sys.argv):
     logger.info(f"status file: {status_filename}")
 
     for year in range(start_year, end_year + 1):
-        write_status(status_filename, f"processing {name} {year}")
+        write_status(
+            message=f"processing {name} {year}",
+            status_filename=status_filename 
+        )
+        
         sleep(10)
         image_filename_source = join("test_images", f"{year}_test_target.png")
 
         if not exists(image_filename_source):
-            write_status(status_filename, f"no image produced for {name} for year {year}")
+            write_status(
+                message=f"no image produced for {name} for year {year}",
+                status_filename=status_filename
+            )
+
             continue
 
         image_directory = join(working_directory, "output", "figures")
@@ -49,7 +53,10 @@ def main(argv=sys.argv):
         image_filename_destination = join(image_directory, f"{year}_{name}.png")
         shutil.copy(image_filename_source, image_filename_destination)
     
-    write_status(status_filename, f"completed {name} from {start_year} to {end_year}")
+    write_status(
+        message=f"completed {name} from {start_year} to {end_year}",
+        status_filename=status_filename
+    )
 
 if __name__ == "__main__":
     sys.exit(main(argv=sys.argv))

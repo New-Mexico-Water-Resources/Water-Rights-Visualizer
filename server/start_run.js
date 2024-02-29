@@ -10,8 +10,8 @@ const constants = require('./constants');
 const project_directory = constants.project_directory;
 const run_directory_base = constants.run_directory_base;
 
-// const argv = process.argv.slice(2);
-// const demo_mode = argv[0] == "demo";
+const argv = process.argv.slice(2);
+const data_source = argv[0];
 
 router.post('/start_run', (req, res) => {
     var name = req.body.name;
@@ -87,7 +87,16 @@ router.post('/start_run', (req, res) => {
         }
     });
 
-    var pipeline_script = path.join(project_directory, "water-rights-visualizer-backend.py"); 
+    var pipeline_script;
+    
+    if (data_source == "demo") {
+        pipeline_script = path.join(project_directory, "water-rights-visualizer-backend.py"); 
+    } else if (data_source == "S3") {
+        pipeline_script = path.join(project_directory, "water-rights-visualizer-backend-S3.py"); 
+    } else if (data_source == "google") {
+        pipeline_script = path.join(project_directory, "water-rights-visualizer-backend-google.py"); 
+    }
+
     console.log(`pipeline script: ${pipeline_script}`);
     var command = `python ${pipeline_script} ${config_filename}`;
     console.log(command);

@@ -9,3 +9,5 @@ try_water_rights_gui.sh
 water_rights_visualizer.egg-info
 dist
 build
+runs
+temp
