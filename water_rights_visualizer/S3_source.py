@@ -12,20 +12,59 @@ from dateutil import parser
 import logging
 import cl
 
+import rasterio
+import raster
 import raster as rt
 
 from .errors import FileUnavailable
 from .data_source import DataSource
-from .google_drive import google_drive_login
+# from .google_drive import google_drive_login
 
 logger = logging.getLogger(__name__)
 
 REMOVE_TEMPORARY_FILES = True
 
+def read_geometry(
+        S3_URL: str,
+        session: boto3.session.Session = None) -> raster.RasterGeometry:
+    if session is None:
+        session = assume_role()
+    
+    with rasterio.Env(rasterio.session.AWSSession(session)) as env:
+        with rasterio.open(S3_URL) as remote_file:
+            source_CRS = remote_file.crs
+            source_rows, source_cols = remote_file.shape
+            source_affine = remote_file.transform
+
+            source_grid = raster.RasterGrid.from_affine(
+                affine=source_affine, 
+                rows=source_rows, 
+                cols=source_cols, 
+                crs=source_CRS
+            )
+
+            return source_grid
+
+def read_subset(
+        S3_URL: str,
+        geometry: raster.RasterGeometry,
+        session: boto3.session.Session = None) -> raster.Raster:
+    if session is None:
+        session = assume_role()
+    
+    with rasterio.Env(rasterio.session.AWSSession(session)) as env:
+        subset = raster.Raster.open(
+            filename=S3_URL, 
+            geometry=geometry
+        )
+    
+    return subset
+
 class S3Source(DataSource):
     def __init__(
             self,
             bucket_name: str = None,
+            region_name: str = None,
             temporary_directory: str = None,
             S3_table_filename: str = None,
             remove_temporary_files: bool = None):
@@ -47,10 +86,11 @@ class S3Source(DataSource):
 
         S3_table = pd.read_csv(S3_table_filename)
 
-        bucket = boto3.resource("s3").Bucket(bucket_name)
+        bucket = boto3.resource("s3", region_name=region_name).Bucket(bucket_name)
 
         self.bucket_name = bucket_name
         self.bucket = bucket
+        self.region_name = region_name
         self.temporary_directory = temporary_directory
         self.S3_table = S3_table
         self.filenames = {}
