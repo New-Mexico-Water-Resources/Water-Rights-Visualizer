@@ -1,5 +1,5 @@
 const path = require('path');
-const port = 80;
+const port = 8000;
 const server_directory = __dirname;
 const project_directory = path.dirname(__dirname);
 const run_directory_base = path.join(project_directory, 'runs');

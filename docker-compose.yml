@@ -6,5 +6,5 @@ services:
     container_name: water-rights-visualizer
     restart: always
     ports:
-      - "80:80"
-    command: "npm run server"
+      - "8000:8000"
+    command: "npm run google"
