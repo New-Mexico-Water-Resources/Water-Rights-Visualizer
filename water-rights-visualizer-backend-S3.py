@@ -57,16 +57,6 @@ def main(argv=sys.argv):
     s3 = session.resource("s3")
     output_bucket = s3.Bucket(output_bucket_name)
 
-    # FIXME need to consolidate status update between web UI status file, desktop UI Tk text box, and console logger
-
-    # water_rights_visualizer(
-    #     boundary_filename=geojson_filename,
-    #     input_datastore=input_datastore,
-    #     output_directory=output_directory,
-    #     start_year=start_year,
-    #     end_year=end_year,
-    # )
-
     start_year = int(start_year)
     end_year = int(end_year)
     years = range(start_year, end_year + 1)
