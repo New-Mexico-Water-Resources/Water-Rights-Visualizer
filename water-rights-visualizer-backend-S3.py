@@ -1,10 +1,11 @@
 from os import makedirs
 import shutil
 import sys
-from os.path import join, exists
+from os.path import join, exists, basename
 import logging
 from time import sleep
 import json
+import boto3
 
 from water_rights_visualizer import water_rights_visualizer
 from water_rights_visualizer.S3_source import S3Source
@@ -13,7 +14,8 @@ import cl
 
 logger = logging.getLogger(__name__)
 
-bucket_name = "jpl-nmw-dev-inputs"
+input_bucket_name = "jpl-nmw-dev-inputs"
+output_bucket_name = "jpl-nmw-dev-outputs"
 
 def write_status(status_filename: str, message: str):
     logger.info(message)
@@ -46,20 +48,49 @@ def main(argv=sys.argv):
     output_directory = join(working_directory, "output")
 
     input_datastore = S3Source(
-        bucket_name=bucket_name,
+        bucket_name=input_bucket_name,
         temporary_directory=temporary_directory, 
         remove_temporary_files=False
     )
 
+    session = boto3.Session()
+    s3 = session.resource("s3")
+    output_bucket = s3.Bucket(output_bucket_name)
+
     # FIXME need to consolidate status update between web UI status file, desktop UI Tk text box, and console logger
 
-    water_rights_visualizer(
-        boundary_filename=geojson_filename,
-        input_datastore=input_datastore,
-        output_directory=output_directory,
-        start_year=start_year,
-        end_year=end_year,
-    )
+    # water_rights_visualizer(
+    #     boundary_filename=geojson_filename,
+    #     input_datastore=input_datastore,
+    #     output_directory=output_directory,
+    #     start_year=start_year,
+    #     end_year=end_year,
+    # )
+
+    start_year = int(start_year)
+    end_year = int(end_year)
+    years = range(start_year, end_year + 1)
+
+    for year in years:
+        write_status(status_filename, f"processing {name} for {year}")
+
+        water_rights_visualizer(
+            boundary_filename=geojson_filename,
+            input_datastore=input_datastore,
+            output_directory=output_directory,
+            start_year=year,
+            end_year=year,
+        )
+
+        output_filename = join(output_directory, "figures", f"{year}_{name}.png")
+
+        if not exists(output_filename):
+            write_status(status_filename, f"problem producing {name} for {year}")
+            continue
+
+        # TODO upload output file to S3 bucket
+        output_filename_base = basename(output_filename)
+        output_bucket.upload_file(output_filename, output_filename_base)
 
     write_status(status_filename, f"completed {name} from {start_year} to {end_year}")
 
