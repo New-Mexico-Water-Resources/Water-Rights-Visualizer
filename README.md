@@ -57,7 +57,14 @@ make install-mambaforge-amazon-linux-2
 
 Exit your shell and log back in. There should now be `(base)` in the prompt.
 
+Install `docker` and `docker-compose`
+```
+make install-docker-amazon-linux-2
+```
 
+## Credentials
+
+Insert `google_drive_key.txt` and `client_secrets.json` into `Water-Rights-Visualizer/water_rights_visualizer`.
 
 ## Installation
 

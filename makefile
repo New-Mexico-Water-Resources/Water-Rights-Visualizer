@@ -16,6 +16,7 @@ install-mambaforge-amazon-linux-2:
 		$$HOME/mambaforge/condabin/conda init; \
 		$$HOME/mambaforge/condabin/mamba init; \
 		conda config --set auto_activate_base false; \
+		rm ./Mambaforge-$$(uname)-$$(uname -m).sh; \
 	else \
 		echo "Mambaforge is already installed."; \
 	fi
