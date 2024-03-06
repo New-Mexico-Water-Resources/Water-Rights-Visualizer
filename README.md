@@ -32,7 +32,7 @@ You should see the base environment name `(base)` when running a shell with cond
 
 These are the instructions for setting up an Amazon Linux 2 EC2 instance from scratch.
 
-Install `git`
+Install `git`:
 ```
 yum install git
 ```
@@ -40,26 +40,31 @@ yum install git
 Add an SSH key to GitHub
 https://docs.github.com/en/authentication/connecting-to-github-with-ssh/checking-for-existing-ssh-keys
 
-Clone the `Water-Rights-Visualizer` repository
+Clone the `Water-Rights-Visualizer` repository:
 ```
 git clone git@github.com:New-Mexico-Water-Resources/Water-Rights-Visualizer.git
 ```
 
-Enter the repository directory
+Enter the repository directory:
 ```
 cd Water-Rights-Visualizer
 ```
 
-Install `mambaforge`
+Install `mambaforge`:
 ```
 make install-mambaforge-amazon-linux-2
 ```
 
 Exit your shell and log back in. There should now be `(base)` in the prompt.
 
-Install `docker` and `docker-compose`
+Install `docker` and `docker-compose`:
 ```
 make install-docker-amazon-linux-2
+```
+
+Give `ec2-user` write permissions to the `/data` directory:
+```
+sudo setfacl -m u:ec2-user:rwx /data
 ```
 
 ## Credentials
