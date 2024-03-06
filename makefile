@@ -28,7 +28,7 @@ else
 	-conda deactivate; conda install -y -c conda-forge "mamba>=0.23"
 endif
 
-install-docker:
+install-docker-amazon-linux-2:
 	@echo "Updating existing packages"
 	sudo yum update -y
 	@echo "Installing Docker"
