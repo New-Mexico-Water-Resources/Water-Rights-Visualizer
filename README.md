@@ -28,6 +28,27 @@ The Water Rights Visualizer is designed to run in a Python 3 [`conda`](https://d
 
 You should see the base environment name `(base)` when running a shell with conda active.
 
+## Amazon Linux 2
+
+Install `git`
+```
+yum install git
+```
+
+Add an SSH key to GitHub
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/checking-for-existing-ssh-keys
+
+Clone this repository
+```
+git clone git@github.com:New-Mexico-Water-Resources/Water-Rights-Visualizer.git
+```
+
+```
+cd Water-Rights-Visualizer
+```
+
+
+
 ## Installation
 
 Use `make install` to produce the `water_rights` environment:

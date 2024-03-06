@@ -8,6 +8,18 @@ default:
 version:
 	$(info New Mexico Water Rights Visualizer version ${VERSION})
 
+install-mambaforge-amazon-linux-2:
+	@if [ ! -d "$$HOME/mambaforge" ]; then \
+		echo "Mambaforge not found. Installing..."; \
+		curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$$(uname)-$$(uname -m).sh; \
+		sh ./Mambaforge-$$(uname)-$$(uname -m).sh -b; \
+		$$HOME/mambaforge/condabin/conda init; \
+		$$HOME/mambaforge/condabin/mamba init; \
+		conda config --set auto_activate_base false; \
+	else \
+		echo "Mambaforge is already installed."; \
+	fi
+
 mamba:
 ifeq ($(word 1,$(shell mamba --version)),mamba)
 	@echo "mamba already installed"
