@@ -90,7 +90,7 @@ router.post('/start_run', (req, res) => {
     var pipeline_script;
     
     if (data_source == "demo") {
-        pipeline_script = path.join(project_directory, "water-rights-visualizer-backend.py"); 
+        pipeline_script = path.join(project_directory, "water-rights-visualizer-backend-demo.py"); 
     } else if (data_source == "S3") {
         pipeline_script = path.join(project_directory, "water-rights-visualizer-backend-S3.py"); 
     } else if (data_source == "google") {

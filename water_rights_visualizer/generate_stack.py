@@ -177,17 +177,17 @@ def generate_stack(
         makedirs(stack_directory)
 
     logger.info(f"writing stack: {stack_filename}")
-    with h5py.File(stack_filename, "w") as stack_file:
-        stack_file["ET"] = ET_stack
-        stack_file["PET"] = PET_stack
+    # with h5py.File(stack_filename, "w") as stack_file:
+    #     stack_file["ET"] = ET_stack
+    #     stack_file["PET"] = PET_stack
 
-        stack_file["affine"] = (
-            affine.a,
-            affine.b,
-            affine.c,
-            affine.d,
-            affine.e,
-            affine.f
-        )
+    #     stack_file["affine"] = (
+    #         affine.a,
+    #         affine.b,
+    #         affine.c,
+    #         affine.d,
+    #         affine.e,
+    #         affine.f
+    #     )
 
     return ET_stack, PET_stack, affine

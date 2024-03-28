@@ -216,5 +216,7 @@ def process_year(
 
         # continue
 
+    # FIXME delete the stack file
+
     logger.info(f"finished processing year {year}")
     return monthly_means_df
