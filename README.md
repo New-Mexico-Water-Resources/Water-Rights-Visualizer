@@ -45,6 +45,16 @@ Clone the `Water-Rights-Visualizer` repository:
 git clone git@github.com:New-Mexico-Water-Resources/Water-Rights-Visualizer.git
 ```
 
+Enter the repository directory:
+```
+cd Water-Rights-Visualizer
+```
+
+Install `mambaforge`:
+```
+make install-mambaforge-amazon-linux-2023
+```
+
 ## Amazon Linux 2
 
 These are the instructions for setting up an Amazon Linux 2 EC2 instance from scratch.
