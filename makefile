@@ -8,6 +8,9 @@ default:
 version:
 	$(info New Mexico Water Rights Visualizer version ${VERSION})
 
+install-git-amazon-linux:
+	sudo yum install -y git
+
 install-mambaforge-amazon-linux:
 	@if [ ! -d "$$HOME/mambaforge" ]; then \
 		echo "Mambaforge not found. Installing..."; \
@@ -21,18 +24,19 @@ install-mambaforge-amazon-linux:
 		echo "Mambaforge is already installed."; \
 	fi
 
-install-mambaforge-amazon-linux-2:
-	make install-mambaforge-amazon-linux
-
-install-mambaforge-amazon-linux-2023:
-	make install-mambaforge-amazon-linux
-
 mamba:
 ifeq ($(word 1,$(shell mamba --version)),mamba)
 	@echo "mamba already installed"
 else
 	-conda deactivate; conda install -y -c conda-forge "mamba>=0.23"
 endif
+
+setup-scrollback-buffer:
+	cp .screenrc ~
+
+setup-data-directory-amazon-linux:
+	sudo mkdir /data
+	sudo setfacl -m u:ec2-user:rwx /data
 
 install-docker-amazon-linux:
 	@echo "Updating existing packages"
@@ -47,12 +51,6 @@ install-docker-amazon-linux:
 	sudo curl -L https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
 	sudo chmod +x /usr/local/bin/docker-compose
 	@echo "Docker and Docker Compose installed successfully"
-
-install-docker-amazon-linux-2:
-	make install-docker-amazon-linux
-
-install-docker-amazon-linux-2023:
-	make install-docker-amazon-linux
 
 create-blank-env:
 	$(info creating blank water_rights environment)
@@ -109,3 +107,10 @@ reinstall-soft:
 docker-build:
 	-cp google_drive_key.txt water_rights_visualizer
 	docker build -t water-rights-visualizer .
+
+setup-amazon-linux:
+	make install-git-amazon-linux
+	make install-mambaforge-amazon-linux
+	make install-docker-amazon-linux
+	make setup-scrollback-buffer
+	setup-data-directory-amazon-linux
