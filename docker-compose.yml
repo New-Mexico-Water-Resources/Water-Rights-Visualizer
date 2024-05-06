@@ -10,5 +10,5 @@ services:
       - "8000:8000"
     volumes:
       - type: bind
-        source: /home/ec2-user/Water-Rights-Visualizer
+        source: .
         target: /app
