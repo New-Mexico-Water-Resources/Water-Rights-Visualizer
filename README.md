@@ -61,6 +61,13 @@ Install `mambaforge`:
 make install-mambaforge-amazon-linux-2023
 ```
 
+Exit your shell and log back in. There should now be `(base)` in the prompt.
+
+Install `docker` and `docker-compose`:
+```
+make install-docker-amazon-linux-2023
+```
+
 ## Amazon Linux 2
 
 These are the instructions for setting up an Amazon Linux 2 EC2 instance from scratch.

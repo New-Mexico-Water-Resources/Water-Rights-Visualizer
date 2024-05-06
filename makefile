@@ -34,7 +34,7 @@ else
 	-conda deactivate; conda install -y -c conda-forge "mamba>=0.23"
 endif
 
-install-docker-amazon-linux-2:
+install-docker-amazon-linux:
 	@echo "Updating existing packages"
 	sudo yum update -y
 	@echo "Installing Docker"
@@ -47,6 +47,12 @@ install-docker-amazon-linux-2:
 	sudo curl -L https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
 	sudo chmod +x /usr/local/bin/docker-compose
 	@echo "Docker and Docker Compose installed successfully"
+
+install-docker-amazon-linux-2:
+	make install-docker-amazon-linux
+
+install-docker-amazon-linux-2023:
+	make install-docker-amazon-linux
 
 create-blank-env:
 	$(info creating blank water_rights environment)
