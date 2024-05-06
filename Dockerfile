@@ -30,7 +30,7 @@ WORKDIR ${APP_ROOT}
 # ADD . ${APP_ROOT}
 
 # RUN mamba env update -n base -f /app/water_rights.yml
-RUN python setup.py install
-RUN npm install
+# RUN python setup.py install
+# RUN npm install
 
-EXPOSE 80
+# EXPOSE 80
