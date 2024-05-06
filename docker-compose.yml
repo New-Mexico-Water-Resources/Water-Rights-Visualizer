@@ -8,5 +8,5 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - /home/ec2-user/Water-Rights-Visualizer:/app
     command: "npm run ${WATER_RIGHTS_SOURCE:-S3}"
