@@ -32,9 +32,15 @@ You should see the base environment name `(base)` when running a shell with cond
 
 These are the instructions for setting up an Amazon Linux 2023 EC2 instance from scratch.
 
+Install `make`:
+```
+sudo yum update
+sudo yum install -y make
+```
+
 Install `git`:
 ```
-sudo yum install git
+sudo yum install -y git
 ```
 
 Add an SSH key to GitHub
