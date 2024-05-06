@@ -28,13 +28,30 @@ The Water Rights Visualizer is designed to run in a Python 3 [`conda`](https://d
 
 You should see the base environment name `(base)` when running a shell with conda active.
 
+## Amazon Linux 2023
+
+These are the instructions for setting up an Amazon Linux 2023 EC2 instance from scratch.
+
+Install `git`:
+```
+sudo yum install git
+```
+
+Add an SSH key to GitHub
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/checking-for-existing-ssh-keys
+
+Clone the `Water-Rights-Visualizer` repository:
+```
+git clone git@github.com:New-Mexico-Water-Resources/Water-Rights-Visualizer.git
+```
+
 ## Amazon Linux 2
 
 These are the instructions for setting up an Amazon Linux 2 EC2 instance from scratch.
 
 Install `git`:
 ```
-yum install git
+sudo yum install git
 ```
 
 Add an SSH key to GitHub
