@@ -68,6 +68,12 @@ Install `docker` and `docker-compose`:
 make install-docker-amazon-linux-2023
 ```
 
+Give `ec2-user` write permissions to the `/data` directory:
+```
+sudo mkdir /data
+sudo setfacl -m u:ec2-user:rwx /data
+```
+
 ## Amazon Linux 2
 
 These are the instructions for setting up an Amazon Linux 2 EC2 instance from scratch.
