@@ -25,9 +25,9 @@ RUN pip install area astropy affine boto3 h5py geojson geopandas jupyter matplot
 FROM python as app
 
 # install app
-RUN mkdir ${APP_ROOT}
+# RUN mkdir ${APP_ROOT}
 WORKDIR ${APP_ROOT}
-ADD . ${APP_ROOT}
+# ADD . ${APP_ROOT}
 
 # RUN mamba env update -n base -f /app/water_rights.yml
 RUN python setup.py install

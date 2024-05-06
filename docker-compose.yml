@@ -7,4 +7,6 @@ services:
     restart: always
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
     command: "npm run ${WATER_RIGHTS_SOURCE:-S3}"
