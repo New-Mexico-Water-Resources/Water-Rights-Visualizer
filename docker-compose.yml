@@ -10,5 +10,5 @@ services:
       - "8000:8000"
     volumes:
       - type: bind
-        source: ${WATER_RIGHTS_DATA:-./data}
-        target: /app/data
+        source: ${WATER_RIGHTS_DATA:-~/data}
+        target: /data
