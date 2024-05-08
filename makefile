@@ -35,8 +35,8 @@ setup-scrollback-buffer:
 	cp .screenrc ~
 
 setup-data-directory-amazon-linux:
-	sudo mkdir /data
-	sudo setfacl -m u:ec2-user:rwx /data
+	sudo mkdir ~/data
+	sudo setfacl -m u:ec2-user:rwx ~/data
 
 install-docker-amazon-linux:
 	@echo "Updating existing packages"

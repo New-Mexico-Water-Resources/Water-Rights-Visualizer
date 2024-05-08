@@ -11,4 +11,4 @@ services:
     volumes:
       - type: bind
         source: ${WATER_RIGHTS_DATA:-~/data}
-        target: /data
+        target: ~/data

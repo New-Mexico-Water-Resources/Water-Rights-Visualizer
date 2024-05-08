@@ -38,7 +38,8 @@ sudo yum update
 sudo yum install -y make
 ```
 
-Run the `setup-amazon-linux` make target:
+Run the `setup-amazon-linux` make target to install the `git`, `mamba`, and `docker` tools:
+
 ```
 make setup-amazon-linux
 ```
