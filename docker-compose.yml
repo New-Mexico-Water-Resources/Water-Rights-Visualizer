@@ -10,5 +10,5 @@ services:
       - "8000:8000"
     volumes:
       - type: bind
-        source: ${HOME}/data
-        target: ${HOME}/data
+        source: ${HOST_DATA_DIRECTORY:-${HOME}/data}
+        target: ${CONTAINER_DATA_DIRECTORY:-${HOME}/data}
