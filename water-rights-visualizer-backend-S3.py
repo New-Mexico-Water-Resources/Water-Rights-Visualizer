@@ -82,6 +82,10 @@ def main(argv=sys.argv):
         output_filename_base = basename(output_filename)
         output_bucket.upload_file(output_filename, output_filename_base)
 
+        #todo:
+        #pull out csv file that corresponds to png
+        #delete run directory of all tiff files for this current year
+        
     write_status(status_filename, f"completed {name} from {start_year} to {end_year}")
 
 if __name__ == "__main__":
