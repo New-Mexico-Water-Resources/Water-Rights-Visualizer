@@ -14,6 +14,7 @@ import cl
 
 logger = logging.getLogger(__name__)
 
+# FIXME input and output bucket names need to be parameterized
 input_bucket_name = "jpl-nmw-dev-inputs"
 output_bucket_name = "jpl-nmw-dev-outputs"
 
@@ -47,6 +48,10 @@ def main(argv=sys.argv):
     temporary_directory = join(working_directory, "temp")
     output_directory = join(working_directory, "output")
 
+    # FIXME assign figure directory and monthly means directory to directories outside of the temporary run directory
+    figure_directory = None
+    monthly_means_directory = None
+
     input_datastore = S3Source(
         bucket_name=input_bucket_name,
         temporary_directory=temporary_directory, 
@@ -68,6 +73,8 @@ def main(argv=sys.argv):
             boundary_filename=geojson_filename,
             input_datastore=input_datastore,
             output_directory=output_directory,
+            figure_directory=figure_directory,
+            monthly_means_directory=monthly_means_directory,
             start_year=year,
             end_year=year,
         )
