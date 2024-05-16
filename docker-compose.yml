@@ -10,5 +10,5 @@ services:
       - "8000:8000"
     volumes:
       - type: bind
-        source: ${WATER_RIGHTS_DATA:-~/data}
-        target: ~/data
+        source: /home/ec2-user/data
+        target: /root/data
