@@ -52,7 +52,7 @@ def water_rights(
         status_filename: str = None,
         debug: bool = False):
     ROI_base = splitext(basename(ROI))[0]
-    DEFAULT_FIGURE_DIRECTORY = Path(f"{output_directory}/figures")
+    DEFAULT_FIGURE_DIRECTORY = Path(f"{output_directory}/figures/{ROI_base}")
     DEFAULT_SUBSET_DIRECTORY = Path(f"{output_directory}/subset/{ROI_base}")
     DEFAULT_NAN_SUBSET_DIRECTORY = Path(
         f"{output_directory}/nan_subsets/{ROI_base}")
