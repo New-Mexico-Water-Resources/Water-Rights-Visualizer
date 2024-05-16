@@ -34,6 +34,8 @@ router.get('/download', function(req, res) {
         throw err;
     });
 
+    // FIXME the `download` end-point is producing an empty zip-file when tested on AWS
+
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename=${name}.zip`);
 
@@ -46,6 +48,8 @@ router.get('/download', function(req, res) {
         console.log(`Adding file: ${file}`);
         archive.file(file, { name: path.basename(file) });
     });
+
+    // FIXME the zip-file also needs to contain the CSV files produced for each year
 
     archive.finalize();
 });
