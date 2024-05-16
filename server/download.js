@@ -34,16 +34,28 @@ router.get('/download', function(req, res) {
         throw err;
     });
 
+    // FIXME the `download` end-point is producing an empty zip-file when tested on AWS
+
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename=${name}.zip`);
 
     archive.pipe(res);
 
-    directory = path.join(run_directory_base, name, "output", "figures");
-    let files = glob.sync(path.join(directory, "*.png"));
+    let figure_directory = path.join(run_directory_base, name, "output", "figures", name);
+    let figure_files = glob.sync(path.join(figure_directory, "*.png"));
 
-    files.forEach(file => {
-        console.log(`Adding file: ${file}`);
+    figure_files.forEach(file => {
+        console.log(`Adding figure file: ${file}`);
+        archive.file(file, { name: path.basename(file) });
+    });
+
+    // FIXME the zip-file also needs to contain the CSV files produced for each year
+
+    let CSV_directory = path.join(run_directory_base, name, "output", "monthly_means", name);
+    let CSV_files = glob.sync(path.join(CSV_directory, "*.csv"));
+
+    CSV_files.forEach(file => {
+        console.log(`Adding CSV file: ${file}`);
         archive.file(file, { name: path.basename(file) });
     });
 

@@ -8,7 +8,10 @@ default:
 version:
 	$(info New Mexico Water Rights Visualizer version ${VERSION})
 
-install-mambaforge-amazon-linux-2:
+install-git-amazon-linux:
+	sudo yum install -y git
+
+install-mambaforge-amazon-linux:
 	@if [ ! -d "$$HOME/mambaforge" ]; then \
 		echo "Mambaforge not found. Installing..."; \
 		curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$$(uname)-$$(uname -m).sh; \
@@ -28,7 +31,14 @@ else
 	-conda deactivate; conda install -y -c conda-forge "mamba>=0.23"
 endif
 
-install-docker-amazon-linux-2:
+setup-scrollback-buffer:
+	cp .screenrc ~
+
+setup-data-directory-amazon-linux:
+	sudo mkdir ~/data
+	sudo setfacl -m u:ec2-user:rwx ~/data
+
+install-docker-amazon-linux:
 	@echo "Updating existing packages"
 	sudo yum update -y
 	@echo "Installing Docker"
@@ -97,3 +107,10 @@ reinstall-soft:
 docker-build:
 	-cp google_drive_key.txt water_rights_visualizer
 	docker build -t water-rights-visualizer .
+
+setup-amazon-linux:
+	make install-git-amazon-linux
+	make install-mambaforge-amazon-linux
+	make install-docker-amazon-linux
+	make setup-scrollback-buffer
+	setup-data-directory-amazon-linux

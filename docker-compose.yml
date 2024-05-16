@@ -5,6 +5,10 @@ services:
     build: .
     container_name: water-rights-visualizer
     restart: always
+    command: "npm run ${WATER_RIGHTS_SOURCE:-S3}"
     ports:
       - "8000:8000"
-    command: "npm run ${WATER_RIGHTS_SOURCE}"
+    volumes:
+      - type: bind
+        source: ${HOST_DATA_DIRECTORY:-${HOME}/data}
+        target: ${CONTAINER_DATA_DIRECTORY:-${HOME}/data}

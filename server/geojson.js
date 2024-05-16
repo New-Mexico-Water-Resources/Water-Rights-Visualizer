@@ -9,7 +9,7 @@ const run_directory_base = constants.run_directory_base;
 router.get('/geojson', (req, res) => {
   var name = req.query.name;
   var run_directory = path.join(run_directory_base, name);
-  var geojson_filename = path.join(run_directory, "target.geojson");
+  var geojson_filename = path.join(run_directory, `${name}.geojson`);
   console.log(`reading GeoJSON from ${geojson_filename}`);
   var geojson = fs.readFileSync(geojson_filename, 'utf8');
   console.log("GeoJSON:");

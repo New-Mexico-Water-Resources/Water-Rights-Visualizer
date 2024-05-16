@@ -48,7 +48,7 @@ def main(argv=sys.argv):
 
             continue
 
-        image_directory = join(working_directory, "output", "figures")
+        image_directory = join(working_directory, "output", "figures", name)
         makedirs(image_directory, exist_ok=True)
         image_filename_destination = join(image_directory, f"{year}_{name}.png")
         shutil.copy(image_filename_source, image_filename_destination)

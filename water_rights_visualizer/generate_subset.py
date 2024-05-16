@@ -84,12 +84,15 @@ def generate_subset(
 
     if exists(subset_filename):
         logger.info(f"loading existing {cl.name(variable_name)} subset file: {cl.file(subset_filename)}")
+        subset = Raster.open(subset_filename)
 
-        with rasterio.open(subset_filename, "r") as f:
-            subset = f.read(1)
-            affine = f.transform
+        return subset
 
-        return subset, affine
+        # with rasterio.open(subset_filename, "r") as f:
+        #     subset = f.read(1)
+        #     affine = f.transform
+
+        # return subset, affine
 
     tiles = select_tiles(ROI_latlon)
     
