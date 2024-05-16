@@ -72,15 +72,24 @@ def main(argv=sys.argv):
             end_year=year,
         )
 
-        output_filename = join(output_directory, "figures", f"{year}_{name}.png")
+        figure_output_filename = join(output_directory, "figures", name, f"{year}_{name}.png")
 
-        if not exists(output_filename):
-            write_status(status_filename, f"problem producing {name} for {year}")
+        if not exists(figure_output_filename):
+            write_status(status_filename, f"problem producing figure for {name} for {year}")
             continue
 
         # TODO upload output file to S3 bucket
-        output_filename_base = basename(output_filename)
-        output_bucket.upload_file(output_filename, output_filename_base)
+        figure_output_filename_base = basename(figure_output_filename)
+        output_bucket.upload_file(figure_output_filename, figure_output_filename_base)
+
+        CSV_output_filename = join(output_directory, "monthly_means", name, f"{year}_monthly_means.csv")
+
+        if not exists(CSV_output_filename):
+            write_status(status_filename, f"problem producing CSV for {name} for {year}")
+            continue
+
+        CSV_output_filename_base = basename(CSV_output_filename)
+        output_bucket.upload_file(CSV_output_filename, CSV_output_filename_base)
 
     write_status(status_filename, f"completed {name} from {start_year} to {end_year}")
 
