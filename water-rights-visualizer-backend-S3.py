@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 # FIXME input and output bucket names need to be parameterized
 input_bucket_name = "jpl-nmw-dev-inputs"
 output_bucket_name = "jpl-nmw-dev-outputs"
+delete_temp_files = True
 
 def write_status(status_filename: str, message: str):
     logger.info(message)
@@ -55,7 +56,7 @@ def main(argv=sys.argv):
     input_datastore = S3Source(
         bucket_name=input_bucket_name,
         temporary_directory=temporary_directory, 
-        remove_temporary_files=False
+        remove_temporary_files=delete_temp_files
     )
 
     session = boto3.Session()
@@ -98,6 +99,12 @@ def main(argv=sys.argv):
         CSV_output_filename_base = basename(CSV_output_filename)
         output_bucket.upload_file(CSV_output_filename, CSV_output_filename_base)
 
+        #todo:
+        #pull out csv file that corresponds to png and store somewhere it will not get deleted
+        #maybe something like /data/saved_runs/ ?
+        #png found in: /home/ec2-user/data/water_rights_runs/Smith/output/figures
+        #csv found in: /home/ec2-user/data/water_rights_runs/Smith/output/monthly_means        
+        
     write_status(status_filename, f"completed {name} from {start_year} to {end_year}")
 
 if __name__ == "__main__":
