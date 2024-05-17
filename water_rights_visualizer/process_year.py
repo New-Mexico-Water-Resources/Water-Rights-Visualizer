@@ -163,11 +163,6 @@ def process_year(
 
     logger.info(f"generating figure for year {cl.time(year)} ROI {cl.place(ROI_name)}")
 
-#    figure_output_directory = join(figure_directory, ROI_name)
-#
-#    if not exists(figure_output_directory):
-#        makedirs(figure_output_directory)
-
     figure_filename = join(figure_directory, f"{year}_{ROI_name}.png")
 
     if exists(figure_filename):
