@@ -6,6 +6,7 @@ from pathlib import Path
 from tkinter import Tk, Text
 from tkinter.scrolledtext import ScrolledText
 
+import time
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -103,7 +104,8 @@ def water_rights(
         target_CRS = WGS84
 
     str_time = datetime.now().strftime("%H%M")
-
+    start_time = time.time() #epoch time in seconds
+    
     write_status(
         message=f"Start Time:{str_time}\n",
         status_filename=status_filename,
@@ -143,6 +145,8 @@ def water_rights(
     print(years_x)
 
     for i, year in enumerate(years_x):
+        year_start_time = time.time()
+        
         monthly_means_df = process_year(
             year=year,
             dates_available=dates_available,
@@ -176,3 +180,31 @@ def water_rights(
         )
 
         monthly_means.append(monthly_means_df)
+
+        year_end_time = time.time()
+        total_year_time = (year_end_time - year_start_time)/60
+        
+        write_status(
+            message=f"Process Year Run Time: {total_year_time} minutes\n\n",
+            status_filename=status_filename,
+            text_panel=text_panel,
+            root=root
+        )
+        
+    str_time = datetime.now().strftime("%H%M")
+    end_time = time.time()
+    
+    write_status(
+        message=f"End Time:{str_time}\n",
+        status_filename=status_filename,
+        text_panel=text_panel,
+        root=root
+    )
+    
+    total_time = (end_time - start_time)/60
+    write_status(
+        message=f"Total Run Time: {total_time} minutes\n\n",
+        status_filename=status_filename,
+        text_panel=text_panel,
+        root=root
+    )

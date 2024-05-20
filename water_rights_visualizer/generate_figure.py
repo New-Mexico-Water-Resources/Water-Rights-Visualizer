@@ -155,7 +155,7 @@ def generate_figure(
     # plt.figtext(0.93, 0.001, caption2, wrap=True, verticalalignment='bottom', horizontalalignment='right', fontsize=5)
     plt.tight_layout()
 
-    end_time = datetime.now().strftime("%H:%M")
+    end_time = datetime.now().strftime("%H%M")
 
     write_status(
         message=f"generate_figure end time:{end_time}\n",
