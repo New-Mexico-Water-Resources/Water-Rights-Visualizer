@@ -1,6 +1,7 @@
 from datetime import datetime, date
 from logging import getLogger
-from os.path import join, exists
+from os.path import join, exists, dirname
+from os import makedirs
 from tkinter import Text, Tk
 from tkinter.scrolledtext import ScrolledText
 
@@ -154,23 +155,34 @@ def generate_figure(
     # plt.figtext(0.93, 0.001, caption2, wrap=True, verticalalignment='bottom', horizontalalignment='right', fontsize=5)
     plt.tight_layout()
 
+    end_time = datetime.now().strftime("%H:%M")
+
+    write_status(
+        message=f"generate_figure end time:{end_time}\n",
+        status_filename=status_filename,
+        text_panel=text_panel,
+        root=root
+    )    
+
+    #check to make sure the subdir exists first before writing the file(think matlab savfig does not create it?)
+    subdir = dirname(figure_filename)
+    if not exists(subdir):
+        write_status(
+            message=f"Creating subdir {subdir}\n",
+            status_filename=status_filename,
+            text_panel=text_panel,
+            root=root
+        )    
+        makedirs(subdir)
+    
     # Display messages in the text panel
     write_status(
-        message=f"Figure saved\n",
+        message=f"Saving figure to {figure_filename}\n",
         status_filename=status_filename,
         text_panel=text_panel,
         root=root
-    )
-
-    end_time = datetime.now().strftime("%H%M")
-
-    write_status(
-        message=f"End Time:{end_time}\n",
-        status_filename=status_filename,
-        text_panel=text_panel,
-        root=root
-    )
-
+    )    
+    
     # Save the figure to a file
     plt.savefig(figure_filename, dpi=300)
 
