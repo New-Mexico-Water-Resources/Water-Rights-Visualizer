@@ -162,14 +162,6 @@ def generate_figure(
         status_filename=status_filename,
         text_panel=text_panel,
         root=root
-    )
-    
-    # Display messages in the text panel
-    write_status(
-        message=f"Saving figure to {figure_filename}\n",
-        status_filename=status_filename,
-        text_panel=text_panel,
-        root=root
     )    
 
     #check to make sure the subdir exists first before writing the file(think matlab savfig does not create it?)
@@ -182,7 +174,15 @@ def generate_figure(
             root=root
         )    
         makedirs(subdir)
-        
+    
+    # Display messages in the text panel
+    write_status(
+        message=f"Saving figure to {figure_filename}\n",
+        status_filename=status_filename,
+        text_panel=text_panel,
+        root=root
+    )    
+    
     # Save the figure to a file
     plt.savefig(figure_filename, dpi=300)
 
