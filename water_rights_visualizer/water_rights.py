@@ -104,7 +104,6 @@ def water_rights(
         target_CRS = WGS84
 
     str_time = datetime.now().strftime("%H%M")
-    start_time = time.time() #epoch time in seconds
     
     write_status(
         message=f"Start Time:{str_time}\n",
@@ -191,19 +190,10 @@ def water_rights(
             root=root
         )
         
-    str_time = datetime.now().strftime("%H%M")
-    end_time = time.time()
+    str_time = datetime.now().strftime("%H%M")    
     
     write_status(
         message=f"End Time:{str_time}\n",
-        status_filename=status_filename,
-        text_panel=text_panel,
-        root=root
-    )
-    
-    total_time = (end_time - start_time)/60
-    write_status(
-        message=f"Total Run Time: {total_time} minutes\n\n",
         status_filename=status_filename,
         text_panel=text_panel,
         root=root

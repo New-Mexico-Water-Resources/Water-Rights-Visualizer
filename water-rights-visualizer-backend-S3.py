@@ -3,7 +3,7 @@ import shutil
 import sys
 from os.path import join, exists, basename
 import logging
-from time import sleep
+import time
 import json
 import boto3
 
@@ -67,6 +67,8 @@ def main(argv=sys.argv):
     end_year = int(end_year)
     years = range(start_year, end_year + 1)
 
+    start_time = time.time()
+    
     for year in years:
         write_status(status_filename, f"processing {name} for {year}")
 
@@ -106,6 +108,10 @@ def main(argv=sys.argv):
         #csv found in: /home/ec2-user/data/water_rights_runs/Smith/output/monthly_means        
         
     write_status(status_filename, f"completed {name} from {start_year} to {end_year}")
-
+    
+    end_time = time.time()
+    total_mins = (end_time - start_time)/60                  
+    write_status(status_filename, f"Total Run Time: {total_mins} minutes\n\n")
+                  
 if __name__ == "__main__":
     sys.exit(main(argv=sys.argv))
