@@ -111,7 +111,7 @@ def main(argv=sys.argv):
     
     end_time = time.time()
     total_mins = (end_time - start_time)/60                  
-    write_status(status_filename, f"Total Run Time: {total_mins} minutes\n\n")
+    logger.info(f"Total Run Time: {total_mins} minutes\n\n")
                   
 if __name__ == "__main__":
     sys.exit(main(argv=sys.argv))
