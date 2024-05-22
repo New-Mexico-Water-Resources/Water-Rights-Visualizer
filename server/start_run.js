@@ -100,15 +100,15 @@ router.post('/start_run', (req, res) => {
     console.log(`pipeline script: ${pipeline_script}`);
     var command = `python ${pipeline_script} ${config_filename}`;
     console.log(command);
-//    var pid = spawn_child.spawn_child(command);
-//
-//    var pid_filename = path.join(run_directory, "pid.txt");
-//    console.log(`writing process ID ${pid} to ${pid_filename}`);
-//
-//    fs.writeFile(pid_filename, pid.toString(), 'utf8', function(err){
-//        if(err) throw err;
-//        console.log(`successfully wrote process ID to ${pid_filename}`);
-//    });
+    var pid = spawn_child.spawn_child(command);
+
+    var pid_filename = path.join(run_directory, "pid.txt");
+    console.log(`writing process ID ${pid} to ${pid_filename}`);
+
+    fs.writeFile(pid_filename, pid.toString(), 'utf8', function(err){
+        if(err) throw err;
+        console.log(`successfully wrote process ID to ${pid_filename}`);
+    });
     
     var report_queue_file = path.join(run_directory_base, "report_queue.json");
     var report_queue = [];
