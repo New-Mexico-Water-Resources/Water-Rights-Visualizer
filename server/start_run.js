@@ -113,7 +113,7 @@ router.post('/start_run', (req, res) => {
     var report_queue_file = path.join(run_directory_base, "report_queue.json");
     var report_queue = [];
     
-    fs.readFile(queue_file, (err, data) => {
+    fs.readFile(report_queue_file, (err, data) => {
         if (!err && data) {
             report_queue = JSON.parse(data);
         }
