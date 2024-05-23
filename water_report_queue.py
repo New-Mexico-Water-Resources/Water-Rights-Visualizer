@@ -89,7 +89,7 @@ def check_already_running():
     my_pid, err = process.communicate()
 
     if len(my_pid.splitlines()) >0:
-        print("Water report queue is already running")
+        print("Water report queue is already running under pid {}".format(my_pid))
         exit()
 
 def main():
