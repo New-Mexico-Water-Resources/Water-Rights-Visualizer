@@ -111,12 +111,13 @@ router.post('/start_run', (req, res) => {
     });
     
     var report_queue_file = path.join(run_directory_base, "report_queue.json");
-    var report_queue = [];
     
-    fs.readFile(report_queue_file, (err, data) => {
+    fs.readFileSync(report_queue_file, (err, data) => {
+        var report_queue = [];
+        
         if (!err && data) {
             report_queue = JSON.parse(data);
-            console.log("Loaded report queue from " + data);
+            console.log("Loaded report queue with " + data);
         }
         else if(err) {
             console.log("Error loading report queue:");
@@ -125,17 +126,19 @@ router.post('/start_run', (req, res) => {
         else {
             console.log("No data in report queue file");
         }
+        
+        report_queue.push(command);
+    
+        fs.writeFile(report_queue_file, JSON.stringify(report_queue, null, 2), function(err) {
+            if(err) {
+                console.log(err);
+            } else {
+                console.log("report queue saved to " + report_queue_file);
+            }
+        });
     })
     
-    report_queue.push(command);
     
-    fs.writeFile(report_queue_file, JSON.stringify(report_queue, null, 2), function(err) {
-        if(err) {
-            console.log(err);
-        } else {
-            console.log("report queue saved to " + report_queue_file);
-        }
-    });
     
     res.status(200).send(`Queued report for ${name} from ${start_year} to ${end_year}`);
 });
