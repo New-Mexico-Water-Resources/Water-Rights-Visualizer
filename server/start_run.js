@@ -116,6 +116,14 @@ router.post('/start_run', (req, res) => {
     fs.readFile(report_queue_file, (err, data) => {
         if (!err && data) {
             report_queue = JSON.parse(data);
+            console.log("Loaded report queue from " + data);
+        }
+        else if(err) {
+            console.log("Error loading report queue:");
+            console.log(err);
+        }
+        else {
+            console.log("No data in report queue file");
         }
     })
     
