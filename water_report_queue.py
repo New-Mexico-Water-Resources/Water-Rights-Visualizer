@@ -62,8 +62,9 @@ def update_queue_file(queue_file_path, queue_data):
         queue_file.write(json.dumps(queue_data, indent=4))
         queue_file.truncate()
                 
-def check_report_queue(queue_file_path):    
-    print("Reading queue_file from {}".format(queue_file_path))
+def check_report_queue(queue_file_path):
+    now = datetime.now()
+    print("Reading queue_file from {} at {}".format(queue_file_path, str(now)))
     
     queue_data = []
     try:        
@@ -97,7 +98,7 @@ def check_report_queue(queue_file_path):
                 update_queue_file(queue_file_path, queue_data)    
             except Exception as e:
                 status_msg = str(e)
-                print("Failed to process {}\n; caused by: {}".format(record, status_msg))
+                print("Failed to process {}\n\nCaused by: {}".format(record, status_msg))
                 record['status_msg'] = status_msg
                 update_status(record, "Failed")
                 update_queue_file(queue_file_path, queue_data)
