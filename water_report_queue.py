@@ -26,12 +26,12 @@ def exec_report(record):
     pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
     res = pipe.communicate()
     
-#    print("retcode =", pipe.returncode)
-#    print("res =", res)
-#    print("stderr =", res[1])
-#    
-#    for line in res[0].decode(encoding='utf-8').split('\n'):
-#        print(line)
+    print("retcode =", pipe.returncode)
+    print("res =", res)
+    print("stderr =", res[1])
+    
+    for line in res[0].decode(encoding='utf-8').split('\n'):
+        print(line)
 
 #    out, err = proc.communicate()
 #
@@ -40,7 +40,7 @@ def exec_report(record):
 #        return output
 
 #    return "Invoked without errors: {}".format(cmd)
-    return pipe.returncode
+    return res[0]
 
 def update_status(record, state):
     now = datetime.now()
@@ -92,6 +92,7 @@ def check_report_queue(queue_file_path):
                 #update the queue file again with the final status
                 update_queue_file(queue_file_path, queue_data)    
     except FileNotFoundError as e:
+        print(e)
         print("Report Queue File not found: {}".format(queue_file_path))
     
 def main():
