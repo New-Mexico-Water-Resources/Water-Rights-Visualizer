@@ -68,6 +68,7 @@ def check_report_queue(queue_file_path):
                 update_queue_file(queue_file_path, queue_data)
 
                 status_msg = exec_report(record)
+                print("Status of invocation: {}".format(status_msg))
                 record['status_msg'] = status_msg
                 
                 status = None
