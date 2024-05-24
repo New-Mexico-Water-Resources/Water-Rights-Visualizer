@@ -80,21 +80,25 @@ def check_report_queue(queue_file_path):
             #update the queue file right away so we see the "In Progress"
             update_queue_file(queue_file_path, queue_data)
 
-            status_msg = exec_report(record)
-            print("Status of invocation: {}".format(status_msg))
-            record['status_msg'] = status_msg
+            try:
+                status_msg = exec_report(record)
+                print("Status of invocation: {}".format(status_msg))
+                record['status_msg'] = status_msg
 
-            status = None
-            if status_msg.startswith("Invoked without errors"):
-                status = "Invoked without errors"
-            else:
-                status = "Failed"
+                status = None
+                if status_msg.startswith("Invoked without errors"):
+                    status = "Invoked without errors"
+                else:
+                    status = "Failed"
 
-            update_status(record, status)
+                update_status(record, status)
 
-            #update the queue file again with the final status
-            update_queue_file(queue_file_path, queue_data)    
-    
+                #update the queue file again with the final status
+                update_queue_file(queue_file_path, queue_data)    
+            except Exception as e:
+                status_msg = e
+                update_status(record, "Failed")
+                
     
 def main():
     global DEFAULT_QUEUE
