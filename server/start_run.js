@@ -134,8 +134,8 @@ router.post('/start_run', (req, res) => {
             "ended": null,
             "invoker": "to-do",
             "base_dir": run_directory,
-            "png_dir": run_directory + "/output/figures/target",
-            "csv_dir": run_directory + "/output/monthly_nan/target",
+            "png_dir": run_directory + "/output/figures/" + name,
+            "csv_dir": run_directory + "/output/monthly_nan/" + name,
             "years_processed": years_processed
         };
         
