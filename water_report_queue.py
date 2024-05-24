@@ -96,8 +96,9 @@ def check_report_queue(queue_file_path):
                 #update the queue file again with the final status
                 update_queue_file(queue_file_path, queue_data)    
             except Exception as e:
-                print(e)
                 status_msg = e
+                print("Failed to process {} due to {}".format(record, status_msg))
+                record['status_msg'] = status_msg
                 update_status(record, "Failed")
                 update_queue_file(queue_file_path, queue_data)
     
