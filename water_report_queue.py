@@ -23,12 +23,21 @@ def exec_report(record):
     cmd = record['cmd'].split(" ")
     print("invoking cmd: {}".format(cmd))
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = proc.communicate()
+    pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+    res = pipe.communicate()
+    print("retcode =", pipe.returncode)
+    print("res =", res)
+    print("stderr =", res[1])
+    
+    for line in res[0].decode(encoding='utf-8').split('\n'):
+        print(line)
 
-    if err:
-        output = err.decode()
-        return output
+#    out, err = proc.communicate()
+#
+#    if err:
+#        output = err.decode()
+#        return output
 
     return "Invoked without errors: {}".format(cmd)
 
