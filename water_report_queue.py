@@ -23,15 +23,15 @@ def exec_report(record):
     cmd = record['cmd'].split(" ")
     print("invoking cmd: {}".format(cmd))
 
-    pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
+    pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
     res = pipe.communicate()
-    print("retcode =", pipe.returncode)
-    print("res =", res)
-    print("stderr =", res[1])
     
-    for line in res[0].decode(encoding='utf-8').split('\n'):
-        print(line)
+#    print("retcode =", pipe.returncode)
+#    print("res =", res)
+#    print("stderr =", res[1])
+#    
+#    for line in res[0].decode(encoding='utf-8').split('\n'):
+#        print(line)
 
 #    out, err = proc.communicate()
 #
@@ -39,7 +39,8 @@ def exec_report(record):
 #        output = err.decode()
 #        return output
 
-    return "Invoked without errors: {}".format(cmd)
+#    return "Invoked without errors: {}".format(cmd)
+    return pipe.returncode
 
 def update_status(record, state):
     now = datetime.now()
