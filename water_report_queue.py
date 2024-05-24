@@ -1,6 +1,7 @@
 import subprocess
 import time
 import os
+import sys
 import argparse
 import json
 import subprocess
@@ -82,16 +83,6 @@ def check_report_queue(queue_file_path):
     except FileNotFoundError as e:
         print("Report Queue File not found: {}".format(queue_file_path))
     
-def check_already_running():
-    cmd = ['pgrep -f .*python.*water_report_queue.py']
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, 
-    stderr=subprocess.PIPE)
-    my_pid, err = process.communicate()
-
-    if len(my_pid.splitlines()) >0:
-        print("Water report queue is already running under pid {}".format(my_pid))
-        exit()
-
 def main():
     global DEFAULT_QUEUE
     
@@ -100,12 +91,25 @@ def main():
     
     args = parser.parse_args()
     queue = args.queue
-    
-    check_already_running()
-    
+ 
     while True:
         check_report_queue(queue)
         time.sleep(60)        
     
 if __name__ == "__main__":
-    main()
+    pid = str(os.getpid())
+    pidfile = "/tmp/water_report_queue.pid"
+
+    if os.path.isfile(pidfile):
+        print("{} already exists, exiting".format(pidfile))
+        sys.exit()
+        
+    with open(pidfile, 'w') as f:
+        f.seek(0)
+        f.write(pid)
+        f.truncate()
+    
+    try:
+        main()
+    finally:
+        os.unlink(pidfile)
