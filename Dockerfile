@@ -29,6 +29,8 @@ RUN mkdir ${APP_ROOT}
 WORKDIR ${APP_ROOT}
 ADD . ${APP_ROOT}
 
+RUN mkdir /root/data
+
 # RUN mamba env update -n base -f /app/water_rights.yml
 RUN python setup.py install
 RUN npm install
