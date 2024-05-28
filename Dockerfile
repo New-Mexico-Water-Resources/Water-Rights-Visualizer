@@ -33,4 +33,16 @@ ADD . ${APP_ROOT}
 RUN python setup.py install
 RUN npm install
 
+#install cronjob for water_report_queue
+RUN apt-get install -y cron
+RUN /etc/init.d/cron start
+
+COPY water_report_queue_cron /etc/cron.d/water_report_queue_cron
+ 
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/water_report_queue_cron
+
+# Apply cron job
+RUN crontab /etc/cron.d/water_report_queue_cron
+
 EXPOSE 80

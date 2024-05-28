@@ -30,8 +30,8 @@ def exec_report(record):
     print("res =", res)
     print("stderr =", res[1])
     
-    for line in res[0].decode(encoding='utf-8').split('\n'):
-        print(line)
+#    for line in res[0].decode(encoding='utf-8').split('\n'):
+#        print(line)
 
 #    out, err = proc.communicate()
 #
@@ -40,7 +40,11 @@ def exec_report(record):
 #        return output
 
 #    return "Invoked without errors: {}".format(cmd)
-    return res[0]
+    
+    #todo: parse output(res[0]) and decide whether or not something blew up
+    status = "success"
+    return status
+    
 
 def update_status(record, state):
     now = datetime.now()
@@ -54,54 +58,76 @@ def update_status(record, state):
     #might have to do special stuff like retry later so put in seperate elif
     elif state == "Failed":        
         record['ended'] = str(now)
-        
-#completely overwrite the contents of the queue_file_path with queue_data
-def update_queue_file(queue_file_path, queue_data):
+
+def read_queue_file(queue_file_path):
+    queue_data = []
+    try:        
+        with open(queue_file_path, 'r') as queue_file:
+            queue_data = json.load(queue_file)            
+    except FileNotFoundError as e:
+        print("Report Queue File not found: {}".format(queue_file_path))
+        return None
+    
+    return queue_data
+
+def update_queue_file(queue_file_path, record):
+    #read the queue data in to make sure we have the latest data
+    queue_data = read_queue_file(queue_file_path)
+    
+    #loop through the queue and find the item we need to update
+    for row in queue_data:
+        if row['key'] == record['key']:
+            row = record
+            break
+            
     with open(queue_file_path, 'w') as queue_file:
         queue_file.seek(0)
         queue_file.write(json.dumps(queue_data, indent=4))
         queue_file.truncate()
-                
+        
+def process_report(record):
+    try:
+        status_msg = exec_report(record)
+        print("Status of invocation: {}".format(status_msg))
+        record['status_msg'] = status_msg
+
+        status = None
+        if status_msg == "success":
+            status = "Invoked without errors"
+        else:
+            status = "Failed"
+
+        update_status(record, status)
+
+        #update the queue file again with the final status
+        update_queue_file(queue_file_path, record)    
+    except Exception as e:
+        status_msg = str(e)
+        print("Failed to process {}\n\nCaused by: {}".format(record, status_msg))
+        record['status_msg'] = status_msg
+        update_status(record, "Failed")
+        update_queue_file(queue_file_path, record)
+             
+#scan the report queue for any files that are "Pending"             
 def check_report_queue(queue_file_path):
     now = datetime.now()
     print("Reading queue_file from {} at {}".format(queue_file_path, str(now)))
     
-    queue_data = []
-    try:        
-        with open(queue_file_path, 'r') as queue_file:
-            queue_data = json.load(queue_file)
-    except FileNotFoundError as e:
-        print("Report Queue File not found: {}".format(queue_file_path))
+    queue_data = read_queue_file(queue_file_path)
+    if not queue_data:
+        print("No reports to process")
         return
     
     for record in queue_data:
-        if record['status'] == "Pending":                    
-            update_status(record, "In Progress")
-
+        if record['status'] == "Pending":       
             #update the queue file right away so we see the "In Progress"
-            update_queue_file(queue_file_path, queue_data)
-
-            try:
-                status_msg = exec_report(record)
-                print("Status of invocation: {}".format(status_msg))
-                record['status_msg'] = status_msg
-
-                status = None
-                if status_msg.startswith("Invoked without errors"):
-                    status = "Invoked without errors"
-                else:
-                    status = "Failed"
-
-                update_status(record, status)
-
-                #update the queue file again with the final status
-                update_queue_file(queue_file_path, queue_data)    
-            except Exception as e:
-                status_msg = str(e)
-                print("Failed to process {}\n\nCaused by: {}".format(record, status_msg))
-                record['status_msg'] = status_msg
-                update_status(record, "Failed")
-                update_queue_file(queue_file_path, queue_data)
+            update_status(record, "In Progress")            
+            update_queue_file(queue_file_path, record)
+            
+            process_report(record)
+            
+            # exit loop after processing one so we can make sure the queue_data gets synced
+            break
     
 def main():
     global DEFAULT_QUEUE
