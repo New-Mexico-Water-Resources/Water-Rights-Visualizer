@@ -93,7 +93,9 @@ def process_report(queue_file_path, record):
         record['status_msg'] = status_msg
 
         status = None
-        if status_msg == "success":
+        
+        #todo: update status based on parse status_msg
+        if status_msg == "Success":
             status = "Complete"
         else:
             status = "Failed"
