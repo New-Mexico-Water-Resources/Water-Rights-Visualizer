@@ -50,4 +50,4 @@ RUN crontab /etc/cron.d/water_report_queue_cron
 
 EXPOSE 80
 
-CMD /etc/init.d/cron start
+CMD ["/etc/init.d/cron", "start"]
