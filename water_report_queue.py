@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     if os.path.isfile(pidfile):
         with open(pidfile, 'r') as pid_data:
-            existing_pid = pid_data.readlines()           
+            existing_pid = pid_data.read()           
             print("Checking pid {}".format(existing_pid))
             if is_running(existing_pid):
                 print("{}: {} already exists, exiting".format(str(now), pidfile))
