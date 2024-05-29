@@ -154,6 +154,8 @@ def is_running(pid):
     return False
 
 if __name__ == "__main__":
+    now = datetime.now()
+    
     pid = str(os.getpid())    
     pidfile = "/tmp/water_report_queue.pid"
 
@@ -162,7 +164,7 @@ if __name__ == "__main__":
             existing_pid = pid_data.readlines()           
             print("Checking pid {}".format(existing_pid))
             if is_running(existing_pid):
-                print("{} already exists, exiting".format(pidfile))
+                print("{}: {} already exists, exiting".format(str(now), pidfile))
                 sys.exit()
         
     with open(pidfile, 'w') as f:
@@ -171,6 +173,7 @@ if __name__ == "__main__":
         f.truncate()
     
     try:
+        print("{}: Starting up water_report_queue.py".format(str(now)))
         main()
     finally:
         os.unlink(pidfile)
