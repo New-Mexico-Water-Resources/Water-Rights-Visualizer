@@ -18,6 +18,8 @@ router.post('/start_run', (req, res) => {
     var start_year = req.body.startYear;
     var end_year = req.body.endYear;
     var geojson = req.body.geojson;
+    var epoch = Date.now(); //used to make sure run is unique
+    
     console.log("receiving start run request");
     console.log(`name: ${name}`);
     console.log(`start year: ${start_year}`);
@@ -126,7 +128,7 @@ router.post('/start_run', (req, res) => {
         }
         
         var entry = {
-            "key": name + "_" + start_year + "_" + end_year,
+            "key": name + "_" + start_year + "_" + end_year + "_" + epoch,
             "cmd": command,
             "status": "Pending",
             "status_msg": null,

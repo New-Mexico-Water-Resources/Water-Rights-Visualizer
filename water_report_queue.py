@@ -42,7 +42,7 @@ def exec_report(record):
 #    return "Invoked without errors: {}".format(cmd)
     
     #todo: parse output(res[0]) and decide whether or not something blew up
-    status = "success"
+    status = "Success"
     return status
     
 
@@ -94,7 +94,7 @@ def process_report(queue_file_path, record):
 
         status = None
         if status_msg == "success":
-            status = "Invoked without errors"
+            status = "Complete"
         else:
             status = "Failed"
 
