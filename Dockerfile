@@ -37,7 +37,6 @@ RUN npm install
 
 #install cronjob for water_report_queue
 RUN apt-get install -y cron
-RUN /etc/init.d/cron start
 
 COPY water_report_queue_cron /etc/cron.d/water_report_queue_cron
  
@@ -46,5 +45,7 @@ RUN chmod 0644 /etc/cron.d/water_report_queue_cron
 
 # Apply cron job
 RUN crontab /etc/cron.d/water_report_queue_cron
+
+RUN /etc/init.d/cron start
 
 EXPOSE 80
