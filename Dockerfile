@@ -47,7 +47,9 @@ RUN chmod 0644 /etc/cron.d/water_report_queue_cron
 RUN crontab /etc/cron.d/water_report_queue_cron
 
 #RUN /etc/init.d/cron start
+RUN chmod +x /app/init.sh
 
 EXPOSE 80
 
-CMD ["/etc/init.d/cron", "start"]
+#CMD ["/etc/init.d/cron", "start"]
+ENTRYPOINT ["/app/init.sh"]
