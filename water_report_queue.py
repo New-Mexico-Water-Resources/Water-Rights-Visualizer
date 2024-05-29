@@ -19,6 +19,7 @@ DEFAULT_QUEUE = "/root/data/water_rights_runs/report_queue.json"
 # -write output from exec_report into a logfile?
 #     -rotate contents of logfile when it gets too big
 #     -maybe just do a tail -5000 on the log file after every run to keep it trimmed?
+# -decide "official" status(e.g. Complete, Failed, Pending, etc) and turn those into ENUMs in the code
 
 class WaterReportException(Exception):
     pass
@@ -57,7 +58,7 @@ def update_status(record, state):
     
     if state == "In Progress":
         record['started'] = str(now)    
-    elif state == "Invoked without errors":
+    elif state == "Complete":
         record['ended'] = str(now)
     #might have to do special stuff like retry later so put in seperate elif
     elif state == "Failed":        
