@@ -147,11 +147,9 @@ def main():
 
 def is_running(pid):
     #only run this check if the /proc dir exists(on linux systems only)
-    if not os.path.isdir('/proc'):
-        return True
-    
-    if os.path.isdir('/proc/{}'.format(pid)):
-        return True
+    if os.path.isdir('/proc'):
+        if os.path.isdir('/proc/{}'.format(pid)):
+            return True
     
     return False
 
@@ -161,9 +159,9 @@ if __name__ == "__main__":
 
     if os.path.isfile(pidfile):
         with open(pidfile, 'r') as pid_data:
-            current_pid = pid_data.readlines()           
+            existing_pid = pid_data.readlines()           
             
-            if is_running(current_pid):
+            if is_running(existing_pid):
                 print("{} already exists, exiting".format(pidfile))
                 sys.exit()
         
