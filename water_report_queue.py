@@ -10,11 +10,14 @@ from datetime import datetime
 
 DEFAULT_QUEUE = "/root/data/water_rights_runs/report_queue.json"
 
-#some things we need for cleanup...
-#reset In Progress to Pending in case things get hung
-#clear out "Failed" runs
-#clear out json file completely
-#read from an "archived_runs.json"
+#some things we need this script or some other cleanup/maintenance script to do
+# -reset In Progress to Pending in case things get hung
+# -clear out "Failed" runs
+# -clear out json file completely
+# -move successful runs into a "completed_runs.json"
+# -rotate cron log in /tmp/cron_log.txt
+# -write output from exec_report into a logfile?
+#     -rotate contents of logfile when it gets too big
 
 class WaterReportException(Exception):
     pass
