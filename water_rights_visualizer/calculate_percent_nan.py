@@ -154,7 +154,7 @@ def calculate_percent_nan(
     nan_avg = list()
     nanavg = pd.read_csv(nan_folder)
     group = nanavg.groupby(['year', 'month'])
-    monthavg = group.aggregate({'percent_nan': "mean"})
+    monthavg = group.aggregate({'percent_nan': np.mean})
     nan_avg.append(monthavg)
     conavg = pd.concat(nan_avg, ignore_index=False)
     conavg.to_csv(nan_monthly_folder)
