@@ -18,6 +18,7 @@ DEFAULT_QUEUE = "/root/data/water_rights_runs/report_queue.json"
 # -rotate cron log in /tmp/cron_log.txt
 # -write output from exec_report into a logfile?
 #     -rotate contents of logfile when it gets too big
+#     -maybe just do a tail -5000 on the log file after every run to keep it trimmed?
 
 class WaterReportException(Exception):
     pass

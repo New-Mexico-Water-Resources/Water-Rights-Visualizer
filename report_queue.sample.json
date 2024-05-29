@@ -2,8 +2,8 @@
   {
     "key": "Smith_1985_1986_1717023080669",
     "cmd": "/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/Smith/config.json",
-    "status": "In Progress",
-    "status_msg": null,
+    "status": "Complete",
+    "status_msg": "Success",
     "submitted": "2024-05-29 22:51:20",
     "started": "2024-05-29 22:51:45.744729",
     "ended": null,
@@ -18,12 +18,12 @@
   },
   {
     "key": "Smith_1988_1990_1717023091465",
-    "cmd": "/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/Smith/config.json",
-    "status": "Pending",
-    "status_msg": null,
+    "cmd": "/opt/conda/bin/pythonnnn /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/Smith/config.json",
+    "status": "Failed",
+    "status_msg": "[Errno 2] No such file or directory: '/opt/conda/bin/pythonnnn'",
     "submitted": "2024-05-29 22:51:31",
-    "started": null,
-    "ended": null,
+    "started": "2024-05-29 23:05:14.600885",
+    "ended": "2024-05-29 23:05:14.602384",
     "invoker": "to-do",
     "base_dir": "/root/data/water_rights_runs/Smith",
     "png_dir": "/root/data/water_rights_runs/Smith/output/figures/Smith",
@@ -37,10 +37,10 @@
   {
     "key": "Smith_2001_2001_1717023106133",
     "cmd": "/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/Smith/config.json",
-    "status": "Pending",
-    "status_msg": null,
+    "status": "Complete",
+    "status_msg": "Success",
     "submitted": "2024-05-29 22:51:46",
-    "started": null,
+    "started": "2024-05-29 23:06:14.663792",
     "ended": null,
     "invoker": "to-do",
     "base_dir": "/root/data/water_rights_runs/Smith",
@@ -53,10 +53,10 @@
   {
     "key": "target_1985_1987_1717023125172",
     "cmd": "/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/target/config.json",
-    "status": "Pending",
+    "status": "In Progress",
     "status_msg": null,
     "submitted": "2024-05-29 22:52:05",
-    "started": null,
+    "started": "2024-05-29 23:11:17.534542",
     "ended": null,
     "invoker": "to-do",
     "base_dir": "/root/data/water_rights_runs/target",
@@ -66,6 +66,24 @@
       1985,
       1986,
       1987
+    ]
+  },
+  {
+    "key": "Smith_2016_2018_1717024480009",
+    "cmd": "/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/Smith/config.json",
+    "status": "Pending",
+    "status_msg": null,
+    "submitted": "2024-05-29 23:14:40",
+    "started": null,
+    "ended": null,
+    "invoker": "to-do",
+    "base_dir": "/root/data/water_rights_runs/Smith",
+    "png_dir": "/root/data/water_rights_runs/Smith/output/figures/Smith",
+    "csv_dir": "/root/data/water_rights_runs/Smith/output/monthly_nan/Smith",
+    "years_processed": [
+      2016,
+      2017,
+      2018
     ]
   }
 ]
