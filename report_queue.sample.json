@@ -1,0 +1,71 @@
+[
+  {
+    "key": "Smith_1985_1986_1717023080669",
+    "cmd": "/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/Smith/config.json",
+    "status": "In Progress",
+    "status_msg": null,
+    "submitted": "2024-05-29 22:51:20",
+    "started": "2024-05-29 22:51:45.744729",
+    "ended": null,
+    "invoker": "to-do",
+    "base_dir": "/root/data/water_rights_runs/Smith",
+    "png_dir": "/root/data/water_rights_runs/Smith/output/figures/Smith",
+    "csv_dir": "/root/data/water_rights_runs/Smith/output/monthly_nan/Smith",
+    "years_processed": [
+      1985,
+      1986
+    ]
+  },
+  {
+    "key": "Smith_1988_1990_1717023091465",
+    "cmd": "/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/Smith/config.json",
+    "status": "Pending",
+    "status_msg": null,
+    "submitted": "2024-05-29 22:51:31",
+    "started": null,
+    "ended": null,
+    "invoker": "to-do",
+    "base_dir": "/root/data/water_rights_runs/Smith",
+    "png_dir": "/root/data/water_rights_runs/Smith/output/figures/Smith",
+    "csv_dir": "/root/data/water_rights_runs/Smith/output/monthly_nan/Smith",
+    "years_processed": [
+      1988,
+      1989,
+      1990
+    ]
+  },
+  {
+    "key": "Smith_2001_2001_1717023106133",
+    "cmd": "/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/Smith/config.json",
+    "status": "Pending",
+    "status_msg": null,
+    "submitted": "2024-05-29 22:51:46",
+    "started": null,
+    "ended": null,
+    "invoker": "to-do",
+    "base_dir": "/root/data/water_rights_runs/Smith",
+    "png_dir": "/root/data/water_rights_runs/Smith/output/figures/Smith",
+    "csv_dir": "/root/data/water_rights_runs/Smith/output/monthly_nan/Smith",
+    "years_processed": [
+      2001
+    ]
+  },
+  {
+    "key": "target_1985_1987_1717023125172",
+    "cmd": "/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/target/config.json",
+    "status": "Pending",
+    "status_msg": null,
+    "submitted": "2024-05-29 22:52:05",
+    "started": null,
+    "ended": null,
+    "invoker": "to-do",
+    "base_dir": "/root/data/water_rights_runs/target",
+    "png_dir": "/root/data/water_rights_runs/target/output/figures/target",
+    "csv_dir": "/root/data/water_rights_runs/target/output/monthly_nan/target",
+    "years_processed": [
+      1985,
+      1986,
+      1987
+    ]
+  }
+]
