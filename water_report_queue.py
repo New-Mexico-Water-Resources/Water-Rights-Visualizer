@@ -75,9 +75,10 @@ def update_queue_file(queue_file_path, record):
     queue_data = read_queue_file(queue_file_path)
     
     #loop through the queue and find the item we need to update
-    for row in queue_data:
-        if row['key'] == record['key']:
-            row = record
+    for i in range(0, len(queue_data)):
+        if queue_data[i]['key'] == record['key']:
+            queue_data[i] = record
+            print("Updating record {}".format(record['key']))
             break
             
     with open(queue_file_path, 'w') as queue_file:
@@ -85,7 +86,7 @@ def update_queue_file(queue_file_path, record):
         queue_file.write(json.dumps(queue_data, indent=4))
         queue_file.truncate()
         
-def process_report(record):
+def process_report(queue_file_path, record):
     try:
         status_msg = exec_report(record)
         print("Status of invocation: {}".format(status_msg))
@@ -124,7 +125,7 @@ def check_report_queue(queue_file_path):
             update_status(record, "In Progress")            
             update_queue_file(queue_file_path, record)
             
-            process_report(record)
+            process_report(queue_file_path, record)
             
             # exit loop after processing one so we can make sure the queue_data gets synced
             break
