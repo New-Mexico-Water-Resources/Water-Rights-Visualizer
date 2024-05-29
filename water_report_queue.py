@@ -144,14 +144,28 @@ def main():
     while True:
         check_report_queue(queue)
         time.sleep(60)        
+
+def is_running(pid):
+    #only run this check if the /proc dir exists(on linux systems only)
+    if not os.path.isdir('/proc'):
+        return True
     
+    if os.path.isdir('/proc/{}'.format(pid)):
+        return True
+    
+    return False
+
 if __name__ == "__main__":
-    pid = str(os.getpid())
+    pid = str(os.getpid())    
     pidfile = "/tmp/water_report_queue.pid"
 
     if os.path.isfile(pidfile):
-        print("{} already exists, exiting".format(pidfile))
-        sys.exit()
+        with open(pidfile, 'r') as pid_data:
+            current_pid = pid_data.readlines()           
+            
+            if is_running(current_pid):
+                print("{} already exists, exiting".format(pidfile))
+                sys.exit()
         
     with open(pidfile, 'w') as f:
         f.seek(0)
