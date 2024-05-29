@@ -98,7 +98,7 @@ router.post('/start_run', (req, res) => {
     }
 
     console.log(`pipeline script: ${pipeline_script}`);
-    var command = `python ${pipeline_script} ${config_filename}`;
+    var command = `/opt/conda/bin/python ${pipeline_script} ${config_filename}`;
     console.log(command);
 //    var pid = spawn_child.spawn_child(command);
 //
