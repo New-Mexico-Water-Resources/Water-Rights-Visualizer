@@ -29,8 +29,27 @@ RUN mkdir ${APP_ROOT}
 WORKDIR ${APP_ROOT}
 ADD . ${APP_ROOT}
 
+RUN mkdir /root/data
+
 # RUN mamba env update -n base -f /app/water_rights.yml
 RUN python setup.py install
 RUN npm install
+
+#install cronjob for water_report_queue
+RUN apt-get install -y cron
+
+COPY water_report_queue_cron /etc/cron.d/water_report_queue_cron
+ 
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/water_report_queue_cron
+
+# Apply cron job
+RUN crontab /etc/cron.d/water_report_queue_cron
+
+COPY init.sh /init.sh
+
+RUN chmod +x /init.sh
+
+RUN touch /tmp/cron_log.txt
 
 EXPOSE 80

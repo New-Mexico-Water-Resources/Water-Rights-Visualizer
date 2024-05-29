@@ -18,6 +18,8 @@ router.post('/start_run', (req, res) => {
     var start_year = req.body.startYear;
     var end_year = req.body.endYear;
     var geojson = req.body.geojson;
+    var epoch = Date.now(); //used to make sure run is unique
+    
     console.log("receiving start run request");
     console.log(`name: ${name}`);
     console.log(`start year: ${start_year}`);
@@ -98,19 +100,74 @@ router.post('/start_run', (req, res) => {
     }
 
     console.log(`pipeline script: ${pipeline_script}`);
-    var command = `python ${pipeline_script} ${config_filename}`;
+    var command = `/opt/conda/bin/python ${pipeline_script} ${config_filename}`;
     console.log(command);
-    var pid = spawn_child.spawn_child(command);
-
-    var pid_filename = path.join(run_directory, "pid.txt");
-    console.log(`writing process ID ${pid} to ${pid_filename}`);
-
-    fs.writeFile(pid_filename, pid.toString(), 'utf8', function(err){
-        if(err) throw err;
-        console.log(`successfully wrote process ID to ${pid_filename}`);
-    });
-
-    res.status(200).send(`started run ${name} from ${start_year} to ${end_year}`);
+//    var pid = spawn_child.spawn_child(command);
+//
+//    var pid_filename = path.join(run_directory, "pid.txt");
+//    console.log(`writing process ID ${pid} to ${pid_filename}`);
+//
+//    fs.writeFile(pid_filename, pid.toString(), 'utf8', function(err){
+//        if(err) throw err;
+//        console.log(`successfully wrote process ID to ${pid_filename}`);
+//    });
+//    
+    //json file that holds the list of all the reports that need processing
+    var report_queue_file = path.join(run_directory_base, "report_queue.json");
+    
+    fs.readFile(report_queue_file, (err, data) => {
+        var report_queue = [];
+        
+        var years_processed = [];
+        var year_current = parseInt(start_year);
+        var year_end = parseInt(end_year);        
+        
+        while(year_current <= year_end) {
+            years_processed.push(year_current);
+            year_current++;
+        }
+        
+        var entry = {
+            "key": name + "_" + start_year + "_" + end_year + "_" + epoch,
+            "cmd": command,
+            "status": "Pending",
+            "status_msg": null,
+            "submitted": new Date().toISOString().slice(0, 19).replace('T', ' '),
+            "started": null,
+            "ended": null,
+            "invoker": "to-do",
+            "base_dir": run_directory,
+            "png_dir": run_directory + "/output/figures/" + name,
+            "csv_dir": run_directory + "/output/monthly_nan/" + name,
+            "years_processed": years_processed
+        };
+        
+        if (!err && data) {
+            report_queue = JSON.parse(data);
+            console.log("Loaded report queue with " + data);
+        }
+        else if(err) {
+            console.log("Error loading report queue:");
+            console.log(err);
+        }
+        else {
+            console.log("No data in report queue file");
+        }
+        
+        report_queue.push(entry);
+    
+        fs.writeFile(report_queue_file, JSON.stringify(report_queue, null, 2), function(err) {
+            if(err) {
+                console.log(err);
+            } else {
+                console.log("report queue saved to " + report_queue_file);
+            }
+        });
+    })
+    
+    
+    
+    res.status(200).send(`Queued report for ${name} from ${start_year} to ${end_year}`);
 });
 
 module.exports = router;
