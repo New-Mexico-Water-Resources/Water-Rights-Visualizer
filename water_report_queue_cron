@@ -1,3 +1,3 @@
 # must be ended with a new line "LF" (Unix) and not "CRLF" (Windows)
-* * * * * /opt/conda/bin/python /app/water_report_queue.py > /dev/null 2>&1
+* * * * * /opt/conda/bin/python /app/water_report_queue.py > /tmp/cron_log.txt 2>&1
 # An empty line is required at the end of this file for a valid cron file.
