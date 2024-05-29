@@ -53,5 +53,3 @@ RUN chmod +x /init.sh
 RUN touch /tmp/cron_log.txt
 
 EXPOSE 80
-
-ENTRYPOINT /init.sh
