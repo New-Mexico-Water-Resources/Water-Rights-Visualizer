@@ -118,28 +118,32 @@ router.post('/start_run', (req, res) => {
     fs.readFile(report_queue_file, (err, data) => {
         var report_queue = [];
         
-        var years_processed = [];
-        var year_current = parseInt(start_year);
-        var year_end = parseInt(end_year);        
-        
-        while(year_current <= year_end) {
-            years_processed.push(year_current);
-            year_current++;
-        }
+//        var years_processed = [];
+//        var year_current = parseInt(start_year);
+//        var year_end = parseInt(end_year);        
+//        
+//        while(year_current <= year_end) {
+//            years_processed.push(year_current);
+//            year_current++;
+//        }
         
         var entry = {
             "key": name + "_" + start_year + "_" + end_year + "_" + epoch,
+            "name": name,
             "cmd": command,
             "status": "Pending",
             "status_msg": null,
-            "submitted": new Date().toISOString().slice(0, 19).replace('T', ' '),
+            "submitted": epoch,
             "started": null,
             "ended": null,
             "invoker": "to-do",
             "base_dir": run_directory,
             "png_dir": run_directory + "/output/figures/" + name,
             "csv_dir": run_directory + "/output/monthly_nan/" + name,
-            "years_processed": years_processed
+            "subset_dir": run_directory + "/output/subset/" + name,
+            "geo_json": run_directory + "/" + name + ".json",
+            "start_year": parseInt(start_year),
+            "end_year": parseInt(end_year)            
         };
         
         if (!err && data) {
