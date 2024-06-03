@@ -52,17 +52,17 @@ def exec_report(record):
     
 
 def update_status(record, state):
-    now = datetime.now()
+    now = int(time.time())
     
     record['status'] = state
     
     if state == "In Progress":
-        record['started'] = str(now)    
+        record['started'] = now
     elif state == "Complete":
-        record['ended'] = str(now)
+        record['ended'] = now
     #might have to do special stuff like retry later so put in seperate elif
     elif state == "Failed":        
-        record['ended'] = str(now)
+        record['ended'] = now
 
 def read_queue_file(queue_file_path):
     queue_data = []
