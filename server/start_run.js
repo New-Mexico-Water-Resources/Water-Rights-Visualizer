@@ -28,7 +28,7 @@ router.post('/start_run', (req, res) => {
     console.log(`end year: ${end_year}`);
     console.log("GeoJSON:");
     console.log(geojson);
-    var run_directory = path.join(run_directory_base, name);
+    var run_directory = path.join(run_directory_base, key);
     console.log(`creating run directory ${run_directory}`);
     fs.mkdirSync(run_directory, { recursive: true });
     geojson_filename = path.join(run_directory, `${name}.geojson`);
