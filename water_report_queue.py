@@ -57,8 +57,8 @@ def exec_report(record):
     with open(log_path, 'w') as queue_file:
         if res:            
             dlog("writing exec output to logfile {}".format(log_path))
-            queue_file.write(res[0].decode(encoding='utf-8'))
-            queue_file.write(res[1].decode(encoding='utf-8'))    
+            queue_file.write(res[0].decode(encoding='utf-8')) #std out from script
+            queue_file.write(res[1].decode(encoding='utf-8')) #std err from script
             
 #    for line in res[0].decode(encoding='utf-8').split('\n'):
 #        print(line)
@@ -144,7 +144,7 @@ def process_report(queue_file_path, record):
 #scan the report queue for any files that are "Pending"             
 def check_report_queue(queue_file_path):
     now = datetime.now()
-    dlog("Reading queue_file from {} at {}".format(queue_file_path, str(now)))
+    # dlog("Reading queue_file from {} at {}".format(queue_file_path, str(now)))
     
     queue_data = read_queue_file(queue_file_path)
     if not queue_data:
@@ -152,7 +152,8 @@ def check_report_queue(queue_file_path):
         return
     
     for record in queue_data:
-        if record['status'] == "Pending":       
+        if record['status'] == "Pending":
+            dlog("Found Pending item in queue_file {} at {}".format(queue_file_path, str(now)))
             #update the queue file right away so we see the "In Progress"
             update_status(record, "In Progress")            
             update_queue_file(queue_file_path, record)
