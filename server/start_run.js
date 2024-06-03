@@ -141,7 +141,7 @@ router.post('/start_run', (req, res) => {
             "png_dir": run_directory + "/output/figures/" + name,
             "csv_dir": run_directory + "/output/monthly_nan/" + name,
             "subset_dir": run_directory + "/output/subset/" + name,
-            "geo_json": run_directory + "/" + name + ".json",
+            "geo_json": run_directory + "/" + name + ".geojson",
             "start_year": parseInt(start_year),
             "end_year": parseInt(end_year)            
         };
