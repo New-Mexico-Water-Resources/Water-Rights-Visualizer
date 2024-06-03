@@ -24,9 +24,12 @@ DEFAULT_QUEUE = "/root/data/water_rights_runs/report_queue.json"
 class WaterReportException(Exception):
     pass
 
-#writes tot he daemon log file
+PRINT_LOG = False
+
+#writes to the daemon log file
 #todo: check logsize and tail -1000 if it is too long
-def dlog(text, new_line=True, print=False):
+def dlog(text, new_line=True):
+    global PRINT_LOG    
     log_path = "/tmp/wrq_log.txt"
     
     with open(log_path, 'a+') as log_file:
@@ -34,6 +37,9 @@ def dlog(text, new_line=True, print=False):
         
         if new_line:
             log_file.write("\n")
+            
+    if PRINT_LOG:
+        print(text)
         
 def exec_report(record):                       
     cmd = record['cmd'].split(" ")
