@@ -1,3 +1,9 @@
+###############################################################################
+# This script fires off once a minute to read the report_queue.json file and
+# invokes some OS calls to run the water-rights-visualizer-backend scripts
+# Logs for this script are written to /tmp/wrq_log.txt via the dlog() function 
+###############################################################################
+
 import subprocess
 import time
 import os
@@ -26,6 +32,15 @@ class WaterReportException(Exception):
 
 PRINT_LOG = False
 
+def cleanup_files():
+    # stuff we need to clean up
+    # /tmp/wrq_log.txt
+    # /tmp_cron_log.txt
+    # do system calls for tail on logs above and pipe back into log
+    #      e.g. tail -1000 /tmp/wrq_log.txt > /tmp/wrq_log.txt 
+    # loop through all of the runs in data and remove runs older than a month?
+    dlog("TODO: cleanup files")
+    
 #writes to the daemon log file
 #todo: check logsize and tail -1000 if it is too long
 def dlog(text, new_line=True):
@@ -153,7 +168,7 @@ def check_report_queue(queue_file_path):
     
     for record in queue_data:
         if record['status'] == "Pending":
-            dlog("\n>>> Found Pending item in queue_file {}".format(queue_file_path))
+            dlog(">>> Found Pending item in queue_file {}".format(queue_file_path))
             #update the queue file right away so we see the "In Progress"
             update_status(record, "In Progress")            
             update_queue_file(queue_file_path, record)
@@ -162,7 +177,7 @@ def check_report_queue(queue_file_path):
             
             # exit loop after processing one so we can make sure the queue_data gets synced
             break
-    
+
 def main():
     global DEFAULT_QUEUE
     
@@ -173,7 +188,8 @@ def main():
     queue = args.queue
  
     while True:
-        check_report_queue(queue)
+        cleanup_files()
+        check_report_queue(queue)        
         time.sleep(60)        
 
 def is_running(pid):
