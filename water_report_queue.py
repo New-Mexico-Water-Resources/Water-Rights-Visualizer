@@ -5,7 +5,6 @@ import sys
 import argparse
 import json
 import subprocess
-import gzip
 
 from datetime import datetime
 
@@ -63,12 +62,7 @@ def exec_report(record):
             dlog("writing exec output to logfile {}".format(log_path))
             queue_file.write(res[0].decode(encoding='utf-8')) #std out from script
             queue_file.write(res[1].decode(encoding='utf-8')) #std err from script
-            
-    #now gzip the log file so we don't take too much space?
-    with open(log_path, 'rb') as orig_file:
-        with gzip.open(log_path, 'wb') as zipped_file:
-            zipped_file.writelines(orig_file)
-        
+                    
 #    for line in res[0].decode(encoding='utf-8').split('\n'):
 #        print(line)
 
