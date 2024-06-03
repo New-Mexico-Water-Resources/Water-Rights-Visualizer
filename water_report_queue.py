@@ -5,6 +5,7 @@ import sys
 import argparse
 import json
 import subprocess
+import gzip
 
 from datetime import datetime
 
@@ -31,6 +32,9 @@ PRINT_LOG = False
 def dlog(text, new_line=True):
     global PRINT_LOG    
     log_path = "/tmp/wrq_log.txt"
+    
+    now = datetime.now()    
+    text = str(now) + " - " + text
     
     with open(log_path, 'a+') as log_file:
         log_file.write(text)
@@ -60,6 +64,11 @@ def exec_report(record):
             queue_file.write(res[0].decode(encoding='utf-8')) #std out from script
             queue_file.write(res[1].decode(encoding='utf-8')) #std err from script
             
+    #now gzip the log file so we don't take too much space?
+    with open(log_path, 'rb') as orig_file:
+        with gzip.open(log_path, 'wb') as zipped_file:
+            zipped_file.writelines(orig_file)
+        
 #    for line in res[0].decode(encoding='utf-8').split('\n'):
 #        print(line)
 
@@ -142,10 +151,7 @@ def process_report(queue_file_path, record):
         update_queue_file(queue_file_path, record)
              
 #scan the report queue for any files that are "Pending"             
-def check_report_queue(queue_file_path):
-    now = datetime.now()
-    # dlog("Reading queue_file from {} at {}".format(queue_file_path, str(now)))
-    
+def check_report_queue(queue_file_path):    
     queue_data = read_queue_file(queue_file_path)
     if not queue_data:
         dlog("No reports to process")
@@ -153,7 +159,7 @@ def check_report_queue(queue_file_path):
     
     for record in queue_data:
         if record['status'] == "Pending":
-            dlog("Found Pending item in queue_file {} at {}".format(queue_file_path, str(now)))
+            dlog("\n>>> Found Pending item in queue_file {}".format(queue_file_path))
             #update the queue file right away so we see the "In Progress"
             update_status(record, "In Progress")            
             update_queue_file(queue_file_path, record)
