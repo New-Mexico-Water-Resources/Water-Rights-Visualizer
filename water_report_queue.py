@@ -24,17 +24,36 @@ DEFAULT_QUEUE = "/root/data/water_rights_runs/report_queue.json"
 class WaterReportException(Exception):
     pass
 
+#writes tot he daemon log file
+#todo: check logsize and tail -1000 if it is too long
+def dlog(text, new_line=True, print=False):
+    log_path = "/tmp/wrq_log.txt"
+    
+    with open(log_path, 'a+') as log_file:
+        log_file.write(text)
+        
+        if new_line:
+            log_file.write("\n")
+        
 def exec_report(record):                       
     cmd = record['cmd'].split(" ")
-    print("invoking cmd: {}".format(cmd))
+    dlog("invoking cmd: {}".format(cmd))
 
     pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
     res = pipe.communicate()
     
-    print("retcode =", pipe.returncode)
-    print("res =", res)
-    print("stderr =", res[1])
+    dlog("retcode = {}".format(pipe.returncode))
+#    print("res =", res)
+#    print("stderr =", res[1])
     
+    log_path = "{}/exec_report_log.txt".format(record['base_dir'])
+    
+    with open(log_path, 'w') as queue_file:
+        if res:            
+            dlog("writing exec output to logfile {}".format(log_path))
+            queue_file.write(res[0].decode(encoding='utf-8'))
+            queue_file.write(res[1].decode(encoding='utf-8'))    
+            
 #    for line in res[0].decode(encoding='utf-8').split('\n'):
 #        print(line)
 
@@ -70,7 +89,7 @@ def read_queue_file(queue_file_path):
         with open(queue_file_path, 'r') as queue_file:
             queue_data = json.load(queue_file)            
     except FileNotFoundError as e:
-        print("Report Queue File not found: {}".format(queue_file_path))
+        dlog("Report Queue File not found: {}".format(queue_file_path))
         return None
     
     return queue_data
@@ -83,7 +102,7 @@ def update_queue_file(queue_file_path, record):
     for i in range(0, len(queue_data)):
         if queue_data[i]['key'] == record['key']:
             queue_data[i] = record
-            print("Updating record {}".format(record['key']))
+            dlog("Updating record {}".format(record['key']))
             break
             
     with open(queue_file_path, 'w') as queue_file:
@@ -94,7 +113,7 @@ def update_queue_file(queue_file_path, record):
 def process_report(queue_file_path, record):
     try:
         status_msg = exec_report(record)
-        print("Status of invocation: {}".format(status_msg))
+        dlog("Status of invocation: {}".format(status_msg))
         record['status_msg'] = status_msg
 
         status = None
@@ -111,7 +130,7 @@ def process_report(queue_file_path, record):
         update_queue_file(queue_file_path, record)    
     except Exception as e:
         status_msg = str(e)
-        print("Failed to process {}\n\nCaused by: {}".format(record, status_msg))
+        dlog("Failed to process {}\n\nCaused by: {}".format(record, status_msg))
         record['status_msg'] = status_msg
         update_status(record, "Failed")
         update_queue_file(queue_file_path, record)
@@ -119,11 +138,11 @@ def process_report(queue_file_path, record):
 #scan the report queue for any files that are "Pending"             
 def check_report_queue(queue_file_path):
     now = datetime.now()
-    print("Reading queue_file from {} at {}".format(queue_file_path, str(now)))
+    dlog("Reading queue_file from {} at {}".format(queue_file_path, str(now)))
     
     queue_data = read_queue_file(queue_file_path)
     if not queue_data:
-        print("No reports to process")
+        dlog("No reports to process")
         return
     
     for record in queue_data:
