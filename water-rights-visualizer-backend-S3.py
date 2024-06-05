@@ -33,16 +33,24 @@ def main(argv=sys.argv):
     with open(config_filename, "r") as file:
         config = json.load(file)
 
+    key = config["key"]
+    logger.info(f"key: {key}")
+    
     name = config["name"]
     logger.info(f"name: {name}")
+    
     start_year = int(config["start_year"])
     logger.info(f"start year: {start_year}")
+    
     end_year = int(config['end_year'])
     logger.info(f"end year: {end_year}")
+    
     working_directory = config["working_directory"]
     logger.info(f"working directory: {working_directory}")
+    
     geojson_filename = config["geojson_filename"]
     logger.info(f"GeoJSON file: {geojson_filename}")
+    
     status_filename = config["status_filename"]
     logger.info(f"status file: {status_filename}")
 
@@ -92,7 +100,7 @@ def main(argv=sys.argv):
         figure_output_filename_base = basename(figure_output_filename)
         output_bucket.upload_file(figure_output_filename, figure_output_filename_base)
 
-        CSV_output_filename = join(output_directory, "monthly_means", name, f"{year}_monthly_means.csv")
+        CSV_output_filename = join(output_directory, "monthly_meansZZZ", name, f"{year}_monthly_means.csv")
 
         if not exists(CSV_output_filename):
             write_status(status_filename, f"problem producing CSV for {CSV_output_filename} for {year}")

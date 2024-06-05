@@ -75,7 +75,8 @@ router.post('/start_run', (req, res) => {
     var config_filename = path.join(run_directory, "config.json");
     
     var config = {
-        "name": key, //use key instead of name here to make it unique
+        "key": key,
+        "name": name,
         "start_year": start_year,
         "end_year": end_year,
         "working_directory": run_directory,
