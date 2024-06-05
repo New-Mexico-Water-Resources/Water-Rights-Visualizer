@@ -97,7 +97,7 @@ def main(argv=sys.argv):
             continue
 
         # TODO upload output file to S3 bucket
-        figure_output_s3_name = key + "-" + basename(figure_output_filename)
+        figure_output_s3_name = key + "/" + basename(figure_output_filename)
         output_bucket.upload_file(figure_output_filename, figure_output_s3_name)
 
         CSV_output_filename = join(output_directory, "monthly_means", name, f"{year}_monthly_means.csv")
@@ -106,7 +106,7 @@ def main(argv=sys.argv):
             write_status(status_filename, f"problem producing CSV for {CSV_output_filename} for {year}")
             continue
 
-        CSV_output_s3_name = key + "-" + basename(CSV_output_filename)
+        CSV_output_s3_name = key + "/" + basename(CSV_output_filename)
         output_bucket.upload_file(CSV_output_filename, CSV_output_s3_name)
 
         #todo:
