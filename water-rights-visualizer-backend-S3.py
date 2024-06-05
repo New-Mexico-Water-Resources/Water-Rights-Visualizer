@@ -33,16 +33,24 @@ def main(argv=sys.argv):
     with open(config_filename, "r") as file:
         config = json.load(file)
 
+    key = config["key"]
+    logger.info(f"key: {key}")
+    
     name = config["name"]
     logger.info(f"name: {name}")
+    
     start_year = int(config["start_year"])
     logger.info(f"start year: {start_year}")
+    
     end_year = int(config['end_year'])
     logger.info(f"end year: {end_year}")
+    
     working_directory = config["working_directory"]
     logger.info(f"working directory: {working_directory}")
+    
     geojson_filename = config["geojson_filename"]
     logger.info(f"GeoJSON file: {geojson_filename}")
+    
     status_filename = config["status_filename"]
     logger.info(f"status file: {status_filename}")
 
@@ -82,27 +90,28 @@ def main(argv=sys.argv):
             end_year=year,
         )
 
+        #check and upload the png file to s3
         figure_output_filename = join(output_directory, "figures", name, f"{year}_{name}.png")
 
         if not exists(figure_output_filename):
-            write_status(status_filename, f"problem producing figure for {name} for {year}")
+            write_status(status_filename, f"problem producing figure for {figure_output_filename} for {year}")
             continue
+        
+        figure_output_s3_name = key + "/" + basename(figure_output_filename)
+        output_bucket.upload_file(figure_output_filename, figure_output_s3_name)
 
-        # TODO upload output file to S3 bucket
-        figure_output_filename_base = basename(figure_output_filename)
-        output_bucket.upload_file(figure_output_filename, figure_output_filename_base)
-
+        #check and uplaod the csv file to s3
         CSV_output_filename = join(output_directory, "monthly_means", name, f"{year}_monthly_means.csv")
 
         if not exists(CSV_output_filename):
-            write_status(status_filename, f"problem producing CSV for {name} for {year}")
+            write_status(status_filename, f"problem producing CSV for {CSV_output_filename} for {year}")
             continue
-
-        CSV_output_filename_base = basename(CSV_output_filename)
-        output_bucket.upload_file(CSV_output_filename, CSV_output_filename_base)
+        
+        CSV_output_s3_name = key + "/" + basename(CSV_output_filename)
+        output_bucket.upload_file(CSV_output_filename, CSV_output_s3_name)
 
         #todo:
-        #pull out csv file that corresponds to png and store somewhere it will not get deleted
+        #pull out csv file that corresponds to png and store somewhere on disk it will not get deleted
         #maybe something like /data/saved_runs/ ?
         #png found in: /home/ec2-user/data/water_rights_runs/Smith/output/figures
         #csv found in: /home/ec2-user/data/water_rights_runs/Smith/output/monthly_means        
