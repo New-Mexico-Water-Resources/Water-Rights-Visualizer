@@ -97,17 +97,17 @@ def main(argv=sys.argv):
             continue
 
         # TODO upload output file to S3 bucket
-        figure_output_filename_base = basename(figure_output_filename)
-        output_bucket.upload_file(figure_output_filename, figure_output_filename_base)
+        figure_output_s3_name = key + "-" + basename(figure_output_filename)
+        output_bucket.upload_file(figure_output_filename, figure_output_s3_name)
 
-        CSV_output_filename = join(output_directory, "monthly_meansZZZ", name, f"{year}_monthly_means.csv")
+        CSV_output_filename = join(output_directory, "monthly_means", name, f"{year}_monthly_means.csv")
 
         if not exists(CSV_output_filename):
             write_status(status_filename, f"problem producing CSV for {CSV_output_filename} for {year}")
             continue
 
-        CSV_output_filename_base = basename(CSV_output_filename)
-        output_bucket.upload_file(CSV_output_filename, CSV_output_filename_base)
+        CSV_output_s3_name = key + "-" + basename(CSV_output_filename)
+        output_bucket.upload_file(CSV_output_filename, CSV_output_s3_name)
 
         #todo:
         #pull out csv file that corresponds to png and store somewhere it will not get deleted
