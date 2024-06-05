@@ -85,7 +85,7 @@ def main(argv=sys.argv):
         figure_output_filename = join(output_directory, "figures", name, f"{year}_{name}.png")
 
         if not exists(figure_output_filename):
-            write_status(status_filename, f"problem producing figure for {name} for {year}")
+            write_status(status_filename, f"problem producing figure for {figure_output_filename} for {year}")
             continue
 
         # TODO upload output file to S3 bucket
@@ -95,7 +95,7 @@ def main(argv=sys.argv):
         CSV_output_filename = join(output_directory, "monthly_means", name, f"{year}_monthly_means.csv")
 
         if not exists(CSV_output_filename):
-            write_status(status_filename, f"problem producing CSV for {name} for {year}")
+            write_status(status_filename, f"problem producing CSV for {CSV_output_filename} for {year}")
             continue
 
         CSV_output_filename_base = basename(CSV_output_filename)

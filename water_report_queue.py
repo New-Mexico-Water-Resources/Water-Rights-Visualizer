@@ -79,17 +79,20 @@ def exec_report(record):
             
             dlog("writing exec output to logfile {}".format(log_path))
             queue_file.write(stdout) #std out from script
-            queue_file.write("\n\n\nErrors and Warnings from run: {}".format(err))
-                    
-            #todo: something went wrong with creating the png figure
-            dlog("Checking figure err")           
-            if "problem producing figure for" in stdout:
-                pass
-            dlog("Checking csv err")
-            #todo: somethign went wrong with creating the csv file
-            if "problem producing CSV for" in stdout:
-                pass
+            queue_file.write("\n\n\nErrors and Warnings from run:\n{}".format(err))
+                            
+            err_msg = ""
             
+            figure_err_check = "problem producing figure for" 
+            if figure_err_check in stdout:
+                err_msg += "Error producing figure png file.\n"                
+                        
+            csv_err_check = "problem producing CSV for"
+            if csv_err_check in stdout:
+                err_msg += "Error producing csv file.\n"
+            
+            if err_msg:
+                raise WaterReportException("Error processing file: {}".format(err_msg))
 #    for line in res[0].decode(encoding='utf-8').split('\n'):
 #        print(line)
 
