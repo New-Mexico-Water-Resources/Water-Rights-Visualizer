@@ -73,11 +73,22 @@ def exec_report(record):
     log_path = "{}/exec_report_log.txt".format(record['base_dir'])
     
     with open(log_path, 'w') as queue_file:
-        if res:            
+        if res:     
+            stdout = res[0]
+            err = res[1]
+            
             dlog("writing exec output to logfile {}".format(log_path))
-            queue_file.write(res[0].decode(encoding='utf-8')) #std out from script
-            queue_file.write(res[1].decode(encoding='utf-8')) #std err from script
+            queue_file.write(stdout.decode(encoding='utf-8')) #std out from script
+            queue_file.write(err.decode(encoding='utf-8')) #std err from script
                     
+            #todo: something went wrong with creating the png figure
+            if "problem producing figure for" in stdout:
+                pass
+
+            #todo: somethign went wrong with creating the csv file
+            if "problem producing CSV for" in stdout:
+                pass
+            
 #    for line in res[0].decode(encoding='utf-8').split('\n'):
 #        print(line)
 
@@ -187,11 +198,11 @@ def main():
     args = parser.parse_args()
     queue = args.queue
  
-    while True:
-        cleanup_files()
+    while True:        
         check_report_queue(queue)        
         time.sleep(60)        
-
+        cleanup_files() #put this after the sleep so you have a minute to look at things before cleanup
+        
 def is_running(pid):
     #only run this check if the /proc dir exists(on linux systems only)
     if os.path.isdir('/proc'):
