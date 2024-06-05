@@ -110,7 +110,7 @@ def exec_report(record):
     
 
 def update_status(record, state):
-    now = int(time.time())
+    now = int(time.time()) * 1000 #convert to milliseconds to match javascript epoch
     
     record['status'] = state
     
