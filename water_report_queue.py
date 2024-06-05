@@ -74,17 +74,18 @@ def exec_report(record):
     
     with open(log_path, 'w') as queue_file:
         if res:     
-            stdout = res[0]
-            err = res[1]
+            stdout = res[0].decode(encoding='utf-8')
+            err = res[1].decode(encoding='utf-8')
             
             dlog("writing exec output to logfile {}".format(log_path))
-            queue_file.write(stdout.decode(encoding='utf-8')) #std out from script
-            queue_file.write(err.decode(encoding='utf-8')) #std err from script
+            queue_file.write(stdout) #std out from script
+            queue_file.write("\n\n\nErrors and Warnings from run: {}".format(err))
                     
             #todo: something went wrong with creating the png figure
+            dlog("Checking figure err")           
             if "problem producing figure for" in stdout:
                 pass
-
+            dlog("Checking csv err")
             #todo: somethign went wrong with creating the csv file
             if "problem producing CSV for" in stdout:
                 pass
