@@ -1,3 +1,9 @@
+###############################################################################
+# This script fires off once a minute to read the report_queue.json file and
+# invokes some OS calls to run the water-rights-visualizer-backend scripts
+# Logs for this script are written to /tmp/wrq_log.txt via the dlog() function 
+###############################################################################
+
 import subprocess
 import time
 import os
@@ -24,17 +30,66 @@ DEFAULT_QUEUE = "/root/data/water_rights_runs/report_queue.json"
 class WaterReportException(Exception):
     pass
 
+PRINT_LOG = False
+
+def cleanup_files():
+    # stuff we need to clean up
+    # /tmp/wrq_log.txt
+    # /tmp_cron_log.txt
+    # do system calls for tail on logs above and pipe back into log
+    #      e.g. tail -1000 /tmp/wrq_log.txt > /tmp/wrq_log.txt 
+    # loop through all of the runs in data and remove runs older than a month?
+    dlog("TODO: cleanup files")
+    
+#writes to the daemon log file
+#todo: check logsize and tail -1000 if it is too long
+def dlog(text, new_line=True):
+    global PRINT_LOG    
+    log_path = "/tmp/wrq_log.txt"
+    
+    now = datetime.now()    
+    text = str(now) + " - " + text
+    
+    with open(log_path, 'a+') as log_file:
+        log_file.write(text)
+        
+        if new_line:
+            log_file.write("\n")
+            
+    if PRINT_LOG:
+        print(text)
+        
 def exec_report(record):                       
     cmd = record['cmd'].split(" ")
-    print("invoking cmd: {}".format(cmd))
+    dlog("invoking cmd: {}".format(cmd))
 
     pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
     res = pipe.communicate()
     
-    print("retcode =", pipe.returncode)
-    print("res =", res)
-    print("stderr =", res[1])
+    dlog("retcode = {}".format(pipe.returncode))
+#    print("res =", res)
+#    print("stderr =", res[1])
     
+    log_path = "{}/exec_report_log.txt".format(record['base_dir'])
+    
+    with open(log_path, 'w') as queue_file:
+        if res:     
+            stdout = res[0].decode(encoding='utf-8')
+            err = res[1].decode(encoding='utf-8')
+            
+            dlog("writing exec output to logfile {}".format(log_path))
+            queue_file.write(stdout) #std out from script
+            queue_file.write("\n\n\nErrors and Warnings from run: {}".format(err))
+                    
+            #todo: something went wrong with creating the png figure
+            dlog("Checking figure err")           
+            if "problem producing figure for" in stdout:
+                pass
+            dlog("Checking csv err")
+            #todo: somethign went wrong with creating the csv file
+            if "problem producing CSV for" in stdout:
+                pass
+            
 #    for line in res[0].decode(encoding='utf-8').split('\n'):
 #        print(line)
 
@@ -70,7 +125,7 @@ def read_queue_file(queue_file_path):
         with open(queue_file_path, 'r') as queue_file:
             queue_data = json.load(queue_file)            
     except FileNotFoundError as e:
-        print("Report Queue File not found: {}".format(queue_file_path))
+        dlog("Report Queue File not found: {}".format(queue_file_path))
         return None
     
     return queue_data
@@ -83,7 +138,7 @@ def update_queue_file(queue_file_path, record):
     for i in range(0, len(queue_data)):
         if queue_data[i]['key'] == record['key']:
             queue_data[i] = record
-            print("Updating record {}".format(record['key']))
+            dlog("Updating record {}".format(record['key']))
             break
             
     with open(queue_file_path, 'w') as queue_file:
@@ -94,7 +149,7 @@ def update_queue_file(queue_file_path, record):
 def process_report(queue_file_path, record):
     try:
         status_msg = exec_report(record)
-        print("Status of invocation: {}".format(status_msg))
+        dlog("Status of invocation: {}".format(status_msg))
         record['status_msg'] = status_msg
 
         status = None
@@ -111,23 +166,21 @@ def process_report(queue_file_path, record):
         update_queue_file(queue_file_path, record)    
     except Exception as e:
         status_msg = str(e)
-        print("Failed to process {}\n\nCaused by: {}".format(record, status_msg))
+        dlog("Failed to process {}\n\nCaused by: {}".format(record, status_msg))
         record['status_msg'] = status_msg
         update_status(record, "Failed")
         update_queue_file(queue_file_path, record)
              
 #scan the report queue for any files that are "Pending"             
-def check_report_queue(queue_file_path):
-    now = datetime.now()
-    print("Reading queue_file from {} at {}".format(queue_file_path, str(now)))
-    
+def check_report_queue(queue_file_path):    
     queue_data = read_queue_file(queue_file_path)
     if not queue_data:
-        print("No reports to process")
+        dlog("No reports to process")
         return
     
     for record in queue_data:
-        if record['status'] == "Pending":       
+        if record['status'] == "Pending":
+            dlog(">>> Found Pending item in queue_file {}".format(queue_file_path))
             #update the queue file right away so we see the "In Progress"
             update_status(record, "In Progress")            
             update_queue_file(queue_file_path, record)
@@ -136,7 +189,7 @@ def check_report_queue(queue_file_path):
             
             # exit loop after processing one so we can make sure the queue_data gets synced
             break
-    
+
 def main():
     global DEFAULT_QUEUE
     
@@ -146,10 +199,11 @@ def main():
     args = parser.parse_args()
     queue = args.queue
  
-    while True:
-        check_report_queue(queue)
+    while True:        
+        check_report_queue(queue)        
         time.sleep(60)        
-
+        cleanup_files() #put this after the sleep so you have a minute to look at things before cleanup
+        
 def is_running(pid):
     #only run this check if the /proc dir exists(on linux systems only)
     if os.path.isdir('/proc'):
