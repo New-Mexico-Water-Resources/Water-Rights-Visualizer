@@ -108,6 +108,7 @@ const JobQueue = () => {
                   onScroll={onScroll}
                   enableHotKeys={true}
                   enableSearch={true}
+                  extraLines={1}
                 />
               )}
             />

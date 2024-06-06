@@ -45,7 +45,6 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
 
   useEffect(() => {
     fetchJobStatus(job.key, job.name).then((status) => {
-      console.log("STATUS", status);
       setJobStatus(status);
     });
   }, [job.key]);

@@ -9,6 +9,12 @@ const run_directory_base = constants.run_directory_base;
 router.get("/list", (req, res) => {
   let report_queue_file = path.join(run_directory_base, "report_queue.json");
 
+  if (!fs.existsSync(report_queue_file)) {
+    fs.writeFileSync(report_queue_file, "[]");
+    res.status(200).send([]);
+    return;
+  }
+
   fs.readFile(report_queue_file, (err, data) => {
     let report_queue = [];
 

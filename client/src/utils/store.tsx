@@ -87,6 +87,10 @@ const useStore = create<Store>()(
     setBacklog: (backlog) => set({ backlog }),
     fetchQueue: async () => {
       axios.get(`${API_URL}/queue/list`).then((response) => {
+        if (!response?.data || !Array.isArray(response.data)) {
+          return set({ queue: [], backlog: [] });
+        }
+
         let formattedQueue = response.data.map((job: any) => {
           job.submitted = job.submitted ? new Date(job.submitted).toLocaleString() : null;
           job.started = job.started ? new Date(job.started).toLocaleString() : null;
@@ -186,14 +190,7 @@ const useStore = create<Store>()(
         return;
       }
 
-      axios.get(`${API_URL}/download?name=${job.name}&key=${job.key}`).then((response) => {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `${job.name}.zip`);
-        document.body.appendChild(link);
-        link.click();
-      });
+      window.open(`${API_URL}/download?name=${job.name}&key=${job.key}`);
     },
     startNewJob: () => {
       set({

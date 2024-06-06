@@ -1,7 +1,7 @@
 version: "3"
 
 services:
- water_rights_visualizer_ui:
+  water_rights_visualizer_ui:
     build:
       context: .
       dockerfile: Dockerfile.ui
@@ -9,6 +9,7 @@ services:
       - "8000:8000"
     depends_on:
       - water_rights_visualizer_backend
+
   water_rights_visualizer_backend:
     build: .
     container_name: water-rights-visualizer
