@@ -6,7 +6,7 @@ const constants = require("../constants");
 
 const run_directory_base = constants.run_directory_base;
 
-const calculateYearsProcessed = (directory, startYear, endYear, startTime) => {
+const calculateYearsProcessed = (directory, startYear, endYear, startTime, isComplete) => {
   if (!fs.existsSync(directory) || fs.readdirSync(directory).length === 0) {
     return { years: [], count: 0, estimatedPercentComplete: 0, timeRemaining: 0 };
   }
@@ -24,8 +24,8 @@ const calculateYearsProcessed = (directory, startYear, endYear, startTime) => {
 
   const totalYears = endYear - startYear + 1;
 
-  // Start with a default of 258 files per year
-  let averageFilesPerYear = 258;
+  // Start with a default number of files
+  let averageFilesPerYear = 300;
   let estimatedTotalFiles = averageFilesPerYear * totalYears;
 
   if (sortedYears.length > 1) {
@@ -34,7 +34,8 @@ const calculateYearsProcessed = (directory, startYear, endYear, startTime) => {
 
     let filesForCurrentYear = yearCounts[sortedYears[sortedYears.length - 1]] || 0;
 
-    averageFilesPerYear = (totalFiles - filesForCurrentYear) / totalCompletedYears;
+    // Keep a minimum so we don't under predict
+    averageFilesPerYear = Math.max((totalFiles - filesForCurrentYear) / totalCompletedYears, averageFilesPerYear);
 
     let currentYear = sortedYears[sortedYears.length - 1];
     let currentYearCount = yearCounts[currentYear] || 0;
@@ -49,12 +50,17 @@ const calculateYearsProcessed = (directory, startYear, endYear, startTime) => {
 
   let timeRemaining = 0;
 
-  if (startTime && estimatedPercentComplete > 0 && estimatedPercentComplete < 1) {
-    let timeElapsed = Date.now() - startTime;
-    timeRemaining = timeElapsed / estimatedPercentComplete - timeElapsed;
-  } else if (estimatedPercentComplete === 0 || !startTime) {
-    // Estimate 3.5 minutes per year
-    timeRemaining = totalYears * 3.5 * 60 * 1000;
+  if (estimatedPercentComplete === 1 && !isComplete) {
+    estimatedPercentComplete = 0.99;
+    timeRemaining = 1000;
+  } else {
+    if (startTime && estimatedPercentComplete > 0 && estimatedPercentComplete < 1) {
+      let timeElapsed = Date.now() - startTime;
+      timeRemaining = timeElapsed / estimatedPercentComplete - timeElapsed;
+    } else if (estimatedPercentComplete === 0 || !startTime) {
+      // Estimate 3.5 minutes per year
+      timeRemaining = totalYears * 3.5 * 60 * 1000;
+    }
   }
 
   return { years: sortedYears, count: yearFiles.length, estimatedPercentComplete, timeRemaining };
@@ -102,7 +108,8 @@ router.get("/job/status", (req, res) => {
       path.join(run_directory, "output", "subset", jobName),
       job.start_year,
       job.end_year,
-      job.started
+      job.started,
+      job.status === "Complete"
     );
 
     res.status(200).send({
