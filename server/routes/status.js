@@ -42,11 +42,12 @@ const calculateYearsProcessed = (directory, startYear, endYear, startTime) => {
       yearFiles.length + remainingFilesForCurrentYear + averageFilesPerYear * (endYear - currentYearProcessing);
   }
 
-  let estimatedPercentComplete = yearFiles.length / estimatedTotalFiles;
+  let estimatedPercentComplete = estimatedTotalFiles > 0 ? yearFiles.length / estimatedTotalFiles : 0;
+
   let timeRemaining = 0;
-  if (estimatedPercentComplete > 0) {
-    timeRemaining = (Date.now() - startTime) * (1 / (1 - estimatedPercentComplete));
-  } else {
+  if (startTime && estimatedPercentComplete > 0 && estimatedPercentComplete < 1) {
+    timeRemaining = (Date.now() - startTime) * (1 - estimatedPercentComplete);
+  } else if (estimatedPercentComplete === 0) {
     // Estimate 3.5 minutes per year
     timeRemaining = (endYear - startYear + 1) * 3.5 * 60 * 1000;
   }
@@ -96,13 +97,12 @@ router.get("/job/status", (req, res) => {
       path.join(run_directory, "output", "subset", jobName),
       job.start_year,
       job.end_year,
-      job.start_time
+      job.started
     );
-    let currentYear = processedYears.years.length;
 
     res.status(200).send({
       status: jobStatus,
-      currentYear,
+      currentYear: processedYears.years.length,
       totalYears,
       fileCount: processedYears.count,
       estimatedPercentComplete: job.status === "Complete" ? 1 : processedYears.estimatedPercentComplete,
