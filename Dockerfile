@@ -53,4 +53,6 @@ RUN chmod +x /init.sh
 
 RUN touch /tmp/cron_log.txt
 
+RUN apt-get install -y vim
+
 EXPOSE 80
