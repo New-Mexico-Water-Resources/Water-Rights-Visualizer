@@ -19,6 +19,7 @@ const theme = createTheme({
         tooltip: {
           backgroundColor: "var(--st-gray-80)",
           color: "var(--st-gray-20)",
+          whiteSpace: "pre-line",
         },
         arrow: {
           color: "var(--st-gray-80)",

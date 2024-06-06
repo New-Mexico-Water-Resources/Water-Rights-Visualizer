@@ -8,16 +8,20 @@ import useStore, { JobStatus } from "../utils/store";
 import { useEffect, useState } from "react";
 
 const JobProgressBar = ({ status }: { status: JobStatus }) => {
-  let value = Math.max(Math.min((status.currentYear / status.totalYears) * 100, 100), 0);
+  let estimatedPercentComplete = Math.max(Math.min(Math.round(status.estimatedPercentComplete * 10000) / 100, 100), 0);
 
   return (
-    <Tooltip title={`Status: ${status.status || "N/A"}`}>
+    <Tooltip
+      title={`Status: ${status.status || "N/A"}\nYears Processed: ${status.currentYear}/${
+        status.totalYears
+      }\nEstimated Percent Complete: ${estimatedPercentComplete}%`}
+    >
       <Box sx={{ display: "flex", alignItems: "center" }}>
         <Box sx={{ width: "100%", mr: 1 }}>
-          <LinearProgress value={value} variant="determinate" />
+          <LinearProgress value={estimatedPercentComplete} variant="determinate" />
         </Box>
         <Box sx={{ minWidth: 35 }}>
-          <Typography variant="body2" color="text.secondary">{`${status.currentYear}/${status.totalYears}`}</Typography>
+          <Typography variant="body2" color="text.secondary">{`${estimatedPercentComplete}%`}</Typography>
         </Box>
       </Box>
     </Tooltip>
@@ -35,7 +39,13 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const downloadJob = useStore((state) => state.downloadJob);
   const fetchJobStatus = useStore((state) => state.fetchJobStatus);
 
-  const [jobStatus, setJobStatus] = useState<JobStatus>({ status: "", currentYear: 0, totalYears: 0, fileCount: 0 });
+  const [jobStatus, setJobStatus] = useState<JobStatus>({
+    status: "",
+    currentYear: 0,
+    totalYears: 0,
+    fileCount: 0,
+    estimatedPercentComplete: 0,
+  });
 
   useEffect(() => {
     fetchJobStatus(job.key, job.name).then((status) => {
