@@ -42,12 +42,16 @@ const calculateYearsProcessed = (directory, startYear, endYear, startTime) => {
       yearFiles.length + remainingFilesForCurrentYear + averageFilesPerYear * (endYear - currentYearProcessing);
   }
 
-  let estimatedPercentComplete = estimatedTotalFiles > 0 ? yearFiles.length / estimatedTotalFiles : 0;
+  let estimatedPercentComplete =
+    estimatedTotalFiles > 0 ? yearFiles.length / Math.max(yearFiles.length, estimatedTotalFiles) : 0;
 
   let timeRemaining = 0;
+
   if (startTime && estimatedPercentComplete > 0 && estimatedPercentComplete < 1) {
-    timeRemaining = (Date.now() - startTime) * (1 - estimatedPercentComplete);
-  } else if (estimatedPercentComplete === 0) {
+    let timeElapsed = Date.now() - startTime;
+
+    timeRemaining = timeElapsed / estimatedPercentComplete - timeElapsed;
+  } else if (estimatedPercentComplete === 0 || !startTime) {
     // Estimate 3.5 minutes per year
     timeRemaining = (endYear - startYear + 1) * 3.5 * 60 * 1000;
   }
