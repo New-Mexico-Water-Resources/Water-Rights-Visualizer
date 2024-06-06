@@ -85,6 +85,9 @@ def exec_report(record):
             #sys.stdout.buffer.write(c)
             log_file.buffer.write(c)
                                             
+    #todo: figure out how to read the log as it is streaming above
+    # currenlty each 'c' in the loop is a char so it is just one letter making it
+    # a bit hard to parse for error messages
     #check the output of the logfile for errors
     with open(log_path, 'r') as log_file:
         err_msg = ""
@@ -92,14 +95,15 @@ def exec_report(record):
         csv_err_check = "problem producing CSV for"
         log_body = log_file.read()
         
+        dlog("checking log file for errors")
         if figure_err_check in log_body:
             err_msg += "Error producing figure png file.\n"   
 
-            if csv_err_check in log_Body:
-                err_msg += "Error producing csv file.\n"
+        if csv_err_check in log_Body:
+            err_msg += "Error producing csv file.\n"
 
-            if err_msg:
-                raise WaterReportException("Error processing file: {}".format(err_msg))
+        if err_msg:
+            raise WaterReportException("Error processing file: {}".format(err_msg))
     
     #todo: run tail_cleanup() on the log files after we have run this tool in prod for awhile
     # and we are sure the err checks above catch all the problems
