@@ -89,10 +89,11 @@ def exec_report(record):
             sys.stdout.buffer.write(c)
             log_file.buffer.write(c)
                     
-            if figure_err_check in c:
+            c_str = c.decode(encoding='utf-8')
+            if figure_err_check in c_str:
                 err_msg += "Error producing figure png file.\n"   
 
-            if csv_err_check in c:
+            if csv_err_check in c_str:
                 err_msg += "Error producing csv file.\n"
 
             if err_msg:
