@@ -112,7 +112,9 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           Started: <b>{job.started || "Not started yet"}</b>
         </Typography>
         {job.started && (
-          <Typography variant="body2">Finished: {job.ended ? <b>{job.ended}</b> : <MoreHorizIcon />}</Typography>
+          <Typography variant="body2" sx={{ display: "flex", alignItems: "center" }}>
+            Finished: {job.ended ? <b style={{ marginLeft: "4px" }}>{job.ended}</b> : <MoreHorizIcon />}
+          </Typography>
         )}
         {job.ended && job.started && (
           <Typography variant="body2">
