@@ -4,16 +4,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import StatusIcon from "./StatusIcon";
 
 import { useConfirm } from "material-ui-confirm";
-import useStore from "../utils/store";
+import useStore, { JobStatus } from "../utils/store";
 import { useEffect, useState } from "react";
 
-export interface JobStatus {
-  status: string;
-  currentYear: number;
-  totalYears: number;
-}
-
-const LinearProgressWithLabel = ({ status }: { status: JobStatus }) => {
+const JobProgressBar = ({ status }: { status: JobStatus }) => {
   let value = Math.max(Math.min((status.currentYear / status.totalYears) * 100, 100), 0);
 
   return (
@@ -41,7 +35,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const downloadJob = useStore((state) => state.downloadJob);
   const fetchJobStatus = useStore((state) => state.fetchJobStatus);
 
-  const [jobStatus, setJobStatus] = useState<JobStatus>({ status: "", currentYear: 0, totalYears: 0 });
+  const [jobStatus, setJobStatus] = useState<JobStatus>({ status: "", currentYear: 0, totalYears: 0, fileCount: 0 });
 
   useEffect(() => {
     fetchJobStatus(job.key, job.name).then((status) => {
@@ -100,7 +94,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           Status: <b>{job.status_msg || job.status}</b>
         </Typography>
         <div>
-          <LinearProgressWithLabel status={jobStatus} />
+          <JobProgressBar status={jobStatus} />
         </div>
       </div>
       <div className="action-buttons">

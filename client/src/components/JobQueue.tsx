@@ -1,6 +1,6 @@
 import { Box, IconButton, Modal, Typography } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import useStore from "../utils/store";
+import useStore, { JobStatus } from "../utils/store";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LazyLog, ScrollFollow } from "@melloware/react-logviewer";
 
@@ -19,6 +19,14 @@ const JobQueue = () => {
   const [activeJobLogKey, setActiveJobLogKey] = useState("");
   const [jobLogsOpen, setJobLogsOpen] = useState(false);
 
+  const [jobStatus, setJobStatus] = useState<JobStatus>({ status: "", currentYear: 0, totalYears: 0, fileCount: 0 });
+  const fetchJobStatus = useStore((state) => state.fetchJobStatus);
+  // useEffect(() => {
+  // fetchJobStatus(job.key, job.name).then((status) => {
+  //   setJobStatus(status);
+  // });
+  // }, [job.key]);
+
   let logBottomRef = useRef<HTMLDivElement>(null);
   const viewingJob = useMemo(() => {
     if (!activeJobLogKey) {
@@ -35,6 +43,15 @@ const JobQueue = () => {
   useEffect(() => {
     const fetchLogs = async () => {
       if (activeJobLogKey && jobLogsOpen) {
+        fetchJobStatus(activeJobLogKey, viewingJob.name)
+          .then((status) => {
+            setJobStatus(status);
+          })
+          .catch((error) => {
+            console.error("Error fetching job status", error);
+            setJobStatus({ status: "Error fetching job status", currentYear: 0, totalYears: 0, fileCount: 0 });
+          });
+
         fetchJobLogs(activeJobLogKey).then((logs) => {
           let existingLog = jobLogs[activeJobLogKey];
           if (existingLog && existingLog.logs === logs.logs) {
@@ -65,7 +82,13 @@ const JobQueue = () => {
 
   return (
     <div className={`queue-container ${isQueueOpen || isBacklogOpen ? "open" : "closed"}`}>
-      <Modal open={jobLogsOpen} onClose={() => setJobLogsOpen(false)}>
+      <Modal
+        open={jobLogsOpen}
+        onClose={() => {
+          setJobLogsOpen(false);
+          setJobStatus({ status: "", currentYear: 0, totalYears: 0, fileCount: 0 });
+        }}
+      >
         <Box
           sx={{
             position: "absolute",
@@ -88,6 +111,7 @@ const JobQueue = () => {
               onClick={() => {
                 setActiveJobLogKey("");
                 setJobLogsOpen(false);
+                setJobStatus({ status: "", currentYear: 0, totalYears: 0, fileCount: 0 });
               }}
               sx={{ marginLeft: "auto" }}
             >
@@ -113,19 +137,21 @@ const JobQueue = () => {
               )}
             />
           </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              color: "var(--st-gray-50)",
-              marginTop: "5px",
-              fontSize: "14px",
-            }}
-          >
-            Last Updated:{" "}
-            {jobLogs[activeJobLogKey]?.timestamp
-              ? new Date(jobLogs[activeJobLogKey].timestamp).toLocaleTimeString()
-              : "Never"}
+          <div style={{ display: "flex", marginTop: "5px" }}>
+            <div style={{ color: "var(--st-gray-50)", fontSize: "14px" }}>Files Generated: {jobStatus.fileCount}</div>
+            <div
+              style={{
+                display: "flex",
+                marginLeft: "auto",
+                color: "var(--st-gray-50)",
+                fontSize: "14px",
+              }}
+            >
+              Last Updated:{" "}
+              {jobLogs[activeJobLogKey]?.timestamp
+                ? new Date(jobLogs[activeJobLogKey].timestamp).toLocaleTimeString()
+                : "Never"}
+            </div>
           </div>
         </Box>
       </Modal>

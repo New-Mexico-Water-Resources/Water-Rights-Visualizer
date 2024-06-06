@@ -8,14 +8,14 @@ const run_directory_base = constants.run_directory_base;
 
 const scanForYears = (directory) => {
   if (!fs.existsSync(directory) || fs.readdirSync(directory).length === 0) {
-    return [];
+    return { years: [], count: 0 };
   }
 
   const files = fs.readdirSync(directory);
   const yearFiles = files.filter((file) => file.match(/^\d{4}\./)).map((file) => parseInt(file.split(".")[0]));
   let uniqueYears = new Set(yearFiles);
 
-  return Array.from(uniqueYears).sort((a, b) => a - b);
+  return { years: Array.from(uniqueYears).sort((a, b) => a - b), count: yearFiles.length };
 };
 
 router.get("/job/status", (req, res) => {
@@ -57,9 +57,9 @@ router.get("/job/status", (req, res) => {
 
     let totalYears = job.end_year - job.start_year + 1;
     let processedYears = scanForYears(path.join(run_directory, "output", "subset", jobName));
-    let currentYear = processedYears.length;
+    let currentYear = processedYears.years.length;
 
-    res.status(200).send({ status: jobStatus, currentYear, totalYears });
+    res.status(200).send({ status: jobStatus, currentYear, totalYears, fileCount: processedYears.count });
   });
 });
 

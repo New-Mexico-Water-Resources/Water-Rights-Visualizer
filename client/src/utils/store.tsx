@@ -4,6 +4,13 @@ import { devtools } from "zustand/middleware";
 import axios from "axios";
 import { API_URL } from "./constants";
 
+export interface JobStatus {
+  status: string;
+  currentYear: number;
+  totalYears: number;
+  fileCount: number;
+}
+
 interface Store {
   isQueueOpen: boolean;
   setIsQueueOpen: (isQueueOpen: boolean) => void;
@@ -45,10 +52,7 @@ interface Store {
   startNewJob: () => void;
   closeNewJob: () => void;
   fetchJobLogs: (jobKey: string) => Promise<{ logs: string }>;
-  fetchJobStatus: (
-    jobKey: string,
-    jobName: string
-  ) => Promise<{ status: string; currentYear: number; totalYears: number }>;
+  fetchJobStatus: (jobKey: string, jobName: string) => Promise<JobStatus>;
 }
 
 const useStore = create<Store>()(
@@ -231,7 +235,7 @@ const useStore = create<Store>()(
         })
         .catch((error) => {
           set({ errorMessage: error?.message || "Error fetching job status" });
-          return { status: "Error", currentYear: 0, totalYears: 0 };
+          return { status: "Error", currentYear: 0, totalYears: 0, fileCount: 0 };
         });
     },
   }))
