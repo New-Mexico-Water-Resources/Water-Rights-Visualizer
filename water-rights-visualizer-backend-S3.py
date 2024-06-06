@@ -91,7 +91,7 @@ def main(argv=sys.argv):
         )
 
         #check and upload the png file to s3
-        figure_output_filename = join(output_directory, "figuresZZZZZ", name, f"{year}_{name}.png")
+        figure_output_filename = join(output_directory, "figures", name, f"{year}_{name}.png")
 
         if not exists(figure_output_filename):
             write_status(status_filename, f"problem producing figure for {figure_output_filename} for {year}")
