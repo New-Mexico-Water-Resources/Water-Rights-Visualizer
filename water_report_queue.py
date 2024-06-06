@@ -34,7 +34,8 @@ PRINT_LOG = False
 
 #does a system call to tail -1000 to make sure files do not grow too large
 def tail_cleanup(filepath):
-    cmd = ["tail", "-1000", filepath, ">", filepath]
+    cmd = ["/usr/bin/tail", "-1000", filepath, ">", filepath]
+    dlog("Running tail_cleanup on {}".format(cmd))
     pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
     res = pipe.communicate()
     
@@ -99,18 +100,9 @@ def exec_report(record):
             
             if err_msg:
                 raise WaterReportException("Error processing file: {}".format(err_msg))
-#    for line in res[0].decode(encoding='utf-8').split('\n'):
-#        print(line)
-
-#    out, err = proc.communicate()
-#
-#    if err:
-#        output = err.decode()
-#        return output
-
-#    return "Invoked without errors: {}".format(cmd)
     
-    #todo: parse output(res[0]) and decide whether or not something blew up
+    #todo: run tail_cleanup() on the log files after we have run this tool in prod for awhile
+    # and we are sure the err checks above catch all the problems
     status = "Success"
     return status
     
