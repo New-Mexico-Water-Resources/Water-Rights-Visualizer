@@ -77,13 +77,27 @@ def exec_report(record):
     dlog("invoking cmd: {}".format(cmd))
     
     log_path = "{}/exec_report_log.txt".format(record['base_dir'])
+    dlog("writing exec output to logfile {}".format(log_path))
     with open(log_path, 'w') as log_file:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        err_msg = ""
+        figure_err_check = "problem producing figure for" 
+        csv_err_check = "problem producing CSV for"
         
         for c in iter(lambda: process.stdout.read(1), b""):
             sys.stdout.buffer.write(c)
             log_file.buffer.write(c)
-        
+                    
+            if figure_err_check in c:
+                err_msg += "Error producing figure png file.\n"   
+
+            if csv_err_check in c:
+                err_msg += "Error producing csv file.\n"
+
+            if err_msg:
+                raise WaterReportException("Error processing file: {}".format(err_msg))
+                
 #        res = pipe.communicate()
 #
 #        dlog("retcode = {}".format(pipe.returncode))
