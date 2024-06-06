@@ -79,51 +79,27 @@ def exec_report(record):
     log_path = "{}/exec_report_log.txt".format(record['base_dir'])
     dlog("writing exec output to logfile {}".format(log_path))
     with open(log_path, 'w') as log_file:
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)        
         
+        for c in iter(lambda: process.stdout.read(1), b""):
+            #sys.stdout.buffer.write(c)
+            log_file.buffer.write(c)
+                                            
+    #check the output of the logfile for errors
+    with open(log_path, 'r') as log_file:
         err_msg = ""
         figure_err_check = "problem producing figure for" 
         csv_err_check = "problem producing CSV for"
+        log_body = log_file.read()
         
-        for c in iter(lambda: process.stdout.read(1), b""):
-            sys.stdout.buffer.write(c)
-            log_file.buffer.write(c)
-                    
-            c_str = c.decode(encoding='utf-8')
-            dlog("log c_str is: {}".format(c_str))
-            if figure_err_check in c_str:
-                err_msg += "Error producing figure png file.\n"   
+        if figure_err_check in log_body:
+            err_msg += "Error producing figure png file.\n"   
 
-            if csv_err_check in c_str:
+            if csv_err_check in log_Body:
                 err_msg += "Error producing csv file.\n"
 
             if err_msg:
                 raise WaterReportException("Error processing file: {}".format(err_msg))
-                
-#        res = pipe.communicate()
-#
-#        dlog("retcode = {}".format(pipe.returncode))
-#        
-#        if res:     
-#            stdout = res[0].decode(encoding='utf-8')
-#            err = res[1].decode(encoding='utf-8')
-#            
-#            dlog("writing exec output to logfile {}".format(log_path))
-#            queue_file.write(stdout) #std out from script
-#            queue_file.write("\n\n\nErrors and Warnings from run:\n{}".format(err))
-#                            
-#            err_msg = ""
-#            
-#            figure_err_check = "problem producing figure for" 
-#            if figure_err_check in stdout:
-#                err_msg += "Error producing figure png file.\n"                
-#                        
-#            csv_err_check = "problem producing CSV for"
-#            if csv_err_check in stdout:
-#                err_msg += "Error producing csv file.\n"
-#            
-#            if err_msg:
-#                raise WaterReportException("Error processing file: {}".format(err_msg))
     
     #todo: run tail_cleanup() on the log files after we have run this tool in prod for awhile
     # and we are sure the err checks above catch all the problems
