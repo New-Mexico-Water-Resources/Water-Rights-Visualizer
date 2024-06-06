@@ -6,38 +6,17 @@ import StatusIcon from "./StatusIcon";
 import { useConfirm } from "material-ui-confirm";
 import useStore, { JobStatus } from "../utils/store";
 import { useEffect, useMemo } from "react";
+import { formatElapsedTime } from "../utils/helpers";
 
 const JobProgressBar = ({ status }: { status: JobStatus }) => {
   let estimatedPercentComplete = Math.max(Math.min(Math.round(status.estimatedPercentComplete * 1000) / 10, 100), 0);
-
-  let formattedTimeRemaining = "";
-
-  let timeRemainingSeconds = status.timeRemaining / 1000;
-  let timeRemainingMinutes = Math.floor(timeRemainingSeconds / 60);
-  timeRemainingSeconds = Math.floor(timeRemainingSeconds % 60);
-  let timeRemainingHours = Math.floor(timeRemainingMinutes / 60);
-  timeRemainingMinutes = Math.floor(timeRemainingMinutes % 60);
-  let timeRemainingDays = Math.floor(timeRemainingHours / 24);
-  timeRemainingHours = Math.floor(timeRemainingHours % 24);
-
-  if (timeRemainingDays > 0) {
-    formattedTimeRemaining += `${timeRemainingDays} days `;
-  } else if (timeRemainingHours > 0) {
-    formattedTimeRemaining += `${timeRemainingHours} hours `;
-  } else if (timeRemainingMinutes > 0) {
-    formattedTimeRemaining += `${timeRemainingMinutes} minutes `;
-  } else if (timeRemainingSeconds > 0) {
-    formattedTimeRemaining += `${timeRemainingSeconds} seconds `;
-  } else {
-    formattedTimeRemaining = "N/A";
-  }
 
   let tooltipText = `Status: ${status.status || "N/A"}\nYears Processed: ${status.currentYear}/${
     status.totalYears
   }\nEstimated Percent Complete: ${estimatedPercentComplete}%`;
 
   if (status.timeRemaining > 0) {
-    tooltipText += `\nEstimated Time Remaining: ${formattedTimeRemaining}`;
+    tooltipText += `\nEstimated Time Remaining: ${formatElapsedTime(status.timeRemaining)}`;
   }
 
   return (
@@ -133,8 +112,11 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           Started: <b>{job.started || "Not started yet"}</b>
         </Typography>
         {job.started && (
-          <Typography variant="body2" sx={{ display: "flex", alignItem: "center" }}>
-            Finished: {job.ended ? <b>{job.ended}</b> : <MoreHorizIcon />}
+          <Typography variant="body2">Finished: {job.ended ? <b>{job.ended}</b> : <MoreHorizIcon />}</Typography>
+        )}
+        {job.ended && job.started && (
+          <Typography variant="body2">
+            Time Elapsed: <b>{job.timeElapsed}</b>
           </Typography>
         )}
         <Typography variant="body2">

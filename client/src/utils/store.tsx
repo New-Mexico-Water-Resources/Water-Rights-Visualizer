@@ -3,6 +3,7 @@ import { devtools } from "zustand/middleware";
 
 import axios from "axios";
 import { API_URL } from "./constants";
+import { formatElapsedTime } from "./helpers";
 
 export interface JobStatus {
   status: string;
@@ -102,6 +103,10 @@ const useStore = create<Store>()(
           job.submitted = job.submitted ? new Date(job.submitted).toLocaleString() : null;
           job.started = job.started ? new Date(job.started).toLocaleString() : null;
           job.ended = job.ended ? new Date(job.ended).toLocaleString() : null;
+          job.timeElapsed =
+            job.started && job.ended
+              ? formatElapsedTime(new Date(job.ended).getTime() - new Date(job.started).getTime())
+              : null;
           return job;
         });
 
