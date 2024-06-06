@@ -12,3 +12,7 @@ build
 runs
 temp
 *.log
+report_queue.json
+output
+node_modules
+uploads
