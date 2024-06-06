@@ -52,5 +52,8 @@ COPY init.sh /init.sh
 RUN chmod +x /init.sh
 
 RUN touch /tmp/cron_log.txt
+RUN touch /tmp/wrq_log.txt
+
+RUN apt-get install -y vim
 
 EXPOSE 80

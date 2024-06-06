@@ -32,14 +32,27 @@ class WaterReportException(Exception):
 
 PRINT_LOG = False
 
+#does a system call to tail -1000 to make sure files do not grow too large
+def tail_cleanup(filepath):
+    cmd = ["/usr/bin/tail", "-1000", filepath]    
+    pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
+    res = pipe.communicate()
+    
+    if res:     
+        stdout = res[0].decode(encoding='utf-8')
+        err = res[1].decode(encoding='utf-8')
+        
+        with open(filepath, 'w') as file:
+            file.write(stdout)
+        
 def cleanup_files():
-    # stuff we need to clean up
-    # /tmp/wrq_log.txt
-    # /tmp_cron_log.txt
-    # do system calls for tail on logs above and pipe back into log
-    #      e.g. tail -1000 /tmp/wrq_log.txt > /tmp/wrq_log.txt 
-    # loop through all of the runs in data and remove runs older than a month?
-    dlog("TODO: cleanup files")
+    log_files = [
+        "/tmp/wrq_log.txt",
+        "/tmp/cron_log.txt"
+    ]
+    
+    for lf in log_files:
+        tail_cleanup(lf)        
     
 #writes to the daemon log file
 #todo: check logsize and tail -1000 if it is too long
@@ -93,24 +106,15 @@ def exec_report(record):
             
             if err_msg:
                 raise WaterReportException("Error processing file: {}".format(err_msg))
-#    for line in res[0].decode(encoding='utf-8').split('\n'):
-#        print(line)
-
-#    out, err = proc.communicate()
-#
-#    if err:
-#        output = err.decode()
-#        return output
-
-#    return "Invoked without errors: {}".format(cmd)
     
-    #todo: parse output(res[0]) and decide whether or not something blew up
+    #todo: run tail_cleanup() on the log files after we have run this tool in prod for awhile
+    # and we are sure the err checks above catch all the problems
     status = "Success"
     return status
     
 
 def update_status(record, state):
-    now = int(time.time()) * 1000 #convert to milliseconds to match javascript epoch
+    now = int(time.time() * 1000) #convert to milliseconds to match javascript epoch
     
     record['status'] = state
     
@@ -230,12 +234,13 @@ if __name__ == "__main__":
                 sys.exit()
         
     with open(pidfile, 'w') as f:
+        dlog("Writing pid file with value {}".format(pid))
         f.seek(0)
         f.write(pid)
         f.truncate()
     
     try:
-        print("{}: Starting up water_report_queue.py".format(str(now)))
+        dlog("Starting up water_report_queue.py".format(str(now)))
         main()
     finally:
         os.unlink(pidfile)
