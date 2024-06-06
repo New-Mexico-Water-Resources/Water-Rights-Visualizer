@@ -18,6 +18,4 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - type: bind
-        source: ${HOST_DATA_DIRECTORY:-${HOME}/data}
-        target: ${CONTAINER_DATA_DIRECTORY:-${HOME}/data}
+      - ${HOST_DATA_DIRECTORY:-${HOME}/data}:${CONTAINER_DATA_DIRECTORY:-${HOME}/data}
