@@ -101,7 +101,7 @@ def main(argv=sys.argv):
 #        output_bucket.upload_file(figure_output_filename, figure_output_s3_name)
 
         #check and uplaod the csv file to s3
-        CSV_output_filename = join(output_directory, "monthly_meansZZZZZZ", name, f"{year}_monthly_means.csv")
+        CSV_output_filename = join(output_directory, "monthly_means", name, f"{year}_monthly_means.csv")
 
         if not exists(CSV_output_filename):
             write_status(status_filename, f"problem producing CSV for {CSV_output_filename} for {year}")
