@@ -3,6 +3,7 @@ import { devtools } from "zustand/middleware";
 
 import axios from "axios";
 import { API_URL } from "./constants";
+import { formatElapsedTime } from "./helpers";
 
 export interface JobStatus {
   status: string;
@@ -10,6 +11,7 @@ export interface JobStatus {
   totalYears: number;
   fileCount: number;
   estimatedPercentComplete: number;
+  timeRemaining: number;
 }
 
 interface Store {
@@ -53,6 +55,7 @@ interface Store {
   startNewJob: () => void;
   closeNewJob: () => void;
   fetchJobLogs: (jobKey: string) => Promise<{ logs: string }>;
+  jobStatuses: Record<string, JobStatus>;
   fetchJobStatus: (jobKey: string, jobName: string) => Promise<JobStatus>;
 }
 
@@ -100,6 +103,10 @@ const useStore = create<Store>()(
           job.submitted = job.submitted ? new Date(job.submitted).toLocaleString() : null;
           job.started = job.started ? new Date(job.started).toLocaleString() : null;
           job.ended = job.ended ? new Date(job.ended).toLocaleString() : null;
+          job.timeElapsed =
+            job.started && job.ended
+              ? formatElapsedTime(new Date(job.ended).getTime() - new Date(job.started).getTime())
+              : null;
           return job;
         });
 
@@ -238,15 +245,41 @@ const useStore = create<Store>()(
           return { logs: "" };
         });
     },
+    jobStatuses: {},
     fetchJobStatus: (jobKey, jobName) => {
       return axios
         .get(`${API_URL}/job/status?key=${jobKey}&name=${jobName}`)
         .then((response) => {
+          set((state) => {
+            let jobStatuses = { ...state.jobStatuses };
+            jobStatuses[jobKey] = response.data;
+            return { jobStatuses };
+          });
           return response.data;
         })
         .catch((error) => {
-          set({ errorMessage: error?.message || "Error fetching job status" });
-          return { status: "Error", currentYear: 0, totalYears: 0, fileCount: 0, estimatedPercentComplete: 0 };
+          set((state) => ({
+            errorMessage: error?.message || "Error fetching job status",
+            jobStatuses: {
+              ...state.jobStatuses,
+              [jobKey]: {
+                status: "Error fetching job status",
+                currentYear: 0,
+                totalYears: 0,
+                fileCount: 0,
+                estimatedPercentComplete: 0,
+                timeRemaining: 0,
+              },
+            },
+          }));
+          return {
+            status: "Error",
+            currentYear: 0,
+            totalYears: 0,
+            fileCount: 0,
+            estimatedPercentComplete: 0,
+            timeRemaining: 0,
+          };
         });
     },
   }))
