@@ -1,13 +1,13 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
-const constants = require('./constants');
+const path = require("path");
+const fs = require("fs");
+const constants = require("../constants");
 
 const project_directory = constants.project_directory;
 const run_directory_base = constants.run_directory_base;
 
-router.get('/result_base64', (req, res) => {
+router.get("/result_base64", (req, res) => {
   var name = req.query.name;
   console.log(`name: ${name}`);
   var year = req.query.year;
@@ -20,8 +20,8 @@ router.get('/result_base64', (req, res) => {
       if (err) {
         res.status(500).send(`Error reading image file: ${err}`);
       } else {
-        var base64Image = new Buffer.from(data).toString('base64');
-        var dataURI = 'data:image/png;base64,' + base64Image;
+        var base64Image = new Buffer.from(data).toString("base64");
+        var dataURI = "data:image/png;base64," + base64Image;
         res.status(200).send(dataURI);
       }
     });

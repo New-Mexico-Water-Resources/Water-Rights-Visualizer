@@ -1,14 +1,14 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
-const constants = require('./constants');
+const path = require("path");
+const fs = require("fs");
+const constants = require("../constants");
 
 const project_directory = constants.project_directory;
 const run_directory_base = constants.run_directory_base;
 
-router.get('/result', (req, res) => {
-  console.log("/result")
+router.get("/result", (req, res) => {
+  console.log("/result");
   var name = req.query.name;
   console.log(`name: ${name}`);
   var year = req.query.year;
@@ -18,11 +18,11 @@ router.get('/result', (req, res) => {
   console.log(`reading image from ${image_filename}`);
 
   if (fs.existsSync(image_filename)) {
-      console.log("responding with HTTP 200");
-      res.status(200).sendFile(image_filename);
+    console.log("responding with HTTP 200");
+    res.status(200).sendFile(image_filename);
   } else {
-      console.log("responding with HTTP 204");
-      res.status(204).send(`figure for ${name} ${year} is not available`);
+    console.log("responding with HTTP 204");
+    res.status(204).send(`figure for ${name} ${year} is not available`);
   }
 });
 

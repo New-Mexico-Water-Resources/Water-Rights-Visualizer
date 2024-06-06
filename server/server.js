@@ -1,29 +1,30 @@
-require('log-timestamp');
-const express = require('express');
-const cors = require('cors'); // Don't forget to install this package using npm
-const path = require('path');
-const fs = require('fs');
-const status = require('./status');
-const start_year = require('./start_year');
-const end_year = require('./end_year');
-const years_available = require('./years_available');
-const geojson = require('./geojson');
-const result = require('./result');
-const result_base64 = require('./result_base64');
-const download = require('./download');
-const start_run = require('./start_run');
-const runs = require('./runs');
-const prepare_geojson = require('./prepare_geojson');
-const constants = require('./constants');
+require("log-timestamp");
+const express = require("express");
+const cors = require("cors"); // Don't forget to install this package using npm
+// const path = require('path');
+// const fs = require('fs');
+const status = require("./routes/status");
+const logs = require("./routes/logs");
+const start_year = require("./routes/start_year");
+const end_year = require("./routes/end_year");
+const years_available = require("./routes/years_available");
+const geojson = require("./routes/geojson");
+const result = require("./routes/result");
+const result_base64 = require("./routes/result_base64");
+const download = require("./routes/download");
+const start_run = require("./routes/start_run/start_run");
+const runs = require("./routes/runs");
+const prepare_geojson = require("./routes/prepare_geojson/prepare_geojson");
+const queue = require("./routes/queue/queue");
+const constants = require("./constants");
 
 const working_directory = process.cwd();
 const run_directory_base = constants.run_directory_base;
-const html_path = path.join(path.dirname(__dirname), 'page');
+// const html_path = path.join(path.dirname(__dirname), 'page');
 const port = constants.port;
 
 // const argv = process.argv.slice(2);
 // const demo_mode = argv[0] == "demo";
-
 
 console.log(`starting server on port ${port}`);
 console.log(`run directory: ${run_directory_base}`);
@@ -33,20 +34,31 @@ const app = express();
 
 app.use(cors()); // Use CORS middleware
 app.use(express.json());
-app.use(express.static(html_path));
+// app.use(express.static(html_path));
 
-app.use('/', status);
-app.use('/', start_year);
-app.use('/', end_year);
-app.use('/', years_available);
-app.use('/', geojson);
-app.use('/', result);
-app.use('/', result_base64);
-app.use('/', download);
-app.use('/', start_run);
-app.use('/', runs);
-app.post('/prepare_geojson', prepare_geojson.upload.single('file'), prepare_geojson.prepareGeojson);
+const basePath = "/api";
+
+// Health check
+app.get(`${basePath}/`, (req, res) => {
+  res.status(200).send({
+    message: "New Mexico Water Rights Visualizer API is running",
+  });
+});
+
+app.use(`${basePath}/`, status);
+app.use(`${basePath}/`, logs);
+app.use(`${basePath}/`, start_year);
+app.use(`${basePath}/`, end_year);
+app.use(`${basePath}/`, years_available);
+app.use(`${basePath}/`, geojson);
+app.use(`${basePath}/`, result);
+app.use(`${basePath}/`, result_base64);
+app.use(`${basePath}/`, download);
+app.use(`${basePath}/`, start_run);
+app.use(`${basePath}/`, runs);
+app.use(`${basePath}/queue`, queue);
+app.post(`${basePath}/prepare_geojson`, prepare_geojson.upload.single("file"), prepare_geojson.prepareGeojson);
 
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`API running on http://localhost:${port}${basePath}`);
 });
