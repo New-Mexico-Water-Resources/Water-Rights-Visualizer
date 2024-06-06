@@ -75,37 +75,39 @@ def dlog(text, new_line=True):
 def exec_report(record):                       
     cmd = record['cmd'].split(" ")
     dlog("invoking cmd: {}".format(cmd))
-
-    pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
-    res = pipe.communicate()
-    
-    dlog("retcode = {}".format(pipe.returncode))
-#    print("res =", res)
-#    print("stderr =", res[1])
     
     log_path = "{}/exec_report_log.txt".format(record['base_dir'])
-    
-    with open(log_path, 'w') as queue_file:
-        if res:     
-            stdout = res[0].decode(encoding='utf-8')
-            err = res[1].decode(encoding='utf-8')
-            
-            dlog("writing exec output to logfile {}".format(log_path))
-            queue_file.write(stdout) #std out from script
-            queue_file.write("\n\n\nErrors and Warnings from run:\n{}".format(err))
-                            
-            err_msg = ""
-            
-            figure_err_check = "problem producing figure for" 
-            if figure_err_check in stdout:
-                err_msg += "Error producing figure png file.\n"                
-                        
-            csv_err_check = "problem producing CSV for"
-            if csv_err_check in stdout:
-                err_msg += "Error producing csv file.\n"
-            
-            if err_msg:
-                raise WaterReportException("Error processing file: {}".format(err_msg))
+    with open(log_path, 'w') as log_file:
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        for c in iter(lambda: process.stdout.read(1), b""):
+            sys.stdout.buffer.write(c)
+            log_file.buffer.write(c)
+        
+#        res = pipe.communicate()
+#
+#        dlog("retcode = {}".format(pipe.returncode))
+#        
+#        if res:     
+#            stdout = res[0].decode(encoding='utf-8')
+#            err = res[1].decode(encoding='utf-8')
+#            
+#            dlog("writing exec output to logfile {}".format(log_path))
+#            queue_file.write(stdout) #std out from script
+#            queue_file.write("\n\n\nErrors and Warnings from run:\n{}".format(err))
+#                            
+#            err_msg = ""
+#            
+#            figure_err_check = "problem producing figure for" 
+#            if figure_err_check in stdout:
+#                err_msg += "Error producing figure png file.\n"                
+#                        
+#            csv_err_check = "problem producing CSV for"
+#            if csv_err_check in stdout:
+#                err_msg += "Error producing csv file.\n"
+#            
+#            if err_msg:
+#                raise WaterReportException("Error processing file: {}".format(err_msg))
     
     #todo: run tail_cleanup() on the log files after we have run this tool in prod for awhile
     # and we are sure the err checks above catch all the problems
