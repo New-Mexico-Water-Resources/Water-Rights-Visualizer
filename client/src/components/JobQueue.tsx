@@ -21,11 +21,6 @@ const JobQueue = () => {
 
   const [jobStatus, setJobStatus] = useState<JobStatus>({ status: "", currentYear: 0, totalYears: 0, fileCount: 0 });
   const fetchJobStatus = useStore((state) => state.fetchJobStatus);
-  // useEffect(() => {
-  // fetchJobStatus(job.key, job.name).then((status) => {
-  //   setJobStatus(status);
-  // });
-  // }, [job.key]);
 
   let logBottomRef = useRef<HTMLDivElement>(null);
   const viewingJob = useMemo(() => {
@@ -43,14 +38,16 @@ const JobQueue = () => {
   useEffect(() => {
     const fetchLogs = async () => {
       if (activeJobLogKey && jobLogsOpen) {
-        fetchJobStatus(activeJobLogKey, viewingJob.name)
-          .then((status) => {
-            setJobStatus(status);
-          })
-          .catch((error) => {
-            console.error("Error fetching job status", error);
-            setJobStatus({ status: "Error fetching job status", currentYear: 0, totalYears: 0, fileCount: 0 });
-          });
+        if (viewingJob?.name) {
+          fetchJobStatus(activeJobLogKey, viewingJob.name)
+            .then((status) => {
+              setJobStatus(status);
+            })
+            .catch((error) => {
+              console.error("Error fetching job status", error);
+              setJobStatus({ status: "Error fetching job status", currentYear: 0, totalYears: 0, fileCount: 0 });
+            });
+        }
 
         fetchJobLogs(activeJobLogKey).then((logs) => {
           let existingLog = jobLogs[activeJobLogKey];
