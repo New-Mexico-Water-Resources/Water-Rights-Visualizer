@@ -9,6 +9,7 @@ export interface JobStatus {
   currentYear: number;
   totalYears: number;
   fileCount: number;
+  estimatedPercentComplete: number;
 }
 
 interface Store {
@@ -245,7 +246,7 @@ const useStore = create<Store>()(
         })
         .catch((error) => {
           set({ errorMessage: error?.message || "Error fetching job status" });
-          return { status: "Error", currentYear: 0, totalYears: 0, fileCount: 0 };
+          return { status: "Error", currentYear: 0, totalYears: 0, fileCount: 0, estimatedPercentComplete: 0 };
         });
     },
   }))
