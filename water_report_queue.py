@@ -90,6 +90,7 @@ def exec_report(record):
             log_file.buffer.write(c)
                     
             c_str = c.decode(encoding='utf-8')
+            dlog("log c_str is: {}".format(c_str))
             if figure_err_check in c_str:
                 err_msg += "Error producing figure png file.\n"   
 
