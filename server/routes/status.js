@@ -6,9 +6,9 @@ const constants = require("../constants");
 
 const run_directory_base = constants.run_directory_base;
 
-const calculateYearsProcessed = (directory, startYear, endYear) => {
+const calculateYearsProcessed = (directory, startYear, endYear, startTime) => {
   if (!fs.existsSync(directory) || fs.readdirSync(directory).length === 0) {
-    return { years: [], count: 0, estimatedPercentComplete: 0 };
+    return { years: [], count: 0, estimatedPercentComplete: 0, timeRemaining: 0 };
   }
 
   const files = fs.readdirSync(directory);
@@ -43,8 +43,15 @@ const calculateYearsProcessed = (directory, startYear, endYear) => {
   }
 
   let estimatedPercentComplete = yearFiles.length / estimatedTotalFiles;
+  let timeRemaining = 0;
+  if (estimatedPercentComplete > 0) {
+    timeRemaining = (Date.now() - startTime) * (1 / (1 - estimatedPercentComplete));
+  } else {
+    // Estimate 3.5 minutes per year
+    timeRemaining = (endYear - startYear + 1) * 3.5 * 60 * 1000;
+  }
 
-  return { years: sortedYears, count: yearFiles.length, estimatedPercentComplete };
+  return { years: sortedYears, count: yearFiles.length, estimatedPercentComplete, timeRemaining };
 };
 
 router.get("/job/status", (req, res) => {
@@ -88,7 +95,8 @@ router.get("/job/status", (req, res) => {
     let processedYears = calculateYearsProcessed(
       path.join(run_directory, "output", "subset", jobName),
       job.start_year,
-      job.end_year
+      job.end_year,
+      job.start_time
     );
     let currentYear = processedYears.years.length;
 
@@ -98,6 +106,7 @@ router.get("/job/status", (req, res) => {
       totalYears,
       fileCount: processedYears.count,
       estimatedPercentComplete: job.status === "Complete" ? 1 : processedYears.estimatedPercentComplete,
+      timeRemaining: job.status === "Complete" ? 0 : processedYears.timeRemaining,
     });
   });
 });

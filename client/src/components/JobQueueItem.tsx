@@ -5,17 +5,43 @@ import StatusIcon from "./StatusIcon";
 
 import { useConfirm } from "material-ui-confirm";
 import useStore, { JobStatus } from "../utils/store";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 const JobProgressBar = ({ status }: { status: JobStatus }) => {
-  let estimatedPercentComplete = Math.max(Math.min(Math.round(status.estimatedPercentComplete * 10000) / 100, 100), 0);
+  let estimatedPercentComplete = Math.max(Math.min(Math.round(status.estimatedPercentComplete * 1000) / 10, 100), 0);
+
+  let formattedTimeRemaining = "";
+
+  let timeRemainingSeconds = status.timeRemaining / 1000;
+  let timeRemainingMinutes = Math.floor(timeRemainingSeconds / 60);
+  timeRemainingSeconds = Math.floor(timeRemainingSeconds % 60);
+  let timeRemainingHours = Math.floor(timeRemainingMinutes / 60);
+  timeRemainingMinutes = Math.floor(timeRemainingMinutes % 60);
+  let timeRemainingDays = Math.floor(timeRemainingHours / 24);
+  timeRemainingHours = Math.floor(timeRemainingHours % 24);
+
+  if (timeRemainingDays > 0) {
+    formattedTimeRemaining += `${timeRemainingDays} days `;
+  } else if (timeRemainingHours > 0) {
+    formattedTimeRemaining += `${timeRemainingHours} hours `;
+  } else if (timeRemainingMinutes > 0) {
+    formattedTimeRemaining += `${timeRemainingMinutes} minutes `;
+  } else if (timeRemainingSeconds > 0) {
+    formattedTimeRemaining += `${timeRemainingSeconds} seconds `;
+  } else {
+    formattedTimeRemaining = "N/A";
+  }
+
+  let tooltipText = `Status: ${status.status || "N/A"}\nYears Processed: ${status.currentYear}/${
+    status.totalYears
+  }\nEstimated Percent Complete: ${estimatedPercentComplete}%`;
+
+  if (status.timeRemaining > 0) {
+    tooltipText += `\nEstimated Time Remaining: ${formattedTimeRemaining}`;
+  }
 
   return (
-    <Tooltip
-      title={`Status: ${status.status || "N/A"}\nYears Processed: ${status.currentYear}/${
-        status.totalYears
-      }\nEstimated Percent Complete: ${estimatedPercentComplete}%`}
-    >
+    <Tooltip title={tooltipText}>
       <Box sx={{ display: "flex", alignItems: "center" }}>
         <Box sx={{ width: "100%", mr: 1 }}>
           <LinearProgress value={estimatedPercentComplete} variant="determinate" />
@@ -37,20 +63,31 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const deleteJob = useStore((state) => state.deleteJob);
   const loadJob = useStore((state) => state.loadJob);
   const downloadJob = useStore((state) => state.downloadJob);
-  const fetchJobStatus = useStore((state) => state.fetchJobStatus);
+  const [jobStatuses, fetchJobStatus] = useStore((state) => [state.jobStatuses, state.fetchJobStatus]);
 
-  const [jobStatus, setJobStatus] = useState<JobStatus>({
-    status: "",
-    currentYear: 0,
-    totalYears: 0,
-    fileCount: 0,
-    estimatedPercentComplete: 0,
-  });
+  const jobStatus = useMemo(() => {
+    let jobStatus: JobStatus = jobStatuses[job.key];
+    if (!jobStatus) {
+      jobStatus = {
+        status: "",
+        currentYear: 0,
+        totalYears: 0,
+        fileCount: 0,
+        estimatedPercentComplete: 0,
+        timeRemaining: 0,
+      };
+    }
+
+    return jobStatus;
+  }, [job.key, jobStatuses]);
 
   useEffect(() => {
-    fetchJobStatus(job.key, job.name).then((status) => {
-      setJobStatus(status);
-    });
+    fetchJobStatus(job.key, job.name);
+    const interval = setInterval(() => {
+      fetchJobStatus(job.key, job.name);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [job.key]);
 
   return (

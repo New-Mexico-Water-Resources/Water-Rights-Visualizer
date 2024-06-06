@@ -19,14 +19,22 @@ const JobQueue = () => {
   const [activeJobLogKey, setActiveJobLogKey] = useState("");
   const [jobLogsOpen, setJobLogsOpen] = useState(false);
 
-  const [jobStatus, setJobStatus] = useState<JobStatus>({
-    status: "",
-    currentYear: 0,
-    totalYears: 0,
-    fileCount: 0,
-    estimatedPercentComplete: 0,
-  });
-  const fetchJobStatus = useStore((state) => state.fetchJobStatus);
+  const [jobStatuses, fetchJobStatus] = useStore((state) => [state.jobStatuses, state.fetchJobStatus]);
+  const jobStatus = useMemo(() => {
+    let jobStatus: JobStatus = jobStatuses[activeJobLogKey];
+    if (!jobStatus) {
+      jobStatus = {
+        status: "",
+        currentYear: 0,
+        totalYears: 0,
+        fileCount: 0,
+        estimatedPercentComplete: 0,
+        timeRemaining: 0,
+      };
+    }
+
+    return jobStatus;
+  }, [activeJobLogKey, jobStatuses]);
 
   let logBottomRef = useRef<HTMLDivElement>(null);
   const viewingJob = useMemo(() => {
@@ -46,18 +54,18 @@ const JobQueue = () => {
       if (activeJobLogKey && jobLogsOpen) {
         if (viewingJob?.name) {
           fetchJobStatus(activeJobLogKey, viewingJob.name)
-            .then((status) => {
-              setJobStatus(status);
+            .then(() => {
+              // setJobStatus(status);
             })
             .catch((error) => {
               console.error("Error fetching job status", error);
-              setJobStatus({
-                status: "Error fetching job status",
-                currentYear: 0,
-                totalYears: 0,
-                fileCount: 0,
-                estimatedPercentComplete: 0,
-              });
+              // setJobStatus({
+              //   status: "Error fetching job status",
+              //   currentYear: 0,
+              //   totalYears: 0,
+              //   fileCount: 0,
+              //   estimatedPercentComplete: 0,
+              // });
             });
         }
 
@@ -95,7 +103,6 @@ const JobQueue = () => {
         open={jobLogsOpen}
         onClose={() => {
           setJobLogsOpen(false);
-          setJobStatus({ status: "", currentYear: 0, totalYears: 0, fileCount: 0, estimatedPercentComplete: 0 });
         }}
       >
         <Box
@@ -120,7 +127,6 @@ const JobQueue = () => {
               onClick={() => {
                 setActiveJobLogKey("");
                 setJobLogsOpen(false);
-                setJobStatus({ status: "", currentYear: 0, totalYears: 0, fileCount: 0, estimatedPercentComplete: 0 });
               }}
               sx={{ marginLeft: "auto" }}
             >
