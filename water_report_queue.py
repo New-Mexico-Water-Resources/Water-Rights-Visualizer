@@ -34,8 +34,7 @@ PRINT_LOG = False
 
 #does a system call to tail -1000 to make sure files do not grow too large
 def tail_cleanup(filepath):
-    cmd = ["/usr/bin/tail", "-1000", filepath]
-    dlog("Running tail_cleanup on {}".format(cmd))
+    cmd = ["/usr/bin/tail", "-1000", filepath]    
     pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
     res = pipe.communicate()
     
@@ -43,7 +42,6 @@ def tail_cleanup(filepath):
         stdout = res[0].decode(encoding='utf-8')
         err = res[1].decode(encoding='utf-8')
         
-        dlog("writing tail cleanup file {} with len {}".format(filepath, len(stdout)))
         with open(filepath, 'w') as file:
             file.write(stdout)
         
@@ -236,12 +234,13 @@ if __name__ == "__main__":
                 sys.exit()
         
     with open(pidfile, 'w') as f:
+        dlog("Writing pid file with value {}".format(pid))
         f.seek(0)
         f.write(pid)
         f.truncate()
     
     try:
-        print("{}: Starting up water_report_queue.py".format(str(now)))
+        dlog("Starting up water_report_queue.py".format(str(now)))
         main()
     finally:
         os.unlink(pidfile)
