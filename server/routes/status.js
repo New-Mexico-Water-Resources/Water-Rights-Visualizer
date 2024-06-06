@@ -22,38 +22,39 @@ const calculateYearsProcessed = (directory, startYear, endYear, startTime) => {
   let uniqueYears = new Set(Object.keys(yearCounts));
   let sortedYears = Array.from(uniqueYears).sort((a, b) => a - b);
 
+  const totalYears = endYear - startYear + 1;
+
   // Start with a default of 258 files per year
   let averageFilesPerYear = 258;
-  let estimatedTotalFiles = 258 * (endYear - startYear + 1);
+  let estimatedTotalFiles = averageFilesPerYear * totalYears;
+
   if (sortedYears.length > 1) {
-    // Exclude the current year from the average as this may not be complete
-    let currentYearProcessing = sortedYears[sortedYears.length - 1];
-    let currentYearCount = yearCounts[currentYearProcessing];
+    let totalFiles = yearFiles.length;
+    let totalCompletedYears = sortedYears.length - 1;
 
-    let totalFiles = yearFiles.length - currentYearCount;
-    let totalYears = sortedYears.length - 1;
+    let filesForCurrentYear = yearCounts[sortedYears[sortedYears.length - 1]] || 0;
 
-    averageFilesPerYear = totalFiles / totalYears;
+    averageFilesPerYear = (totalFiles - filesForCurrentYear) / totalCompletedYears;
+
+    let currentYear = sortedYears[sortedYears.length - 1];
+    let currentYearCount = yearCounts[currentYear] || 0;
 
     let remainingFilesForCurrentYear = Math.max(averageFilesPerYear - currentYearCount, 0);
 
     // Estimate the total number of files based on the current files + remaining files for this year + the average files per year for remaining
-    estimatedTotalFiles =
-      yearFiles.length + remainingFilesForCurrentYear + averageFilesPerYear * (endYear - currentYearProcessing);
+    estimatedTotalFiles = totalFiles + remainingFilesForCurrentYear + averageFilesPerYear * (endYear - currentYear);
   }
 
-  let estimatedPercentComplete =
-    estimatedTotalFiles > 0 ? yearFiles.length / Math.max(yearFiles.length, estimatedTotalFiles) : 0;
+  let estimatedPercentComplete = estimatedTotalFiles > 0 ? yearFiles.length / estimatedTotalFiles : 0;
 
   let timeRemaining = 0;
 
   if (startTime && estimatedPercentComplete > 0 && estimatedPercentComplete < 1) {
     let timeElapsed = Date.now() - startTime;
-
     timeRemaining = timeElapsed / estimatedPercentComplete - timeElapsed;
   } else if (estimatedPercentComplete === 0 || !startTime) {
     // Estimate 3.5 minutes per year
-    timeRemaining = (endYear - startYear + 1) * 3.5 * 60 * 1000;
+    timeRemaining = totalYears * 3.5 * 60 * 1000;
   }
 
   return { years: sortedYears, count: yearFiles.length, estimatedPercentComplete, timeRemaining };
