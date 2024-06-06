@@ -32,39 +32,20 @@ class WaterReportException(Exception):
 
 PRINT_LOG = False
 
-def tail(f, lines=20):
-    total_lines_wanted = lines
-
-    BLOCK_SIZE = 1024
-    f.seek(0, 2)
-    block_end_byte = f.tell()
-    lines_to_go = total_lines_wanted
-    block_number = -1
-    blocks = []
-    while lines_to_go > 0 and block_end_byte > 0:
-        if (block_end_byte - BLOCK_SIZE > 0):
-            f.seek(block_number*BLOCK_SIZE, 2)
-            blocks.append(f.read(BLOCK_SIZE))
-        else:
-            f.seek(0,0)
-            blocks.append(f.read(block_end_byte))
-        lines_found = blocks[-1].count(b'\n')
-        lines_to_go -= lines_found
-        block_end_byte -= BLOCK_SIZE
-        block_number -= 1
-    all_read_text = b''.join(reversed(blocks))
-    return b'\n'.join(all_read_text.splitlines()[-total_lines_wanted:])
-
 #does a system call to tail -1000 to make sure files do not grow too large
 def tail_cleanup(filepath):
-    trimmed = None
+    cmd = ["/usr/bin/tail", "-1000", filepath]
+    dlog("Running tail_cleanup on {}".format(cmd))
+    pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
+    res = pipe.communicate()
     
-    with open(filepath, 'rb') as tail_file:
-        trimmed = tail(tail_file, 1000)
-    
-    if trimmed:
-        with open(filepath, 'wb') as tail_file:
-            log_file.write(trimmed)
+    if res:     
+        stdout = res[0].decode(encoding='utf-8')
+        err = res[1].decode(encoding='utf-8')
+        
+        dlog("writing tail cleanup file {} with len {}".format(filepath, len(stdout)))
+        with open(filepath, 'w') as file:
+            file.write(stdout)
         
 def cleanup_files():
     log_files = [
