@@ -99,7 +99,7 @@ def exec_report(record):
         if figure_err_check in log_body:
             err_msg += "Error producing figure png file.\n"   
 
-        if csv_err_check in log_Body:
+        if csv_err_check in log_body:
             err_msg += "Error producing csv file.\n"
 
         if err_msg:
