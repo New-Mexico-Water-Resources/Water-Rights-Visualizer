@@ -32,14 +32,20 @@ class WaterReportException(Exception):
 
 PRINT_LOG = False
 
+#does a system call to tail -1000 to make sure files do not grow too large
+def tail_cleanup(filepath):
+    cmd = ["tail", "-1000", filepath, ">", filepath]
+    pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
+    res = pipe.communicate()
+    
 def cleanup_files():
-    # stuff we need to clean up
-    # /tmp/wrq_log.txt
-    # /tmp_cron_log.txt
-    # do system calls for tail on logs above and pipe back into log
-    #      e.g. tail -1000 /tmp/wrq_log.txt > /tmp/wrq_log.txt 
-    # loop through all of the runs in data and remove runs older than a month?
-    dlog("TODO: cleanup files")
+    log_files = [
+        "/tmp/wrq_log.txt",
+        "/tmp/cron_log.txt"
+    ]
+    
+    for lf in log_files:
+        tail_cleanup(lf)        
     
 #writes to the daemon log file
 #todo: check logsize and tail -1000 if it is too long
@@ -110,7 +116,7 @@ def exec_report(record):
     
 
 def update_status(record, state):
-    now = int(time.time()) * 1000 #convert to milliseconds to match javascript epoch
+    now = int(time.time() * 1000) #convert to milliseconds to match javascript epoch
     
     record['status'] = state
     
