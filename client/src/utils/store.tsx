@@ -114,6 +114,16 @@ const useStore = create<Store>()(
         .then(() => {
           set((state) => {
             let job = state.queue.find((item) => item.key === jobKey);
+            if (!job) {
+              job = state.backlog.find((item) => item.key === jobKey);
+            }
+
+            if (!job) {
+              return {
+                ...state,
+                errorMessage: `Error deleting job: ${jobKey} not found`,
+              };
+            }
 
             return {
               ...state,
