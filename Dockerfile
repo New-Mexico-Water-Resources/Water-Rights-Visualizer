@@ -25,6 +25,10 @@ RUN pip install area astropy affine boto3 geojson geopandas jupyter matplotlib n
 
 FROM python as app
 
+#install cronjob for water_report_queue
+RUN apt-get install -y cron
+RUN apt-get install -y vim
+
 # install app
 RUN mkdir ${APP_ROOT}
 WORKDIR ${APP_ROOT}
@@ -35,9 +39,6 @@ RUN mkdir -p /root/data/water_rights_runs
 # RUN mamba env update -n base -f /app/water_rights.yml
 RUN python setup.py install
 RUN npm install
-
-#install cronjob for water_report_queue
-RUN apt-get install -y cron
 
 COPY water_report_queue_cron /etc/cron.d/water_report_queue_cron
  
@@ -53,7 +54,5 @@ RUN chmod +x /init.sh
 
 RUN touch /tmp/cron_log.txt
 RUN touch /tmp/wrq_log.txt
-
-RUN apt-get install -y vim
 
 EXPOSE 80
