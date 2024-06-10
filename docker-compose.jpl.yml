@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+  water_rights_visualizer_ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    ports:
+      - "8000:8000"
+    depends_on:
+      - water_rights_visualizer_backend
+
+  water_rights_visualizer_backend:
+    build: .
+    container_name: water-rights-visualizer
+    environment:
+      - S3_INPUT_BUCKET=jpl-nmw-dev-inputs
+      - S3_OUTPUT_BUCKET=jpl-nmw-dev-outputs
+    restart: always
+    command: "/init.sh ${WATER_RIGHTS_SOURCE:-S3}"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ${HOST_DATA_DIRECTORY:-${HOME}/data}:${CONTAINER_DATA_DIRECTORY:-/root/data}
