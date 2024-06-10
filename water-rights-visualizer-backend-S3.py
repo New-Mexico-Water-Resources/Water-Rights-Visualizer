@@ -6,6 +6,7 @@ import logging
 import time
 import json
 import boto3
+import os
 
 from water_rights_visualizer import water_rights_visualizer
 from water_rights_visualizer.S3_source import S3Source
@@ -15,8 +16,13 @@ import cl
 logger = logging.getLogger(__name__)
 
 # FIXME input and output bucket names need to be parameterized
-input_bucket_name = "jpl-nmw-dev-inputs"
-output_bucket_name = "jpl-nmw-dev-outputs"
+#input_bucket_name = "jpl-nmw-dev-inputs"
+#output_bucket_name = "jpl-nmw-dev-outputs"
+
+
+input_bucket_name = os.environ.get("S3_INPUT_BUCKET", "ose-dev-inputs")
+output_bucket_name = os.environ.get("S3_OUTPUT_BUCKET", "ose-dev-outputs")
+    
 delete_temp_files = True
 
 def write_status(status_filename: str, message: str):
