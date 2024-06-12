@@ -139,6 +139,7 @@ router.post("/start_run", (req, res) => {
       submitted: epoch,
       started: null,
       ended: null,
+      pid: null,
       invoker: "to-do",
       base_dir: run_directory,
       png_dir: run_directory + "/output/figures/" + name,
