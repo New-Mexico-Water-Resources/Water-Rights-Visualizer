@@ -72,7 +72,7 @@ def dlog(text, new_line=True):
     if PRINT_LOG:
         print(text)
         
-def exec_report(record):                       
+def exec_report(queue_file_path, record):                       
     cmd = record['cmd'].split(" ")
     dlog("invoking cmd: {}".format(cmd))
     
@@ -81,10 +81,27 @@ def exec_report(record):
     with open(log_path, 'w') as log_file:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)        
         
+        #update the record with the pid we just launched
+        record['pid'] = process.pid
+        update_queue_file(queue_file_path, record)
+        
+        #streams the output 'c' in chars and writes them one by one to logfile
         for c in iter(lambda: process.stdout.read(1), b""):
             #sys.stdout.buffer.write(c)
             log_file.buffer.write(c)
-                                            
+    
+        res = process.communicate()
+        retcode = process.returncode
+
+        if retcode != 0:
+            dlog("Found non-zero return code {} from {}".format(retcode, cmd))
+            raise WaterReportException("Error: Return code from visualizer backend {}".format(retcode))
+        
+        #think we might be able to read stdout here isntead of opening the logfile for the output below
+        #do not have time to test this right now though so leaving it alone
+        #stdout = res[0].decode(encoding='utf-8')
+        #stderr = res[1].decode(encoding='utf-8')    
+    
     #todo: figure out how to read the log as it is streaming above
     # currenlty each 'c' in the loop is a char so it is just one letter making it
     # a bit hard to parse for error messages
@@ -153,7 +170,7 @@ def update_queue_file(queue_file_path, record):
         
 def process_report(queue_file_path, record):
     try:
-        status_msg = exec_report(record)
+        status_msg = exec_report(queue_file_path, record)
         dlog("Status of invocation: {}".format(status_msg))
         record['status_msg'] = status_msg
 
@@ -165,9 +182,8 @@ def process_report(queue_file_path, record):
         else:
             status = "Failed"
 
-        update_status(record, status)
-
         #update the queue file again with the final status
+        update_status(record, status)
         update_queue_file(queue_file_path, record)    
     except Exception as e:
         status_msg = str(e)
