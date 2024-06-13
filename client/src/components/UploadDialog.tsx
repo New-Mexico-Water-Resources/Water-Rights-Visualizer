@@ -89,7 +89,7 @@ const UploadDialog = () => {
             </IconButton>
           </div>
           <FormControl style={{ width: "100%", padding: "0 8px", marginTop: "16px" }}>
-            <InputLabel htmlFor="name-field">Name</InputLabel>
+            <InputLabel htmlFor="name-field">Output Name</InputLabel>
             <Input
               id="name-field"
               style={{ padding: "0 8px", width: "100%" }}

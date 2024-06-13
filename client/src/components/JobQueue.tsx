@@ -19,6 +19,8 @@ const JobQueue = () => {
   const [activeJobLogKey, setActiveJobLogKey] = useState("");
   const [jobLogsOpen, setJobLogsOpen] = useState(false);
 
+  const [shouldFollowLogs, setShouldFollowLogs] = useState(true);
+
   const [jobStatuses, fetchJobStatus] = useStore((state) => [state.jobStatuses, state.fetchJobStatus]);
   const jobStatus = useMemo(() => {
     let jobStatus: JobStatus = jobStatuses[activeJobLogKey];
@@ -36,7 +38,7 @@ const JobQueue = () => {
     return jobStatus;
   }, [activeJobLogKey, jobStatuses]);
 
-  let logBottomRef = useRef<HTMLDivElement>(null);
+  // let logBottomRef = useRef<HTMLDivElement>(null);
   const viewingJob = useMemo(() => {
     if (!activeJobLogKey) {
       return null;
@@ -74,9 +76,10 @@ const JobQueue = () => {
           currentLog.timestamp = Date.now();
 
           setJobLogs({ ...jobLogs, [activeJobLogKey]: currentLog });
-          if (logBottomRef.current) {
-            logBottomRef.current.scrollIntoView({ behavior: "smooth" });
-          }
+          // if (logBottomRef.current) {
+          //   console.log("scrolling to bottom");
+          //   logBottomRef.current.scrollIntoView({ behavior: "smooth" });
+          // }
         });
       }
     };
@@ -87,6 +90,21 @@ const JobQueue = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [activeJobLogKey, jobLogsOpen]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (jobLogs[activeJobLogKey]) {
+        setJobLogs({
+          ...jobLogs,
+          [activeJobLogKey]: {
+            timestamp: jobLogs[activeJobLogKey].timestamp,
+            logs: (jobLogs?.[activeJobLogKey]?.logs || "") + "\n" + Math.random().toString(36).substring(7),
+          },
+        });
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [jobLogs, activeJobLogKey]);
 
   return (
     <div className={`queue-container ${isQueueOpen || isBacklogOpen ? "open" : "closed"}`}>
@@ -126,7 +144,7 @@ const JobQueue = () => {
           </Typography>
           <div style={{ height: "calc(100% - 64px)" }}>
             <ScrollFollow
-              startFollowing={true}
+              startFollowing={shouldFollowLogs}
               render={({ follow, onScroll }) => (
                 <LazyLog
                   style={{
@@ -135,13 +153,18 @@ const JobQueue = () => {
                   }}
                   text={jobLogs[activeJobLogKey]?.logs || "Loading logs..."}
                   follow={follow}
-                  onScroll={onScroll}
+                  onScroll={(...props) => {
+                    onScroll(...props);
+                    setShouldFollowLogs(true);
+                    console.log("stopped following logs", ...props);
+                  }}
                   enableHotKeys={true}
                   enableSearch={true}
                   extraLines={1}
                 />
               )}
             />
+            {/* <div className="log-btm" style={{ position: "absolute", bottom: 0 }} ref={logBottomRef}></div> */}
           </div>
           <div style={{ display: "flex", marginTop: "5px" }}>
             <div style={{ color: "var(--st-gray-50)", fontSize: "14px" }}>Files Generated: {jobStatus.fileCount}</div>

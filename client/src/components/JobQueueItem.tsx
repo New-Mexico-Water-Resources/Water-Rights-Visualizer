@@ -142,7 +142,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             }
           }}
         >
-          View
+          Locate
         </Button>
         <Button
           variant="contained"
