@@ -89,7 +89,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
               contentProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
               dialogActionsProps: { sx: { backgroundColor: "var(--st-gray-90)" } },
             }).then(() => {
-              deleteJob(job.key);
+              deleteJob(job.key, true);
             });
           }}
         >

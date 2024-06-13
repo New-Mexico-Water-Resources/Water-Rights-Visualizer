@@ -48,7 +48,7 @@ interface Store {
   backlog: any[];
   setBacklog: (backlog: any[]) => void;
   fetchQueue: () => void;
-  deleteJob: (jobKey: string) => void;
+  deleteJob: (jobKey: string, deleteFiles?: boolean) => void;
   submitJob: () => void;
   loadJob: (job: any) => void;
   downloadJob: (jobKey: string) => void;
@@ -57,6 +57,7 @@ interface Store {
   fetchJobLogs: (jobKey: string) => Promise<{ logs: string }>;
   jobStatuses: Record<string, JobStatus>;
   fetchJobStatus: (jobKey: string, jobName: string) => Promise<JobStatus>;
+  prepareGeoJSON: (shapefile: File) => Promise<any>;
 }
 
 const useStore = create<Store>()(
@@ -116,9 +117,9 @@ const useStore = create<Store>()(
         set({ queue, backlog });
       });
     },
-    deleteJob: async (jobKey) => {
+    deleteJob: async (jobKey, deleteFiles: boolean = true) => {
       axios
-        .delete(`${API_URL}/queue/delete_job?key=${jobKey}`)
+        .delete(`${API_URL}/queue/delete_job?key=${jobKey}&deleteFiles=${deleteFiles ? "true" : "false"}`)
         .then(() => {
           set((state) => {
             let job = state.queue.find((item) => item.key === jobKey);
@@ -280,6 +281,23 @@ const useStore = create<Store>()(
             estimatedPercentComplete: 0,
             timeRemaining: 0,
           };
+        });
+    },
+    prepareGeoJSON: (geoFile: File) => {
+      let formData = new FormData();
+      formData.append("file", geoFile);
+
+      return axios
+        .post(`${API_URL}/prepare_geojson`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then((response) => {
+          return response;
+        })
+        .catch((error) => {
+          set({ errorMessage: error?.response?.data || error?.message || "Error preparing file" });
         });
     },
   }))

@@ -54,18 +54,9 @@ const JobQueue = () => {
       if (activeJobLogKey && jobLogsOpen) {
         if (viewingJob?.name) {
           fetchJobStatus(activeJobLogKey, viewingJob.name)
-            .then(() => {
-              // setJobStatus(status);
-            })
+            .then(() => {})
             .catch((error) => {
               console.error("Error fetching job status", error);
-              // setJobStatus({
-              //   status: "Error fetching job status",
-              //   currentYear: 0,
-              //   totalYears: 0,
-              //   fileCount: 0,
-              //   estimatedPercentComplete: 0,
-              // });
             });
         }
 

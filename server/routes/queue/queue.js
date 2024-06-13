@@ -38,6 +38,8 @@ router.get("/list", (req, res) => {
 
 router.delete("/delete_job", (req, res) => {
   let key = req.query.key;
+  let deleteFiles = req.query.deleteFiles;
+
   if (!key) {
     res.status(400).send("Missing key");
     return;
@@ -61,6 +63,20 @@ router.delete("/delete_job", (req, res) => {
       return;
     }
 
+    let job = report_queue.find((entry) => entry.key === key);
+    if (!job) {
+      res.status(404).send("Job not found");
+      return;
+    }
+
+    if (!["Complete", "Failed"].includes(job?.status) && job?.pid) {
+      try {
+        process.kill(job.pid, "SIGKILL");
+      } catch (e) {
+        console.error(`Error killing process ${job.pid}`, e);
+      }
+    }
+
     let new_report_queue = report_queue.filter((entry) => entry.key !== key);
     fs.writeFile(report_queue_file, JSON.stringify(new_report_queue), (err) => {
       if (err) {
@@ -70,6 +86,14 @@ router.delete("/delete_job", (req, res) => {
       }
       res.status(200).send(new_report_queue);
     });
+
+    if (deleteFiles && job.base_dir) {
+      fs.rmdir(job.base_dir, { recursive: true }, (err) => {
+        if (err) {
+          console.error(`Error deleting ${job.base_dir}`, err);
+        }
+      });
+    }
   });
 });
 

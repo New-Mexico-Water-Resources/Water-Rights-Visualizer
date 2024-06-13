@@ -27,6 +27,7 @@ const UploadDialog = () => {
   const setActiveJob = useStore((state) => state.setActiveJob);
   const submitJob = useStore((state) => state.submitJob);
   const closeNewJob = useStore((state) => state.closeNewJob);
+  const prepareGeoJSON = useStore((state) => state.prepareGeoJSON);
 
   const canSubmitJob = useMemo(() => {
     return jobName && loadedFile && loadedGeoJSON && startYear <= endYear;
@@ -50,10 +51,12 @@ const UploadDialog = () => {
           setJobName(fileName);
         }
 
-        if (file.type === "application/geo+json" || file.name.endsWith(".geojson")) {
-          setLoadedGeoJSON(JSON.parse(response as string));
-          setActiveJob(null);
-        }
+        prepareGeoJSON(file).then((geojson) => {
+          if (geojson.data) {
+            setLoadedGeoJSON(geojson.data);
+            setActiveJob(null);
+          }
+        });
       };
       reader.readAsText(file);
     });
