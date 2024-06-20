@@ -91,20 +91,21 @@ const JobQueue = () => {
     return () => clearInterval(interval);
   }, [activeJobLogKey, jobLogsOpen]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (jobLogs[activeJobLogKey]) {
-        setJobLogs({
-          ...jobLogs,
-          [activeJobLogKey]: {
-            timestamp: jobLogs[activeJobLogKey].timestamp,
-            logs: (jobLogs?.[activeJobLogKey]?.logs || "") + "\n" + Math.random().toString(36).substring(7),
-          },
-        });
-      }
-    }, 500);
-    return () => clearInterval(interval);
-  }, [jobLogs, activeJobLogKey]);
+  // TEST LOGS
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (jobLogs[activeJobLogKey]) {
+  //       setJobLogs({
+  //         ...jobLogs,
+  //         [activeJobLogKey]: {
+  //           timestamp: jobLogs[activeJobLogKey].timestamp,
+  //           logs: (jobLogs?.[activeJobLogKey]?.logs || "") + "\n" + Math.random().toString(36).substring(7),
+  //         },
+  //       });
+  //     }
+  //   }, 500);
+  //   return () => clearInterval(interval);
+  // }, [jobLogs, activeJobLogKey]);
 
   return (
     <div className={`queue-container ${isQueueOpen || isBacklogOpen ? "open" : "closed"}`}>

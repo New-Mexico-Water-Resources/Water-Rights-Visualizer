@@ -36,8 +36,9 @@
 }
 
 .upload-zone {
+  //   height: 50vh;
   height: 50vh;
-  min-height: 400px;
+  min-height: fit-content;
   width: 50vw;
   min-width: 600px;
   background: var(--st-gray-90);

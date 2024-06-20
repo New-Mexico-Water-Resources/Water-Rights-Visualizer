@@ -64,7 +64,26 @@ const convertToGeoJSON = async (extractPath, baseName) => {
                 return;
               }
 
-              const geojson = JSON.parse(data);
+              let geojson = { error: "Error reading geojson path" };
+              try {
+                geojson = JSON.parse(data);
+              } catch (error) {
+                try {
+                  let multipolygon = data.split("\n");
+                  let geojsons = [];
+                  multipolygon.forEach((polygon) => {
+                    if (polygon) {
+                      geojsons.push(JSON.parse(polygon));
+                    }
+                  });
+
+                  geojson = { multipolygon: true, geojsons };
+                } catch (err) {
+                  console.error("Error parsing geojson", err);
+                  reject(err);
+                  return;
+                }
+              }
               resolve(geojson);
             });
             return;

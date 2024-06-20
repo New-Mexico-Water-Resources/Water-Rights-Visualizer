@@ -33,6 +33,8 @@ interface Store {
   setLoadedFile: (loadedFile: File | null) => void;
   loadedGeoJSON: any;
   setLoadedGeoJSON: (loadedGeoJSON: any) => void;
+  multipolygons: any[];
+  setMultipolygons: (multipolygons: any[]) => void;
   showUploadDialog: boolean;
   setShowUploadDialog: (showUploadDialog: boolean) => void;
   activeJob: any | null;
@@ -80,6 +82,8 @@ const useStore = create<Store>()(
     setLoadedFile: (loadedFile) => set({ loadedFile }),
     loadedGeoJSON: null,
     setLoadedGeoJSON: (loadedGeoJSON) => set({ loadedGeoJSON }),
+    multipolygons: [],
+    setMultipolygons: (multipolygons) => set({ multipolygons }),
     showUploadDialog: true,
     setShowUploadDialog: (showUploadDialog) => set({ showUploadDialog }),
     activeJob: null,
@@ -194,11 +198,19 @@ const useStore = create<Store>()(
       axios
         .get(`${API_URL}/geojson?name=${job.name}&key=${job.key}`)
         .then((response) => {
-          job.loaded_geo_json = response.data;
-          set({ loadedGeoJSON: response.data, showUploadDialog: false });
+          let loadedGeoJSON = null;
+          let multipolygons = [];
+          if (response?.data?.geojsons) {
+            multipolygons = response.data.geojsons;
+          } else {
+            loadedGeoJSON = response.data;
+            job.loaded_geo_json = response.data;
+          }
+
+          set({ loadedGeoJSON, multipolygons, showUploadDialog: false });
         })
         .catch((error) => {
-          set({ loadedGeoJSON: null, errorMessage: error?.message || "Error loading job" });
+          set({ loadedGeoJSON: null, multipolygons: [], errorMessage: error?.message || "Error loading job" });
         });
       set({ activeJob: job });
     },
@@ -219,6 +231,7 @@ const useStore = create<Store>()(
       set({
         loadedFile: null,
         loadedGeoJSON: null,
+        multipolygons: [],
         jobName: "",
         startYear: 1985,
         endYear: 2020,
@@ -230,6 +243,7 @@ const useStore = create<Store>()(
         showUploadDialog: false,
         loadedFile: null,
         loadedGeoJSON: null,
+        multipolygons: [],
         jobName: "",
         startYear: 1985,
         endYear: 2020,

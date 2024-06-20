@@ -16,6 +16,7 @@
     "@melloware/react-logviewer": "^5.1.1",
     "@mui/icons-material": "^5.15.18",
     "@mui/material": "^6.0.0-alpha.8",
+    "@mui/x-data-grid": "^7.7.0",
     "axios": "^1.7.2",
     "leaflet": "^1.9.4",
     "material-ui-confirm": "^3.0.16",
@@ -25,6 +26,7 @@
     "react-leaflet": "^4.2.1",
     "react-router": "^6.23.1",
     "react-router-dom": "^6.23.1",
+    "react-virtuoso": "^4.7.11",
     "zustand": "^4.5.2"
   },
   "devDependencies": {

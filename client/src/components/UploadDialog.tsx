@@ -5,15 +5,24 @@ import {
   Input,
   InputLabel,
   MenuItem,
+  Paper,
   Select,
   SelectChangeEvent,
   Slider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
   Typography,
 } from "@mui/material";
+import TableHead from "@mui/material/TableHead";
+
 import MapIcon from "@mui/icons-material/Map";
 import CloseIcon from "@mui/icons-material/Close";
+import { TableVirtuoso, TableComponents } from "react-virtuoso";
 
-import { ChangeEvent, useCallback, useMemo } from "react";
+import React, { ChangeEvent, useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import useStore from "../utils/store";
 
@@ -24,10 +33,13 @@ const UploadDialog = () => {
   const [endYear, setEndYear] = useStore((state) => [state.endYear, state.setEndYear]);
   const [loadedFile, setLoadedFile] = useStore((state) => [state.loadedFile, state.setLoadedFile]);
   const [loadedGeoJSON, setLoadedGeoJSON] = useStore((state) => [state.loadedGeoJSON, state.setLoadedGeoJSON]);
+  const [multipolygons, setMultipolygons] = useStore((state) => [state.multipolygons, state.setMultipolygons]);
   const setActiveJob = useStore((state) => state.setActiveJob);
   const submitJob = useStore((state) => state.submitJob);
   const closeNewJob = useStore((state) => state.closeNewJob);
   const prepareGeoJSON = useStore((state) => state.prepareGeoJSON);
+
+  const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
 
   const canSubmitJob = useMemo(() => {
     return jobName && loadedFile && loadedGeoJSON && startYear <= endYear;
@@ -52,8 +64,12 @@ const UploadDialog = () => {
         }
 
         prepareGeoJSON(file).then((geojson) => {
-          if (geojson.data) {
+          if (geojson.data && !geojson?.data?.multipolygon) {
             setLoadedGeoJSON(geojson.data);
+            setActiveJob(null);
+          } else if (geojson?.data?.multipolygon && geojson?.data?.geojsons?.length > 0) {
+            setMultipolygons(geojson.data.geojsons);
+            generateRows(geojson.data.geojsons);
             setActiveJob(null);
           }
         });
@@ -71,9 +87,118 @@ const UploadDialog = () => {
     },
   });
 
+  interface Data {
+    id: number;
+    acres: number;
+    comments: string;
+    county: string;
+    polygon_So: string;
+    shape_Area: number;
+    shape_Leng: number;
+    source: string;
+    wUR_Basin: string;
+    lat: number;
+    long: number;
+  }
+
+  interface ColumnData {
+    dataKey: keyof Data;
+    label: string;
+    numeric?: boolean;
+    width: number;
+  }
+
+  const columns: ColumnData[] = [
+    { width: 200, label: "Acres", dataKey: "acres" },
+    { width: 200, label: "County", dataKey: "county" },
+    { width: 200, label: "Polygon Source", dataKey: "polygon_So" },
+    { width: 200, label: "Shape Area", dataKey: "shape_Area" },
+    { width: 200, label: "Shape Length", dataKey: "shape_Leng" },
+    { width: 200, label: "Source", dataKey: "source" },
+    { width: 200, label: "WUR Basin", dataKey: "wUR_Basin" },
+    { width: 200, label: "Comments", dataKey: "comments" },
+    { width: 200, label: "Lat", dataKey: "lat" },
+    { width: 200, label: "Long", dataKey: "long" },
+  ];
+
+  const [rows, setRows] = useState<Data[]>([]);
+
+  const generateRows = (multipolygons: any[]) => {
+    const rows: Data[] = multipolygons.map((geojson, index) => {
+      return {
+        acres: geojson.properties.Acres,
+        comments: geojson.properties.Comments,
+        county: geojson.properties.County,
+        polygon_So: geojson.properties.Polygon_So,
+        shape_Area: geojson.properties.Shape_Area,
+        shape_Leng: geojson.properties.Shape_Leng,
+        source: geojson.properties.Source,
+        wUR_Basin: geojson.properties.WUR_Basin,
+        id: index,
+        lat: geojson.geometry.coordinates[0][0][0],
+        long: geojson.geometry.coordinates[0][0][1],
+      };
+    });
+
+    setRows(rows);
+  };
+
+  const VirtuosoTableComponents: TableComponents<Data> = useMemo(
+    () => ({
+      Scroller: React.forwardRef<HTMLDivElement>((props, ref) => (
+        <TableContainer component={Paper} {...props} ref={ref} />
+      )),
+      Table: (props) => <Table {...props} sx={{ borderCollapse: "separate", tableLayout: "fixed" }} />,
+      TableHead: TableHead as any,
+      TableRow: ({ item: _item, ...props }) => <TableRow {...props} />,
+      TableBody: React.forwardRef<HTMLTableSectionElement>((props, ref) => <TableBody {...props} ref={ref} />),
+    }),
+    []
+  );
+
+  function fixedHeaderContent() {
+    return (
+      <TableRow>
+        {columns.map((column) => (
+          <TableCell
+            key={column.dataKey}
+            variant="head"
+            align={column.numeric || false ? "right" : "left"}
+            style={{ width: column.width }}
+            sx={{
+              backgroundColor: "background.paper",
+            }}
+          >
+            {column.label}
+          </TableCell>
+        ))}
+      </TableRow>
+    );
+  }
+
+  function rowContent(_index: number, row: Data) {
+    return (
+      <React.Fragment>
+        {columns.map((column) => (
+          <TableCell
+            sx={{ backgroundColor: selectedRowId === row.id ? "var(--st-gray-80)" : "var(--st-gray-90)" }}
+            key={column.dataKey}
+            align={column.numeric || false ? "right" : "left"}
+            onClick={() => {
+              setLoadedGeoJSON(multipolygons[row.id]);
+              setSelectedRowId(row.id);
+            }}
+          >
+            {row[column.dataKey]}
+          </TableCell>
+        ))}
+      </React.Fragment>
+    );
+  }
+
   return (
     <div className="upload-dialog-container" style={{ background: "rgb(0 0 0 / 50%)", zIndex: 1000 }}>
-      <div className="upload-zone">
+      <div className="upload-zone" style={{ height: multipolygons.length > 0 && loadedFile ? "fit-content" : "50vh" }}>
         <div className="upload-options" style={{ width: "100%", color: "white" }}>
           <div className="dialog-header">
             <Typography variant="h5" className="dialog-title">
@@ -177,6 +302,23 @@ const UploadDialog = () => {
             )}
           </div>
         </div>
+        {multipolygons && multipolygons.length > 0 && loadedFile && (
+          <div className="multipolygon-table" style={{ width: "100%" }}>
+            <Typography variant="h6" style={{ color: "var(--st-gray-30)", padding: "8px 16px" }}>
+              Multipolygon Detected
+            </Typography>
+            <div style={{ padding: "0 16px" }}>
+              <Paper style={{ height: 400, width: "100%" }}>
+                <TableVirtuoso
+                  data={rows}
+                  components={VirtuosoTableComponents}
+                  fixedHeaderContent={fixedHeaderContent}
+                  itemContent={rowContent}
+                />
+              </Paper>
+            </div>
+          </div>
+        )}
         <div
           className="bottom-buttons"
           style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-end" }}

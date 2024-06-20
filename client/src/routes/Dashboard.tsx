@@ -9,9 +9,11 @@ import NavToolbar from "../components/NavToolbar";
 import UploadDialog from "../components/UploadDialog";
 import CurrentJobChip from "../components/CurrentJobChip";
 import JobQueue from "../components/JobQueue";
+import MultiGeoJSONLayer from "../components/MultiGeoJsonLayer";
 
 const Dashboard = () => {
   const loadedGeoJSON = useStore((state) => state.loadedGeoJSON);
+  const multipolygons = useStore((state) => state.multipolygons);
   const showUploadDialog = useStore((state) => state.showUploadDialog);
   const activeJob = useStore((state) => state.activeJob);
   const [successMessage, setSuccessMessage] = useStore((state) => [state.successMessage, state.setSuccessMessage]);
@@ -60,7 +62,7 @@ const Dashboard = () => {
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <NavToolbar />
       {showUploadDialog && <UploadDialog />}
-      <CurrentJobChip job={activeJob} />
+      <CurrentJobChip />
       <JobQueue />
       <MapContainer
         className="map-container"
@@ -78,6 +80,7 @@ const Dashboard = () => {
         <ZoomControl position="topright" />
         <ScaleControl position="bottomleft" />
         <GeoJSONLayer data={loadedGeoJSON} />
+        <MultiGeoJSONLayer data={multipolygons} />
       </MapContainer>
       <Snackbar
         open={successMessage.length > 0}
