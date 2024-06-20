@@ -30,7 +30,6 @@ const MultiGeoJSONLayer = ({ data }: { data: any[] }) => {
         }
 
         destructors.push(() => geoJsonLayer.remove());
-        console.log(geoJsonLayer);
       });
 
       setDestructors(destructors);

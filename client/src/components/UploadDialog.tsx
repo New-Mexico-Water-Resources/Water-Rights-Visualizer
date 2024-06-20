@@ -181,7 +181,10 @@ const UploadDialog = () => {
       <React.Fragment>
         {columns.map((column) => (
           <TableCell
-            sx={{ backgroundColor: selectedRowId === row.id ? "var(--st-gray-80)" : "var(--st-gray-90)" }}
+            sx={{
+              backgroundColor: selectedRowId === row.id ? "var(--st-gray-80)" : "var(--st-gray-90)",
+              cursor: "pointer",
+            }}
             key={column.dataKey}
             align={column.numeric || false ? "right" : "left"}
             onClick={() => {
@@ -293,12 +296,12 @@ const UploadDialog = () => {
           <div className={`dropzone-area ${isDragActive ? "drag-active" : ""}`} {...getRootProps()}>
             <input {...getInputProps()} />
             {loadedFile ? (
-              <div className="loaded-file">
+              <div className="loaded-file" style={{ margin: "8px" }}>
                 <MapIcon style={{ color: "var(--st-gray-20)" }} />
                 <p style={{ color: "var(--st-gray-20)" }}>{loadedFile.name}</p>
               </div>
             ) : (
-              <p style={{ color: "var(--st-gray-40)" }}>Drag and drop a GeoJSON or zipped shapefile</p>
+              <p style={{ color: "var(--st-gray-40)", marginBottom: 0 }}>Drag and drop a GeoJSON or zipped shapefile</p>
             )}
           </div>
         </div>

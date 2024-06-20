@@ -19,7 +19,7 @@ const JobQueue = () => {
   const [activeJobLogKey, setActiveJobLogKey] = useState("");
   const [jobLogsOpen, setJobLogsOpen] = useState(false);
 
-  const [shouldFollowLogs, setShouldFollowLogs] = useState(true);
+  const [pauseLogs, setPauseLogs] = useState(false);
 
   const [jobStatuses, fetchJobStatus] = useStore((state) => [state.jobStatuses, state.fetchJobStatus]);
   const jobStatus = useMemo(() => {
@@ -38,7 +38,6 @@ const JobQueue = () => {
     return jobStatus;
   }, [activeJobLogKey, jobStatuses]);
 
-  // let logBottomRef = useRef<HTMLDivElement>(null);
   const viewingJob = useMemo(() => {
     if (!activeJobLogKey) {
       return null;
@@ -86,7 +85,9 @@ const JobQueue = () => {
 
     fetchLogs();
     const interval = setInterval(() => {
-      fetchLogs();
+      if (!pauseLogs) {
+        fetchLogs();
+      }
     }, 5000);
     return () => clearInterval(interval);
   }, [activeJobLogKey, jobLogsOpen]);
@@ -145,7 +146,7 @@ const JobQueue = () => {
           </Typography>
           <div style={{ height: "calc(100% - 64px)" }}>
             <ScrollFollow
-              startFollowing={shouldFollowLogs}
+              startFollowing={true}
               render={({ follow, onScroll }) => (
                 <LazyLog
                   style={{
@@ -154,10 +155,13 @@ const JobQueue = () => {
                   }}
                   text={jobLogs[activeJobLogKey]?.logs || "Loading logs..."}
                   follow={follow}
-                  onScroll={(...props) => {
-                    onScroll(...props);
-                    setShouldFollowLogs(true);
-                    console.log("stopped following logs", ...props);
+                  onScroll={({ scrollTop, scrollHeight, clientHeight }) => {
+                    onScroll({ scrollTop, scrollHeight, clientHeight });
+                    if (scrollTop !== scrollHeight - clientHeight) {
+                      setPauseLogs(true);
+                    } else {
+                      setPauseLogs(false);
+                    }
                   }}
                   enableHotKeys={true}
                   enableSearch={true}
