@@ -194,14 +194,3 @@
     }
   }
 }
-
-.current-job {
-  position: absolute;
-  top: 49px;
-  left: 4px;
-
-  z-index: 999;
-  background: var(--st-gray-90);
-  padding: 4px 8px;
-  border-radius: 8px;
-}

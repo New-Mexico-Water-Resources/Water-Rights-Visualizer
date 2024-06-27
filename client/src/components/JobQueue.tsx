@@ -1,18 +1,19 @@
-import { Box, IconButton, Modal, Typography } from "@mui/material";
+import { Box, Button, IconButton, Modal, Typography } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useStore, { JobStatus } from "../utils/store";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LazyLog, ScrollFollow } from "@melloware/react-logviewer";
 
 import "../scss/JobQueue.scss";
 import JobQueueItem from "./JobQueueItem";
+import { useConfirm } from "material-ui-confirm";
 
 const JobQueue = () => {
   const queue = useStore((state) => state.queue);
   const backlog = useStore((state) => state.backlog);
   const isBacklogOpen = useStore((state) => state.isBacklogOpen);
   const isQueueOpen = useStore((state) => state.isQueueOpen);
-
+  const clearPendingJobs = useStore((state) => state.clearPendingJobs);
   const fetchJobLogs = useStore((state) => state.fetchJobLogs);
 
   const [jobLogs, setJobLogs] = useState<Record<string, { timestamp: number; logs: string }>>({});
@@ -37,6 +38,12 @@ const JobQueue = () => {
 
     return jobStatus;
   }, [activeJobLogKey, jobStatuses]);
+
+  const confirm = useConfirm();
+
+  const pendingJobCount = useMemo(() => {
+    return queue.reduce((acc, job) => (job.status === "Pending" ? acc + 1 : acc), 0);
+  }, [queue]);
 
   const viewingJob = useMemo(() => {
     if (!activeJobLogKey) {
@@ -189,8 +196,34 @@ const JobQueue = () => {
           </div>
         </Box>
       </Modal>
-      <Typography variant="h5" style={{ color: "var(--st-gray-30)", padding: "8px 16px" }}>
+      <Typography
+        variant="h5"
+        style={{ color: "var(--st-gray-30)", padding: "8px 16px", display: "flex", alignItems: "center" }}
+      >
         {isBacklogOpen ? "Backlog" : "Queue"}
+
+        {!isBacklogOpen && (
+          <Button
+            variant="text"
+            disabled={!pendingJobCount}
+            sx={{ marginLeft: "auto" }}
+            onClick={() => {
+              confirm({
+                title: "Clear Pending Jobs",
+                description: `Are you sure you want to clear ${pendingJobCount} jobs from the queue?`,
+                confirmationButtonProps: { color: "primary", variant: "contained" },
+                cancellationButtonProps: { color: "secondary", variant: "contained" },
+                titleProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                contentProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                dialogActionsProps: { sx: { backgroundColor: "var(--st-gray-90)" } },
+              }).then(() => {
+                clearPendingJobs();
+              });
+            }}
+          >
+            Clear Pending
+          </Button>
+        )}
       </Typography>
       <div className="queue-list">
         {(isBacklogOpen ? backlog : queue).map((job, index) => (

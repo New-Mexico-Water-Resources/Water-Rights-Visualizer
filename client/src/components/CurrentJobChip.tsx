@@ -1,11 +1,15 @@
-import { IconButton, Typography } from "@mui/material";
+import { Button, IconButton, Typography } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useStore, { JobStatus } from "../utils/store";
 import { useMemo } from "react";
 
+import "../scss/CurrentJobChip.scss";
+
 const CurrentJobChip = () => {
   const [activeJob, setActiveJob] = useStore((state) => [state.activeJob, state.setActiveJob]);
   const closeNewJob = useStore((state) => state.closeNewJob);
+  const [previewMode, setPreviewMode] = useStore((state) => [state.previewMode, state.setPreviewMode]);
+  const setShowUploadDialog = useStore((state) => state.setShowUploadDialog);
 
   const jobStatuses = useStore((state) => state.jobStatuses);
   const jobStatus = useMemo(() => {
@@ -57,6 +61,19 @@ const CurrentJobChip = () => {
         <Typography variant="body2" style={{ color: "var(--st-gray-40)" }}>
           Status: <b>{jobStatus.status}</b>
         </Typography>
+      )}
+      {previewMode && (
+        <Button
+          sx={{ margin: "8px 0" }}
+          variant="contained"
+          onClick={() => {
+            setPreviewMode(false);
+            setActiveJob(null);
+            setShowUploadDialog(true);
+          }}
+        >
+          Continue Editing
+        </Button>
       )}
     </div>
   );

@@ -24,7 +24,9 @@ import { TableVirtuoso, TableComponents } from "react-virtuoso";
 
 import React, { ChangeEvent, useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import useStore from "../utils/store";
+import useStore, { PolygonLocation } from "../utils/store";
+import { useConfirm } from "material-ui-confirm";
+import { formatElapsedTime, formJobForQueue } from "../utils/helpers";
 
 const UploadDialog = () => {
   const [jobName, setJobName] = useStore((state) => [state.jobName, state.setJobName]);
@@ -36,14 +38,24 @@ const UploadDialog = () => {
   const [multipolygons, setMultipolygons] = useStore((state) => [state.multipolygons, state.setMultipolygons]);
   const setActiveJob = useStore((state) => state.setActiveJob);
   const submitJob = useStore((state) => state.submitJob);
+  const prepareMultipolygonJob = useStore((state) => state.prepareMultipolygonJob);
+  const submitMultipolygonJob = useStore((state) => state.submitMultipolygonJob);
   const closeNewJob = useStore((state) => state.closeNewJob);
   const prepareGeoJSON = useStore((state) => state.prepareGeoJSON);
+  const previewJob = useStore((state) => state.previewJob);
+  const previewMultipolygonJob = useStore((state) => state.previewMultipolygonJob);
 
   const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
+
+  const confirm = useConfirm();
 
   const canSubmitJob = useMemo(() => {
     return jobName && loadedFile && loadedGeoJSON && startYear <= endYear;
   }, [jobName, loadedFile, loadedGeoJSON, startYear, endYear]);
+
+  const canSubmitBulkJob = useMemo(() => {
+    return jobName && loadedFile && multipolygons && startYear <= endYear;
+  }, [jobName, loadedFile, multipolygons, startYear, endYear]);
 
   const validYears = useMemo(() => {
     return Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
@@ -66,6 +78,8 @@ const UploadDialog = () => {
         prepareGeoJSON(file).then((geojson) => {
           if (geojson.data && !geojson?.data?.multipolygon) {
             setLoadedGeoJSON(geojson.data);
+            setMultipolygons([]);
+            setRows([]);
             setActiveJob(null);
           } else if (geojson?.data?.multipolygon && geojson?.data?.geojsons?.length > 0) {
             setMultipolygons(geojson.data.geojsons);
@@ -87,22 +101,8 @@ const UploadDialog = () => {
     },
   });
 
-  interface Data {
-    id: number;
-    acres: number;
-    comments: string;
-    county: string;
-    polygon_So: string;
-    shape_Area: number;
-    shape_Leng: number;
-    source: string;
-    wUR_Basin: string;
-    lat: number;
-    long: number;
-  }
-
   interface ColumnData {
-    dataKey: keyof Data;
+    dataKey: keyof PolygonLocation;
     label: string;
     numeric?: boolean;
     width: number;
@@ -110,6 +110,8 @@ const UploadDialog = () => {
 
   const columns: ColumnData[] = [
     { width: 200, label: "Acres", dataKey: "acres" },
+    { width: 200, label: "Lat", dataKey: "lat" },
+    { width: 200, label: "Long", dataKey: "long" },
     { width: 200, label: "County", dataKey: "county" },
     { width: 200, label: "Polygon Source", dataKey: "polygon_So" },
     { width: 200, label: "Shape Area", dataKey: "shape_Area" },
@@ -117,15 +119,15 @@ const UploadDialog = () => {
     { width: 200, label: "Source", dataKey: "source" },
     { width: 200, label: "WUR Basin", dataKey: "wUR_Basin" },
     { width: 200, label: "Comments", dataKey: "comments" },
-    { width: 200, label: "Lat", dataKey: "lat" },
-    { width: 200, label: "Long", dataKey: "long" },
   ];
 
-  const [rows, setRows] = useState<Data[]>([]);
+  const [rows, setRows] = useStore((state) => [state.locations, state.setLocations]);
+  const visibleRows = useMemo(() => rows.filter((row) => row.visible), [rows]);
 
   const generateRows = (multipolygons: any[]) => {
-    const rows: Data[] = multipolygons.map((geojson, index) => {
+    const rows: PolygonLocation[] = multipolygons.map((geojson, index) => {
       return {
+        visible: true,
         acres: geojson.properties.Acres,
         comments: geojson.properties.Comments,
         county: geojson.properties.County,
@@ -143,7 +145,7 @@ const UploadDialog = () => {
     setRows(rows);
   };
 
-  const VirtuosoTableComponents: TableComponents<Data> = useMemo(
+  const VirtuosoTableComponents: TableComponents<PolygonLocation> = useMemo(
     () => ({
       Scroller: React.forwardRef<HTMLDivElement>((props, ref) => (
         <TableContainer component={Paper} {...props} ref={ref} />
@@ -176,13 +178,13 @@ const UploadDialog = () => {
     );
   }
 
-  function rowContent(_index: number, row: Data) {
+  function rowContent(_index: number, row: PolygonLocation) {
     return (
       <React.Fragment>
         {columns.map((column) => (
           <TableCell
             sx={{
-              backgroundColor: selectedRowId === row.id ? "var(--st-gray-80)" : "var(--st-gray-90)",
+              backgroundColor: selectedRowId === row.id ? "var(--st-gray-80)" : "var(--st-gray-100)",
               cursor: "pointer",
             }}
             key={column.dataKey}
@@ -298,22 +300,22 @@ const UploadDialog = () => {
             {loadedFile ? (
               <div className="loaded-file" style={{ margin: "8px" }}>
                 <MapIcon style={{ color: "var(--st-gray-20)" }} />
-                <p style={{ color: "var(--st-gray-20)" }}>{loadedFile.name}</p>
+                <p style={{ color: "var(--st-gray-20)", marginBottom: 0 }}>{loadedFile.name}</p>
               </div>
             ) : (
-              <p style={{ color: "var(--st-gray-40)", marginBottom: 0 }}>Drag and drop a GeoJSON or zipped shapefile</p>
+              <p style={{ color: "var(--st-gray-40)" }}>Drag and drop a GeoJSON or zipped shapefile</p>
             )}
           </div>
         </div>
         {multipolygons && multipolygons.length > 0 && loadedFile && (
           <div className="multipolygon-table" style={{ width: "100%" }}>
             <Typography variant="h6" style={{ color: "var(--st-gray-30)", padding: "8px 16px" }}>
-              Multipolygon Detected
+              Multipolygon Detected ({visibleRows.length} visible layers)
             </Typography>
             <div style={{ padding: "0 16px" }}>
               <Paper style={{ height: 400, width: "100%" }}>
                 <TableVirtuoso
-                  data={rows}
+                  data={visibleRows}
                   components={VirtuosoTableComponents}
                   fixedHeaderContent={fixedHeaderContent}
                   itemContent={rowContent}
@@ -327,17 +329,56 @@ const UploadDialog = () => {
           style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-end" }}
         >
           <Button
-            disabled={!canSubmitJob}
+            disabled={!canSubmitJob && !canSubmitBulkJob}
             variant="contained"
             color="primary"
             style={{ margin: "8px", border: canSubmitJob ? "1px solid #1E40AF" : "1px solid transparent" }}
             onClick={() => {
-              if (canSubmitJob) {
-                submitJob();
+              if (multipolygons.length > 0 && loadedFile) {
+                previewMultipolygonJob();
+              } else {
+                let job = formJobForQueue(jobName, startYear, endYear, loadedGeoJSON);
+                previewJob(job);
               }
             }}
           >
-            Submit Job
+            {multipolygons && multipolygons.length > 0 && loadedFile ? "Configure Layers" : "Preview"}
+          </Button>
+          <Button
+            disabled={!canSubmitJob && !canSubmitBulkJob}
+            variant="contained"
+            color="primary"
+            style={{
+              margin: "8px",
+              border: canSubmitJob || canSubmitBulkJob ? "1px solid #1E40AF" : "1px solid transparent",
+            }}
+            onClick={() => {
+              if (canSubmitJob) {
+                submitJob();
+              } else if (canSubmitBulkJob) {
+                let jobs = prepareMultipolygonJob();
+                let totalNumberOfYears = jobs.reduce((acc, job) => acc + job.end_year - job.start_year + 1, 0);
+
+                // Rough estimate of 5 minutes per year
+                let estimatedTimePerYear = 5;
+                let estimatedTimeMS = totalNumberOfYears * estimatedTimePerYear * 60 * 1000;
+                let estimatedTime = formatElapsedTime(estimatedTimeMS).trim();
+
+                confirm({
+                  title: "Submit Bulk Job",
+                  description: `Are you sure you want to submit ${jobs.length} jobs (ETA: ${estimatedTime})?`,
+                  confirmationButtonProps: { color: "primary", variant: "contained" },
+                  cancellationButtonProps: { color: "secondary", variant: "contained" },
+                  titleProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                  contentProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                  dialogActionsProps: { sx: { backgroundColor: "var(--st-gray-90)" } },
+                }).then(() => {
+                  submitMultipolygonJob(jobs);
+                });
+              }
+            }}
+          >
+            Submit {canSubmitBulkJob && multipolygons.length > 1 && "Bulk "}Job
           </Button>
         </div>
       </div>

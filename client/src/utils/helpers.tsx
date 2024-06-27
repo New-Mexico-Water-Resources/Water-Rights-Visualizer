@@ -36,4 +36,29 @@ export const formatElapsedTime = (elapsedTime: number): string => {
   return formattedTimeRemaining;
 };
 
+export const formJobForQueue = (jobName: string, startYear: number, endYear: number, geojson: any): any => {
+  let jobKey = `${jobName}_${startYear}_${endYear}_${Date.now()}`;
+  let newJob = {
+    key: jobKey,
+    cmd: `/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/${jobKey}/config.json`,
+    status: "Pending",
+    status_msg: null,
+    submitted: new Date().toISOString(),
+    started: null,
+    ended: null,
+    invoker: "to-do",
+    name: jobName,
+    start_year: startYear,
+    end_year: endYear,
+    geo_json_file: `/root/data/water_rights_runs/${jobKey}/${jobName}.geojson`,
+    loaded_geo_json: geojson,
+    base_dir: `/root/data/water_rights_runs/${jobKey}`,
+    png_dir: `/root/data/water_rights_runs/${jobKey}/output/figures/${jobName}`,
+    csv_dir: `/root/data/water_rights_runs/${jobKey}/output/monthly_nan/${jobName}`,
+    years_processed: [],
+  };
+
+  return newJob;
+};
+
 export default {};

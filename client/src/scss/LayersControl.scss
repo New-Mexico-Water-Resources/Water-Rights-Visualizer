@@ -1,0 +1,60 @@
+.layers-control {
+  display: flex;
+  flex-direction: column;
+
+  position: absolute;
+  top: 49px;
+  left: 4px;
+
+  z-index: 999;
+  background: var(--st-gray-90);
+  padding: 4px 8px;
+  border-radius: 8px;
+
+  .metaline {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.layer-row {
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 8px;
+
+  height: 85px;
+  display: flex;
+  align-items: center;
+
+  .left-btns {
+  }
+
+  .details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  &:hover {
+    border: 1px solid var(--st-gray-70);
+    background: var(--st-gray-80);
+  }
+
+  &.active {
+    border: 1px solid var(--st-gray-60);
+    background: var(--st-gray-70);
+  }
+}
+
+.custom-tooltip {
+  background: var(--st-gray-90);
+  color: white;
+  border: 1px solid var(--st-gray-70);
+  border-radius: 4px;
+  padding: 4px 8px;
+
+  &::before {
+    background-color: var(--st-gray-90);
+  }
+}

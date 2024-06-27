@@ -10,12 +10,14 @@ import UploadDialog from "../components/UploadDialog";
 import CurrentJobChip from "../components/CurrentJobChip";
 import JobQueue from "../components/JobQueue";
 import MultiGeoJSONLayer from "../components/MultiGeoJsonLayer";
+import LayersControl from "../components/LayersControl";
 
 const Dashboard = () => {
   const loadedGeoJSON = useStore((state) => state.loadedGeoJSON);
   const multipolygons = useStore((state) => state.multipolygons);
+  const locations = useStore((state) => state.locations);
+  const previewMode = useStore((state) => state.previewMode);
   const showUploadDialog = useStore((state) => state.showUploadDialog);
-  const activeJob = useStore((state) => state.activeJob);
   const [successMessage, setSuccessMessage] = useStore((state) => [state.successMessage, state.setSuccessMessage]);
   const [errorMessage, setErrorMessage] = useStore((state) => [state.errorMessage, state.setErrorMessage]);
 
@@ -62,7 +64,8 @@ const Dashboard = () => {
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <NavToolbar />
       {showUploadDialog && <UploadDialog />}
-      <CurrentJobChip />
+      {multipolygons.length <= 1 && <CurrentJobChip />}
+      {multipolygons.length > 1 && previewMode && <LayersControl />}
       <JobQueue />
       <MapContainer
         className="map-container"
@@ -80,7 +83,7 @@ const Dashboard = () => {
         <ZoomControl position="topright" />
         <ScaleControl position="bottomleft" />
         <GeoJSONLayer data={loadedGeoJSON} />
-        <MultiGeoJSONLayer data={multipolygons} />
+        <MultiGeoJSONLayer data={multipolygons} locations={locations} />
       </MapContainer>
       <Snackbar
         open={successMessage.length > 0}

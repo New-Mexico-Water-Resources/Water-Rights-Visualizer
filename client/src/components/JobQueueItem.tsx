@@ -72,20 +72,19 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   return (
     <div className="queue-item">
       <div className="item-header">
-        <Tooltip title={`Status: ${job.status}`}>
+        <Tooltip title={`${job.name}\nStatus: ${job.status}`}>
           <Typography
             variant="h6"
             sx={{
               display: "flex",
               alignItems: "center",
               gap: "4px",
-              maxWidth: "240px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
             }}
           >
             <StatusIcon status={job.status} />
-            {job.name}
+            <span style={{ maxWidth: "215px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "pre" }}>
+              {job.name}
+            </span>
           </Typography>
         </Tooltip>
         <IconButton

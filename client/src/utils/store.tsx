@@ -3,7 +3,22 @@ import { devtools } from "zustand/middleware";
 
 import axios from "axios";
 import { API_URL } from "./constants";
-import { formatElapsedTime } from "./helpers";
+import { formatElapsedTime, formJobForQueue } from "./helpers";
+
+export interface PolygonLocation {
+  visible: boolean;
+  id: number;
+  acres: number;
+  comments: string;
+  county: string;
+  polygon_So: string;
+  shape_Area: number;
+  shape_Leng: number;
+  source: string;
+  wUR_Basin: string;
+  lat: number;
+  long: number;
+}
 
 export interface JobStatus {
   status: string;
@@ -35,6 +50,8 @@ interface Store {
   setLoadedGeoJSON: (loadedGeoJSON: any) => void;
   multipolygons: any[];
   setMultipolygons: (multipolygons: any[]) => void;
+  previewMode: boolean;
+  setPreviewMode: (previewMode: boolean) => void;
   showUploadDialog: boolean;
   setShowUploadDialog: (showUploadDialog: boolean) => void;
   activeJob: any | null;
@@ -51,7 +68,14 @@ interface Store {
   setBacklog: (backlog: any[]) => void;
   fetchQueue: () => void;
   deleteJob: (jobKey: string, deleteFiles?: boolean) => void;
+  bulkDeleteJobs: (jobKeys: string[], deleteFiles?: boolean) => void;
+  previewJob: (job: any) => void;
+  previewMultipolygonJob: () => void;
   submitJob: () => void;
+  locations: PolygonLocation[];
+  setLocations: (locations: PolygonLocation[]) => void;
+  prepareMultipolygonJob: () => any[];
+  submitMultipolygonJob: (jobs: any[]) => void;
   loadJob: (job: any) => void;
   downloadJob: (jobKey: string) => void;
   startNewJob: () => void;
@@ -60,6 +84,7 @@ interface Store {
   jobStatuses: Record<string, JobStatus>;
   fetchJobStatus: (jobKey: string, jobName: string) => Promise<JobStatus>;
   prepareGeoJSON: (shapefile: File) => Promise<any>;
+  clearPendingJobs: () => void;
 }
 
 const useStore = create<Store>()(
@@ -84,6 +109,8 @@ const useStore = create<Store>()(
     setLoadedGeoJSON: (loadedGeoJSON) => set({ loadedGeoJSON }),
     multipolygons: [],
     setMultipolygons: (multipolygons) => set({ multipolygons }),
+    previewMode: false,
+    setPreviewMode: (previewMode) => set({ previewMode }),
     showUploadDialog: true,
     setShowUploadDialog: (showUploadDialog) => set({ showUploadDialog }),
     activeJob: null,
@@ -150,28 +177,37 @@ const useStore = create<Store>()(
           set(() => ({ errorMessage: error?.message || "Error deleting job" }));
         });
     },
+    bulkDeleteJobs: async (jobKeys, deleteFiles: boolean = true) => {
+      axios
+        .delete(`${API_URL}/queue/bulk_delete_jobs`, {
+          data: { keys: jobKeys, deleteFiles },
+        })
+        .then(() => {
+          set((state) => {
+            let deletedJobs = state.queue.filter((item) => jobKeys.includes(item.key));
+            let remainingJobs = state.queue.filter((item) => !jobKeys.includes(item.key));
+
+            return {
+              ...state,
+              queue: remainingJobs,
+              successMessage: `${deletedJobs.length} jobs deleted successfully`,
+              errorMessage: "",
+            };
+          });
+        })
+        .catch((error) => {
+          set(() => ({ errorMessage: error?.message || "Error deleting jobs" }));
+        });
+    },
+    previewJob: (job: any) => {
+      set({ activeJob: job, showUploadDialog: false, previewMode: true });
+    },
+    previewMultipolygonJob: () => {
+      set({ showUploadDialog: false, previewMode: true, activeJob: null });
+    },
     submitJob: async () => {
       let jobName = get().jobName;
-      let jobKey = `${jobName}_${get().startYear}_${get().endYear}_${Date.now()}`;
-      let newJob = {
-        key: jobKey,
-        cmd: `/opt/conda/bin/python /app/water-rights-visualizer-backend-S3.py /root/data/water_rights_runs/${jobKey}/config.json`,
-        status: "Pending",
-        status_msg: null,
-        submitted: new Date().toISOString(),
-        started: null,
-        ended: null,
-        invoker: "to-do",
-        name: jobName,
-        start_year: get().startYear,
-        end_year: get().endYear,
-        geo_json_file: `/root/data/water_rights_runs/${jobKey}/${jobName}.geojson`,
-        loaded_geo_json: get().loadedGeoJSON,
-        base_dir: `/root/data/water_rights_runs/${jobKey}`,
-        png_dir: `/root/data/water_rights_runs/${jobKey}/output/figures/${jobName}`,
-        csv_dir: `/root/data/water_rights_runs/${jobKey}/output/monthly_nan/${jobName}`,
-        years_processed: [],
-      };
+      let newJob = formJobForQueue(jobName, get().startYear, get().endYear, get().loadedGeoJSON);
 
       axios
         .post(`${API_URL}/start_run`, {
@@ -183,6 +219,7 @@ const useStore = create<Store>()(
         .then((response) => {
           set({
             showUploadDialog: false,
+            previewMode: false,
             loadedFile: null,
             activeJob: newJob,
             successMessage: response.data,
@@ -193,6 +230,53 @@ const useStore = create<Store>()(
         .catch((error) => {
           set({ errorMessage: error?.message || "Error submitting job" });
         });
+    },
+    locations: [],
+    setLocations: (locations) => set({ locations }),
+    prepareMultipolygonJob: () => {
+      let baseName = get().jobName;
+      let multipolygons = get().multipolygons;
+      let polygonLocations = get().locations;
+
+      if (multipolygons.length === 0 || polygonLocations.length !== multipolygons.length) {
+        set({ errorMessage: "No multipolygons to submit" });
+        return [];
+      }
+
+      return polygonLocations
+        .filter((location) => location.visible)
+        .map((location) => {
+          let roundedLat = Math.round(location.lat * 1000) / 1000;
+          let roundedLong = Math.round(location.long * 1000) / 1000;
+          let jobName = `${baseName} Part ${location.id + 1} (${roundedLat}, ${roundedLong})`;
+          let geojson = multipolygons[location.id];
+
+          return formJobForQueue(jobName, get().startYear, get().endYear, geojson);
+        });
+    },
+    submitMultipolygonJob: async (jobs: any[]) => {
+      try {
+        let responses = [];
+        for (const job of jobs) {
+          const response = await axios.post(`${API_URL}/start_run`, {
+            name: job.name,
+            startYear: job.start_year,
+            endYear: job.end_year,
+            geojson: job.loaded_geo_json,
+          });
+          responses.push(response.data);
+        }
+        set({
+          successMessage: `All ${jobs.length} jobs submitted successfully!`,
+          errorMessage: "",
+          activeJob: jobs[0],
+        });
+      } catch (error: any) {
+        set({
+          errorMessage: error?.message || `Error submitting multipolygon job! (${error})`,
+          successMessage: "",
+        });
+      }
     },
     loadJob: (job) => {
       axios
@@ -207,7 +291,7 @@ const useStore = create<Store>()(
             job.loaded_geo_json = response.data;
           }
 
-          set({ loadedGeoJSON, multipolygons, showUploadDialog: false });
+          set({ loadedGeoJSON, multipolygons, showUploadDialog: false, previewMode: false });
         })
         .catch((error) => {
           set({ loadedGeoJSON: null, multipolygons: [], errorMessage: error?.message || "Error loading job" });
@@ -236,11 +320,13 @@ const useStore = create<Store>()(
         startYear: 1985,
         endYear: 2020,
         showUploadDialog: true,
+        previewMode: false,
       });
     },
     closeNewJob: () => {
       set({
         showUploadDialog: false,
+        previewMode: false,
         loadedFile: null,
         loadedGeoJSON: null,
         multipolygons: [],
@@ -313,6 +399,17 @@ const useStore = create<Store>()(
         .catch((error) => {
           set({ errorMessage: error?.response?.data || error?.message || "Error preparing file" });
         });
+    },
+    clearPendingJobs: () => {
+      let pendingJobs = get()
+        .queue.filter((job) => job.status === "Pending")
+        .map((job) => job.key);
+
+      if (pendingJobs.length === 0) {
+        return;
+      }
+
+      get().bulkDeleteJobs(pendingJobs, true);
     },
   }))
 );
