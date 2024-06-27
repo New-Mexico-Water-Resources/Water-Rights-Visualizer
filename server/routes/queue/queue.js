@@ -69,7 +69,7 @@ router.delete("/delete_job", (req, res) => {
       return;
     }
 
-    if (!["Complete", "Failed"].includes(job?.status) && job?.pid) {
+    if (!["Complete", "Failed"].includes(job.status) && job.pid) {
       try {
         process.kill(job.pid, "SIGKILL");
       } catch (e) {
@@ -127,7 +127,7 @@ router.delete("/bulk_delete_jobs", (req, res) => {
     let deleted = report_queue.filter((entry) => keys.includes(entry.key));
 
     deleted.forEach((job) => {
-      if (!["Complete", "Failed"].includes(job?.status) && job?.pid) {
+      if (!["Complete", "Failed"].includes(job.status) && job.pid) {
         try {
           process.kill(job.pid, "SIGKILL");
         } catch (e) {
