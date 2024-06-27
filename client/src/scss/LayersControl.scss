@@ -55,6 +55,6 @@
   padding: 4px 8px;
 
   &::before {
-    background-color: var(--st-gray-90);
+    border-right-color: var(--st-gray-90);
   }
 }

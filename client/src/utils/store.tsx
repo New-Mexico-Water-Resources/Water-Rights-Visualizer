@@ -266,10 +266,17 @@ const useStore = create<Store>()(
           });
           responses.push(response.data);
         }
+
         set({
+          showUploadDialog: false,
+          previewMode: false,
+          loadedFile: null,
+          multipolygons: [],
+          locations: [],
           successMessage: `All ${jobs.length} jobs submitted successfully!`,
           errorMessage: "",
           activeJob: jobs[0],
+          loadedGeoJSON: jobs[0].loaded_geo_json,
         });
       } catch (error: any) {
         set({
