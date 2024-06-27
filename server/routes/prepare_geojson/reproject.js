@@ -2,7 +2,10 @@ const proj4 = require("proj4");
 proj4.defs["urn:ogc:def:crs:OGC:1.3:CRS84"] = proj4.defs["EPSG:4326"];
 
 function reprojectGeojson(geojson) {
-  const sourceProj = geojson?.crs?.properties?.name || "EPSG:4326";
+  const sourceProj = "EPSG:4326";
+  if (geojson && geojson.crs && geojson.crs.properties && geojson.crs.properties.name) {
+    sourceProj = geojson.crs.properties.name;
+  }
   const destProj = "EPSG:4326";
 
   if (sourceProj !== destProj) {
