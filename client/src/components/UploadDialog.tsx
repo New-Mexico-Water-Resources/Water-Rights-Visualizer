@@ -68,7 +68,6 @@ const UploadDialog = () => {
       reader.onabort = () => console.log("file reading was aborted");
       reader.onerror = () => console.log("file reading has failed");
       reader.onload = () => {
-        const response = reader.result;
         setLoadedFile(file);
         if (!jobName) {
           let fileName = file.name.replace(/\.[^/.]+$/, "");

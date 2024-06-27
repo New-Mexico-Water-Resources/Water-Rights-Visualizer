@@ -48,11 +48,11 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
         const layer = data[location.id];
         const geoJsonLayer = new Leaflet.GeoJSON(layer);
         geoJsonLayer.on({
-          dblclick: (evt: any) => {
+          dblclick: () => {
             setSelectedMapLayer(location.id);
             map.fitBounds(geoJsonLayer.getBounds());
           },
-          click: (evt: any) => {
+          click: () => {
             setSelectedMapLayer(location.id);
           },
         });

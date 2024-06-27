@@ -114,3 +114,6 @@ setup-amazon-linux:
 	make install-docker-amazon-linux
 	make setup-scrollback-buffer
 	setup-data-directory-amazon-linux
+
+update:
+	./update.sh
