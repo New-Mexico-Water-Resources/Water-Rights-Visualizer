@@ -2,7 +2,9 @@ import { Box, Button, IconButton, Modal, Typography } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useStore, { JobStatus } from "../utils/store";
 import { useEffect, useMemo, useState } from "react";
-import { LazyLog, ScrollFollow } from "@melloware/react-logviewer";
+import { LazyLog } from "@melloware/react-logviewer";
+import FileDownloadSharpIcon from "@mui/icons-material/FileDownloadSharp";
+import FileDownloadOffSharpIcon from "@mui/icons-material/FileDownloadOffSharp";
 
 import "../scss/JobQueue.scss";
 import JobQueueItem from "./JobQueueItem";
@@ -82,10 +84,6 @@ const JobQueue = () => {
           currentLog.timestamp = Date.now();
 
           setJobLogs({ ...jobLogs, [activeJobLogKey]: currentLog });
-          // if (logBottomRef.current) {
-          //   console.log("scrolling to bottom");
-          //   logBottomRef.current.scrollIntoView({ behavior: "smooth" });
-          // }
         });
       }
     };
@@ -97,23 +95,7 @@ const JobQueue = () => {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [activeJobLogKey, jobLogsOpen]);
-
-  // TEST LOGS
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     if (jobLogs[activeJobLogKey]) {
-  //       setJobLogs({
-  //         ...jobLogs,
-  //         [activeJobLogKey]: {
-  //           timestamp: jobLogs[activeJobLogKey].timestamp,
-  //           logs: (jobLogs?.[activeJobLogKey]?.logs || "") + "\n" + Math.random().toString(36).substring(7),
-  //         },
-  //       });
-  //     }
-  //   }, 500);
-  //   return () => clearInterval(interval);
-  // }, [jobLogs, activeJobLogKey]);
+  }, [activeJobLogKey, jobLogsOpen, jobLogs]);
 
   return (
     <div className={`queue-container ${isQueueOpen || isBacklogOpen ? "open" : "closed"}`}>
@@ -152,33 +134,48 @@ const JobQueue = () => {
             </IconButton>
           </Typography>
           <div style={{ height: "calc(100% - 64px)" }}>
-            <ScrollFollow
-              startFollowing={true}
-              render={({ follow, onScroll }) => (
-                <LazyLog
-                  style={{
-                    backgroundColor: "var(--st-gray-100)",
-                    color: "var(--st-gray-10)",
-                  }}
-                  text={jobLogs[activeJobLogKey]?.logs || "Loading logs..."}
-                  follow={follow}
-                  onScroll={({ scrollTop, scrollHeight, clientHeight }) => {
-                    onScroll({ scrollTop, scrollHeight, clientHeight });
-                    if (scrollTop !== scrollHeight - clientHeight) {
-                      setPauseLogs(true);
-                    } else {
-                      setPauseLogs(false);
-                    }
-                  }}
-                  enableHotKeys={true}
-                  enableSearch={true}
-                  extraLines={1}
-                />
-              )}
+            <LazyLog
+              follow={!pauseLogs}
+              style={{
+                backgroundColor: "var(--st-gray-100)",
+                color: "var(--st-gray-10)",
+              }}
+              text={jobLogs[activeJobLogKey]?.logs || "Loading logs..."}
+              enableHotKeys={true}
+              enableSearch={true}
+              extraLines={1}
             />
-            {/* <div className="log-btm" style={{ position: "absolute", bottom: 0 }} ref={logBottomRef}></div> */}
           </div>
-          <div style={{ display: "flex", marginTop: "5px" }}>
+          <div style={{ display: "flex", alignItems: "center", marginTop: "5px", gap: "8px" }}>
+            {!pauseLogs && (
+              <FileDownloadSharpIcon
+                style={{
+                  color: "var(--st-gray-50)",
+                  fontSize: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  setPauseLogs(!pauseLogs);
+                }}
+              />
+            )}
+            {pauseLogs && (
+              <FileDownloadOffSharpIcon
+                style={{
+                  color: "var(--st-gray-50)",
+                  fontSize: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  setPauseLogs(!pauseLogs);
+                }}
+              />
+            )}
+
             <div style={{ color: "var(--st-gray-50)", fontSize: "14px" }}>Files Generated: {jobStatus.fileCount}</div>
             <div
               style={{
