@@ -6,6 +6,67 @@ const constants = require("../../constants");
 
 const run_directory_base = constants.run_directory_base;
 
+router.get("/raw", (req, res) => {
+  let report_queue_file = path.join(run_directory_base, "report_queue.json");
+
+  if (!fs.existsSync(report_queue_file)) {
+    fs.writeFileSync(report_queue_file, "[]");
+    res.status(200).send([]);
+    return;
+  }
+
+  fs.readFile(report_queue_file, (err, data) => {
+    if (err) {
+      console.error(`Error reading ${report_queue_file}`, err, data);
+      res.status(500).send(`Error reading report queue: ${err}`);
+      return;
+    }
+
+    res.status(200).send(data);
+  });
+});
+
+router.post("/admin/edit", (req, res) => {
+  let report_queue_file = path.join(run_directory_base, "report_queue.json");
+
+  if (!fs.existsSync(report_queue_file)) {
+    fs.writeFileSync(report_queue_file, "[]");
+  }
+
+  let edit_report = {
+    old: "",
+    new: "",
+  };
+
+  fs.readFile(report_queue_file, (err, data) => {
+    if (err) {
+      console.error(`Error reading ${report_queue_file}`, err, data);
+    }
+
+    edit_report.old = data || "";
+
+    let new_report_queue = {};
+    try {
+      new_report_queue = JSON.parse(req.body.queue);
+    } catch (e) {
+      console.error(`Error parsing data`, e, new_report_queue);
+      res.status(500).send("Error parsing data");
+      return;
+    }
+
+    fs.writeFile(report_queue_file, JSON.stringify(new_report_queue), (err) => {
+      if (err) {
+        console.error(`Error writing ${report_queue_file}`, err, new_report_queue);
+        res.status(500).send(`Error writing report queue: ${err}`);
+        return;
+      }
+      edit_report.new = new_report_queue;
+
+      res.status(200).send(edit_report);
+    });
+  });
+});
+
 router.get("/list", (req, res) => {
   let report_queue_file = path.join(run_directory_base, "report_queue.json");
 
@@ -27,7 +88,7 @@ router.get("/list", (req, res) => {
     try {
       report_queue = JSON.parse(data);
     } catch (e) {
-      console.error(`Error parsing JSON from ${report_queue_file}`);
+      console.error(`Error parsing JSON from ${report_queue_file}`, e, data);
       res.status(500).send("Error parsing report queue");
       return;
     }
