@@ -33,37 +33,36 @@ router.post("/admin/edit", (req, res) => {
     fs.writeFileSync(report_queue_file, "[]");
   }
 
+  old_data = fs.readFileSync(report_queue_file, "utf8") || "";
+
   let edit_report = {
-    old: "",
+    old: old_data,
     new: "",
   };
 
-  fs.readFile(report_queue_file, (err, data) => {
-    if (err) {
-      console.error(`Error reading ${report_queue_file}`, err, data);
-    }
+  let new_report_queue = [];
 
-    edit_report.old = data || "";
-
-    let new_report_queue = {};
-    try {
+  try {
+    if (typeof req.body.queue === "string") {
       new_report_queue = JSON.parse(req.body.queue);
-    } catch (e) {
-      console.error(`Error parsing data`, e, new_report_queue);
-      res.status(500).send("Error parsing data");
+    } else {
+      new_report_queue = req.body.queue;
+    }
+  } catch (e) {
+    console.error(`Error parsing data`, e);
+    res.status(500).send("Error parsing data");
+    return;
+  }
+
+  fs.writeFile(report_queue_file, JSON.stringify(new_report_queue), (err) => {
+    if (err) {
+      console.error(`Error writing ${report_queue_file}`, err, new_report_queue);
+      res.status(500).send(`Error writing report queue: ${err}`);
       return;
     }
 
-    fs.writeFile(report_queue_file, JSON.stringify(new_report_queue), (err) => {
-      if (err) {
-        console.error(`Error writing ${report_queue_file}`, err, new_report_queue);
-        res.status(500).send(`Error writing report queue: ${err}`);
-        return;
-      }
-      edit_report.new = new_report_queue;
-
-      res.status(200).send(edit_report);
-    });
+    edit_report.new = new_report_queue;
+    res.status(200).send(edit_report);
   });
 });
 
