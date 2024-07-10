@@ -9,7 +9,9 @@ services:
       - "8000:8000"
     depends_on:
       - water_rights_visualizer_backend
-
+    networks:
+      - water_network
+      
   water_rights_visualizer_backend:
     build: .
     container_name: water-rights-visualizer
@@ -19,3 +21,24 @@ services:
       - "5000:5000"
     volumes:
       - ${HOST_DATA_DIRECTORY:-${HOME}/data}:${CONTAINER_DATA_DIRECTORY:-/root/data}
+    networks:
+      - water_network
+      
+  water_mongo:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mypassword}
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodata:/data/db
+    networks:
+      - water_network
+
+volumes:
+  mongodata:
+    driver: local
+    
+networks:
+  water_network:
