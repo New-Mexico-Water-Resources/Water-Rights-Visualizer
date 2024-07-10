@@ -31,7 +31,7 @@ DEFAULT_QUEUE = "/root/data/water_rights_runs/report_queue.json"
 class WaterReportException(Exception):
     pass
 
-PRINT_LOG = True
+PRINT_LOG = False
 
 def build_mongo_client_and_collection():
     #todo: read from ENV vars and then use defaults if not available

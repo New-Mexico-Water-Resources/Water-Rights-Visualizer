@@ -107,6 +107,7 @@ router.post("/start_run", (req, res) => {
   console.log(command);
   
   //todo: Ryan please write this into the mongodb!
+  //host = water-rights-visualizer-water_mongo-1
   //database = water, collection = report_queue
   var entry = {
     key: key,
