@@ -11,6 +11,7 @@ import sys
 import argparse
 import json
 import subprocess
+import pymongo
 
 from datetime import datetime
 
@@ -32,6 +33,31 @@ class WaterReportException(Exception):
 
 PRINT_LOG = False
 
+def build_mongo_client_and_collection():
+    #todo: read from ENV vars and then use defaults if not available
+    user = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "admin")
+    cred = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "mypassword")
+    host = os.environ.get("MONGO_HOST", "water-rights-visualizer-water_mongo-1")
+    #host = os.environ.get("MONGO_HOST", "localhost")
+    port = os.environ.get("MONGO_PORT", 27017)
+
+    database = os.environ.get("MONGO_DATABASE", "water")
+    collection = os.environ.get("MONGO_COLLECTION", "report_queue")
+    
+    mongo_str = 'mongodb://{}:{}@{}:{}'.format(user, cred, host, port)
+    
+    client = pymongo.MongoClient(
+        host = host,
+        username = user,
+        password = cred,
+        port = port        
+    )
+    
+    db = client[database]
+    collect = db[collection]
+    
+    return collect
+        
 #does a system call to tail -1000 to make sure files do not grow too large
 def tail_cleanup(filepath):
     cmd = ["/usr/bin/tail", "-1000", filepath]    
@@ -72,7 +98,7 @@ def dlog(text, new_line=True):
     if PRINT_LOG:
         print(text)
         
-def exec_report(queue_file_path, record):                       
+def exec_report(record):                       
     cmd = record['cmd'].split(" ")
     dlog("invoking cmd: {}".format(cmd))
     
@@ -83,7 +109,7 @@ def exec_report(queue_file_path, record):
         
         #update the record with the pid we just launched
         record['pid'] = process.pid
-        update_queue_file(queue_file_path, record)
+        write_record(record)
         
         #streams the output 'c' in chars and writes them one by one to logfile
         for c in iter(lambda: process.stdout.read(1), b""):
@@ -141,36 +167,29 @@ def update_status(record, state):
     elif state == "Failed":        
         record['ended'] = now
 
-def read_queue_file(queue_file_path):
-    queue_data = []
-    try:        
-        with open(queue_file_path, 'r') as queue_file:
-            queue_data = json.load(queue_file)            
-    except FileNotFoundError as e:
-        dlog("Report Queue File not found: {}".format(queue_file_path))
-        return None
+#finds the next Pending item in the queue to process
+def find_pending_record():
+    report_queue = build_mongo_client_and_collection() #should build the client each time in case it times out    
+    record = report_queue.find_one({'status': 'Pending'}, sort=[('submitted', pymongo.ASCENDING)])
     
-    return queue_data
-
-def update_queue_file(queue_file_path, record):
-    #read the queue data in to make sure we have the latest data
-    queue_data = read_queue_file(queue_file_path)
-    
-    #loop through the queue and find the item we need to update
-    for i in range(0, len(queue_data)):
-        if queue_data[i]['key'] == record['key']:
-            queue_data[i] = record
-            dlog("Updating record {}".format(record['key']))
-            break
-            
-    with open(queue_file_path, 'w') as queue_file:
-        queue_file.seek(0)
-        queue_file.write(json.dumps(queue_data, indent=4))
-        queue_file.truncate()
+    #data['_id'] = str(data['_id']) #this will blow up json.dumps if we do not cast to string
+    if record:
+        del record['_id'] #this will blow up json.dumps
+        #dlog("Found Pending record: {}".format(json.dumps(record, indent=4)))        
         
-def process_report(queue_file_path, record):
+    return record
+
+def write_record(record):
+    key = record['key']
+    dlog("Updating record: {}".format(key))
+    
+    db_filter = { 'key' : key }
+    report_queue = build_mongo_client_and_collection()
+    report_queue.replace_one(db_filter, record, upsert=True)    
+        
+def process_report(record):
     try:
-        status_msg = exec_report(queue_file_path, record)
+        status_msg = exec_report(record)
         dlog("Status of invocation: {}".format(status_msg))
         record['status_msg'] = status_msg
 
@@ -184,44 +203,41 @@ def process_report(queue_file_path, record):
 
         #update the queue file again with the final status
         update_status(record, status)
-        update_queue_file(queue_file_path, record)    
+        write_record(record)    
     except Exception as e:
         status_msg = str(e)
         dlog("Failed to process {}\n\nCaused by: {}".format(record, status_msg))
         record['status_msg'] = status_msg
         update_status(record, "Failed")
-        update_queue_file(queue_file_path, record)
+        write_record(record)
              
 #scan the report queue for any files that are "Pending"             
-def check_report_queue(queue_file_path):    
-    queue_data = read_queue_file(queue_file_path)
-    if not queue_data:
-        dlog("No reports to process")
+def check_report_queue():    
+    record = find_pending_record()
+    if not record:
+        dlog("No Pending reports to process")
         return
     
-    for record in queue_data:
-        if record['status'] == "Pending":
-            dlog(">>> Found Pending item in queue_file {}".format(queue_file_path))
-            #update the queue file right away so we see the "In Progress"
-            update_status(record, "In Progress")            
-            update_queue_file(queue_file_path, record)
+    dlog(">>> Found Pending item {}".format(record['key']))
+    #update the queue file right away so we see the "In Progress"
+    update_status(record, "In Progress")            
+    write_record(record)
+
+    process_report(record)
             
-            process_report(queue_file_path, record)
             
-            # exit loop after processing one so we can make sure the queue_data gets synced
-            break
 
 def main():
     global DEFAULT_QUEUE
     
-    parser = argparse.ArgumentParser(description='Read off the report queue and invoke water-rights-visualizer-backend')
-    parser.add_argument('-q', '--queue', default=DEFAULT_QUEUE, help='path to queue location')
-    
-    args = parser.parse_args()
-    queue = args.queue
+#    parser = argparse.ArgumentParser(description='Read off the report queue and invoke water-rights-visualizer-backend')
+#    parser.add_argument('-q', '--queue', default=DEFAULT_QUEUE, help='path to queue location')
+#    
+#    args = parser.parse_args()
+#    queue = args.queue
  
     while True:        
-        check_report_queue(queue)        
+        check_report_queue()        
         time.sleep(60)        
         cleanup_files() #put this after the sleep so you have a minute to look at things before cleanup
         
