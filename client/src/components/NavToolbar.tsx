@@ -21,8 +21,6 @@ import Logout from "@mui/icons-material/Logout";
 
 import useStore from "../utils/store";
 import { useEffect, useState } from "react";
-import { API_URL } from "../utils/constants";
-import axios from "axios";
 
 const LoginButton = () => {
   const { loginWithRedirect, user, isAuthenticated } = useAuth0();

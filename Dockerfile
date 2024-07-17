@@ -27,7 +27,6 @@ FROM python as app
 
 #install cronjob for water_report_queue
 RUN apt-get install -y cron
-RUN apt-get install -y vim
 
 # install app
 RUN mkdir ${APP_ROOT}
