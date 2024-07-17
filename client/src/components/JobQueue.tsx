@@ -63,14 +63,24 @@ const JobQueue = () => {
     const fetchLogs = async () => {
       if (activeJobLogKey && jobLogsOpen) {
         if (viewingJob?.name) {
-          fetchJobStatus(activeJobLogKey, viewingJob.name)
+          let jobStatusRequest = fetchJobStatus(activeJobLogKey, viewingJob.name);
+          if (!jobStatusRequest) {
+            return;
+          }
+
+          jobStatusRequest
             .then(() => {})
             .catch((error) => {
               console.error("Error fetching job status", error);
             });
         }
 
-        fetchJobLogs(activeJobLogKey).then((logs) => {
+        let jobLogsRequest = fetchJobLogs(activeJobLogKey);
+        if (!jobLogsRequest) {
+          return;
+        }
+
+        jobLogsRequest.then((logs) => {
           let existingLog = jobLogs[activeJobLogKey];
           if (existingLog && existingLog.logs === logs.logs) {
             return;

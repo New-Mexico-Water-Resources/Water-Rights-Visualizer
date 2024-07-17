@@ -13,7 +13,7 @@ const run_directory_base = constants.run_directory_base;
 const argv = process.argv.slice(2);
 const data_source = argv[0];
 
-router.post("/start_run", (req, res) => {
+router.post("/start_run", async (req, res) => {
   var name = req.body.name;
   var start_year = req.body.startYear;
   var end_year = req.body.endYear;
@@ -105,10 +105,7 @@ router.post("/start_run", (req, res) => {
   console.log(`pipeline script: ${pipeline_script}`);
   var command = `/opt/conda/bin/python ${pipeline_script} ${config_filename}`;
   console.log(command);
-  
-  //todo: Ryan please write this into the mongodb!
-  //host = water-rights-visualizer-water_mongo-1
-  //database = water, collection = report_queue
+
   var entry = {
     key: key,
     name: name,
@@ -128,10 +125,14 @@ router.post("/start_run", (req, res) => {
     start_year: parseInt(start_year),
     end_year: parseInt(end_year),
   };
-    
+
+  let db = await constants.connectToDatabase();
+  let collection = db.collection(constants.report_queue_collection);
+  await collection.insertOne(entry);
+
   console.log("Writing entry to mongodb");
   console.log(entry);
-    
+
   res.status(200).send(`Queued report for ${name} from ${start_year} to ${end_year}`);
 });
 

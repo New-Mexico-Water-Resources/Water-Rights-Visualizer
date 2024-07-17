@@ -2,23 +2,30 @@ import pymongo
 import time
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
 def build_mongo_client_and_collection():
     user = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "admin")
-    cred = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "mypassword")
+    cred = os.environ.get("MONGO_INITDB_ROOT_PASSWORD", "mypassword")
     host = os.environ.get("MONGO_HOST", "water-rights-visualizer-water_mongo-1")
     #host = os.environ.get("MONGO_HOST", "localhost")
     port = os.environ.get("MONGO_PORT", 27017)
+    port = int(port) if isinstance(port, str) and port.isdigit() else port
 
     database = os.environ.get("MONGO_DATABASE", "water")
     collection = os.environ.get("MONGO_COLLECTION", "report_queue")
 
     mongo_str = 'mongodb://{}:{}@{}:{}'.format(user, cred, host, port)
     
+    print("Connecting to MongoDB: {}".format(mongo_str))
+    
     client = pymongo.MongoClient(
         host = host,
         username = user,
         password = cred,
-        port = port        
+        port = port,
+        directConnection = True
     )
 
     db = client[database]

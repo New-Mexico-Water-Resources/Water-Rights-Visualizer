@@ -36,7 +36,7 @@ PRINT_LOG = False
 def build_mongo_client_and_collection():
     #todo: read from ENV vars and then use defaults if not available
     user = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "admin")
-    cred = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "mypassword")
+    cred = os.environ.get("MONGO_INITDB_ROOT_PASSWORD", "mypassword")
     host = os.environ.get("MONGO_HOST", "water-rights-visualizer-water_mongo-1")
     #host = os.environ.get("MONGO_HOST", "localhost")
     port = os.environ.get("MONGO_PORT", 27017)
@@ -50,7 +50,8 @@ def build_mongo_client_and_collection():
         host = host,
         username = user,
         password = cred,
-        port = port        
+        port = port,
+        directConnection = True
     )
     
     db = client[database]

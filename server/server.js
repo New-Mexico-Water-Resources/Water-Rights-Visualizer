@@ -18,6 +18,8 @@ const prepare_geojson = require("./routes/prepare_geojson/prepare_geojson");
 const queue = require("./routes/queue/queue");
 const constants = require("./constants");
 
+const { auth } = require("express-oauth2-jwt-bearer");
+
 const working_directory = process.cwd();
 const run_directory_base = constants.run_directory_base;
 // const html_path = path.join(path.dirname(__dirname), 'page');
@@ -32,6 +34,12 @@ console.log(`working directory: ${working_directory}`);
 
 const app = express();
 
+const verifyAuthToken = auth({
+  audience: "https://nmw-dev.jpl.nasa.gov/api",
+  issuerBaseURL: "https://water-rights-visualizer.us.auth0.com/",
+  tokenSigningAlg: "RS256",
+});
+
 app.use(cors()); // Use CORS middleware
 app.use(express.json());
 // app.use(express.static(html_path));
@@ -45,19 +53,28 @@ app.get(`${basePath}/`, (req, res) => {
   });
 });
 
-app.use(`${basePath}/`, status);
-app.use(`${basePath}/`, logs);
-app.use(`${basePath}/`, start_year);
-app.use(`${basePath}/`, end_year);
-app.use(`${basePath}/`, years_available);
-app.use(`${basePath}/`, geojson);
-app.use(`${basePath}/`, result);
-app.use(`${basePath}/`, result_base64);
-app.use(`${basePath}/`, download);
-app.use(`${basePath}/`, start_run);
-app.use(`${basePath}/`, runs);
+app.use(`${basePath}/`, verifyAuthToken, status);
+app.use(`${basePath}/`, verifyAuthToken, logs);
+app.use(`${basePath}/`, verifyAuthToken, start_year);
+app.use(`${basePath}/`, verifyAuthToken, end_year);
+app.use(`${basePath}/`, verifyAuthToken, years_available);
+app.use(`${basePath}/`, verifyAuthToken, geojson);
+app.use(`${basePath}/`, verifyAuthToken, result);
+app.use(`${basePath}/`, verifyAuthToken, result_base64);
+app.use(`${basePath}/`, verifyAuthToken, download);
+app.use(`${basePath}/`, verifyAuthToken, start_run);
+app.use(`${basePath}/`, verifyAuthToken, runs);
 app.use(`${basePath}/queue`, queue);
 app.post(`${basePath}/prepare_geojson`, prepare_geojson.upload.single("file"), prepare_geojson.prepareGeojson);
+
+app.use((err, req, res, next) => {
+  console.error("Error:", err.message, "Endpoint:", req.originalUrl);
+  if (err.status === 401 || err.status === 403) {
+    res.status(err.status).json({ error: "Unauthorized access" });
+  } else {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 app.listen(port, () => {
   console.log(`API running on http://localhost:${port}${basePath}`);

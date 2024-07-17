@@ -33,8 +33,6 @@ router.get("/download", function (req, res) {
     throw err;
   });
 
-  // FIXME the `download` end-point is producing an empty zip-file when tested on AWS
-
   res.setHeader("Content-Type", "application/zip");
   res.setHeader("Content-Disposition", `attachment; filename=${name}.zip`);
 
