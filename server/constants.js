@@ -14,17 +14,17 @@ let cachedURI = null;
 let cachedDB = null;
 
 const client_id = process.env.AUTH0_CLIENT_ID;
-const base_url = process.env.AUTH0_BASE_URL;
 const issuer_base_url = process.env.AUTH0_ISSUER_BASE_URL;
 const auth0_domain = process.env.AUTH0_DOMAIN;
 const auth0_audience = process.env.AUTH0_AUDIENCE;
 
 const connectToDatabase = async () => {
-  let user = process.env.MONGO_INITDB_ROOT_USERNAME ?? "admin";
-  let cred = process.env.MONGO_INITDB_ROOT_PASSWORD ?? "mypassword";
-  let host = process.env.MONGO_HOST ?? "water-rights-visualizer-water_mongo-1";
-  let port = process.env.MONGO_PORT ?? 27017;
-  let database = process.env.MONGO_DATABASE ?? "water";
+  let user = process.env.MONGO_INITDB_ROOT_USERNAME !== undefined ? process.env.MONGO_INITDB_ROOT_USERNAME : "admin";
+  let cred =
+    process.env.MONGO_INITDB_ROOT_PASSWORD !== undefined ? process.env.MONGO_INITDB_ROOT_PASSWORD : "mypassword";
+  let host = process.env.MONGO_HOST !== undefined ? process.env.MONGO_HOST : "water-rights-visualizer-water_mongo-1";
+  let port = process.env.MONGO_PORT !== undefined ? process.env.MONGO_PORT : 27017;
+  let database = process.env.MONGO_DATABASE !== undefined ? process.env.MONGO_DATABASE : "water";
 
   let auth = user && cred ? `${user}:${cred}@` : "";
   const uri = `mongodb://${auth}${host}:${port}`;
@@ -55,7 +55,6 @@ module.exports = {
   report_queue_collection,
   connectToDatabase,
   client_id,
-  base_url,
   issuer_base_url,
   auth0_domain,
   auth0_audience,
