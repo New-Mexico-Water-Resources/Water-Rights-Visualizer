@@ -14,7 +14,7 @@ RUN apt-add-repository ppa:fish-shell/release-3; apt-get -y install fish; chsh -
 FROM base as javascript
 
 # install javascript
-RUN apt-get -y install nodejs npm
+RUN apt-get update && apt-get -y install nodejs npm && npm install -g typescript
 
 FROM javascript as python
 
