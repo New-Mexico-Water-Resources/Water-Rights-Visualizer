@@ -10,6 +10,7 @@ import {
   MenuItem,
   Skeleton,
   Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -21,21 +22,7 @@ import Logout from "@mui/icons-material/Logout";
 
 import useStore from "../utils/store";
 import { useEffect, useState } from "react";
-
-const LoginButton = () => {
-  const { loginWithRedirect, user, isAuthenticated } = useAuth0();
-  return (
-    <Button
-      variant="contained"
-      color="primary"
-      size="small"
-      sx={{ marginRight: "8px" }}
-      onClick={() => loginWithRedirect()}
-    >
-      {user && isAuthenticated ? user.name : "Log In"}
-    </Button>
-  );
-};
+import LoginButton from "./LoginButton";
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth0();
@@ -132,6 +119,8 @@ const NavToolbar = () => {
   const [isBacklogOpen, setIsBacklogOpen] = useStore((state) => [state.isBacklogOpen, state.setIsBacklogOpen]);
   const startNewJob = useStore((state) => state.startNewJob);
   const queue = useStore((state) => state.queue);
+  const { isAuthenticated } = useAuth0();
+
   return (
     <AppBar className="nav-area" position="static">
       <Toolbar
@@ -159,24 +148,30 @@ const NavToolbar = () => {
         >
           New Mexico Water Rights Visualizer
         </Typography>
-        <Typography
-          color="inherit"
-          component="div"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            color: "var(--st-gray-30)",
-            cursor: "pointer",
-            padding: "0 8px",
-            height: "100%",
-            userSelect: "none",
-            ":hover": { color: "var(--st-gray-10)", backgroundColor: "var(--st-gray-80)" },
-          }}
-          onClick={startNewJob}
-        >
-          <AddIcon />
-          New
-        </Typography>
+        <Tooltip title={isAuthenticated ? "Configure a new job" : "You must be logged in to start a job"}>
+          <Typography
+            color="inherit"
+            component="div"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              color: "var(--st-gray-30)",
+              cursor: "pointer",
+              padding: "0 8px",
+              height: "100%",
+              userSelect: "none",
+              ":hover": isAuthenticated ? { color: "var(--st-gray-10)", backgroundColor: "var(--st-gray-80)" } : {},
+            }}
+            onClick={() => {
+              if (isAuthenticated) {
+                startNewJob();
+              }
+            }}
+          >
+            <AddIcon />
+            New
+          </Typography>
+        </Tooltip>
 
         <Box sx={{ ml: "auto", display: "flex", height: "100%", alignItems: "center" }}>
           <Box

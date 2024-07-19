@@ -11,12 +11,7 @@ RUN apt install -y software-properties-common
 # install fish shell
 RUN apt-add-repository ppa:fish-shell/release-3; apt-get -y install fish; chsh -s /usr/local/bin/fish; mamba init fish
 
-FROM base as javascript
-
-# install javascript
-RUN apt-get update && apt-get -y install nodejs npm && npm install -g typescript
-
-FROM javascript as python
+FROM base as python
 
 # install dependencies
 RUN mamba install -y -c conda-forge "python=3.10" cython gdal pygeos pygrib pyresample h5py
@@ -37,7 +32,6 @@ RUN mkdir -p /root/data/water_rights_runs
 
 # RUN mamba env update -n base -f /app/water_rights.yml
 RUN python setup.py install
-RUN npm install
 
 COPY water_report_queue_cron /etc/cron.d/water_report_queue_cron
  

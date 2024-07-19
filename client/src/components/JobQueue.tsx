@@ -103,9 +103,9 @@ const JobQueue = () => {
       if (!pauseLogs) {
         fetchLogs();
       }
-    }, 5000);
+    }, 2000);
     return () => clearInterval(interval);
-  }, [activeJobLogKey, jobLogsOpen, jobLogs]);
+  }, [activeJobLogKey, jobLogsOpen]);
 
   return (
     <div className={`queue-container ${isQueueOpen || isBacklogOpen ? "open" : "closed"}`}>

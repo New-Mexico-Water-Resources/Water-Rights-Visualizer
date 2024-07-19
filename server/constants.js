@@ -22,7 +22,7 @@ const connectToDatabase = async () => {
   let user = process.env.MONGO_INITDB_ROOT_USERNAME !== undefined ? process.env.MONGO_INITDB_ROOT_USERNAME : "admin";
   let cred =
     process.env.MONGO_INITDB_ROOT_PASSWORD !== undefined ? process.env.MONGO_INITDB_ROOT_PASSWORD : "mypassword";
-  let host = process.env.MONGO_HOST !== undefined ? process.env.MONGO_HOST : "water-rights-visualizer-water_mongo-1";
+  let host = process.env.MONGO_HOST !== undefined ? process.env.MONGO_HOST : "water-rights-visualizer-mongo";
   let port = process.env.MONGO_PORT !== undefined ? process.env.MONGO_PORT : 27017;
   let database = process.env.MONGO_DATABASE !== undefined ? process.env.MONGO_DATABASE : "water";
 
