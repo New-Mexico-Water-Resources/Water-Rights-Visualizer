@@ -1,5 +1,5 @@
 import { Alert, Snackbar, Typography } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { MapContainer, ScaleControl, TileLayer, ZoomControl } from "react-leaflet";
 import useStore from "../utils/store";
 
@@ -31,6 +31,9 @@ const Dashboard = () => {
   const fetchQueue = useStore((state) => state.fetchQueue);
 
   const { isAuthenticated } = useAuth0();
+  const userInfo = useStore((state) => state.userInfo);
+  const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
+  const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
 
   const handleKeyPress = (event: any) => {
     const isMac = navigator.userAgent.includes("Mac");
@@ -68,10 +71,10 @@ const Dashboard = () => {
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <NavToolbar />
-      {isAuthenticated && showUploadDialog && <UploadDialog />}
+      {isAuthenticated && canWriteJobs && showUploadDialog && <UploadDialog />}
       {isAuthenticated && multipolygons.length <= 1 && <CurrentJobChip />}
       {isAuthenticated && multipolygons.length > 1 && previewMode && <LayersControl />}
-      {!isAuthenticated && (
+      {(!isAuthenticated || (!canReadJobs && userInfo)) && (
         <div
           style={{
             position: "absolute",
@@ -114,9 +117,11 @@ const Dashboard = () => {
               variant="h4"
               style={{ fontSize: "16px", color: "var(--st-gray-30)", textAlign: "center", marginBottom: "32px" }}
             >
-              Please login to continue
+              {!isAuthenticated
+                ? "Please login to continue"
+                : "You do not have permission to access this tool. Please contact your administrator."}
             </Typography>
-            <LoginButton />
+            {!isAuthenticated && <LoginButton />}
           </div>
         </div>
       )}

@@ -14,12 +14,30 @@ const argv = process.argv.slice(2);
 const data_source = argv[0];
 
 router.post("/start_run", async (req, res) => {
-  var name = req.body.name;
-  var start_year = req.body.startYear;
-  var end_year = req.body.endYear;
-  var geojson = req.body.geojson;
-  var epoch = Date.now(); //used to make sure run is unique
-  var key = name + "_" + start_year + "_" + end_year + "_" + epoch;
+  let canWriteJob = req.auth?.payload?.permissions?.includes("write:jobs") || false;
+  if (!canWriteJob) {
+    res.status(401).send("Unauthorized: missing write:jobs permission");
+    return;
+  }
+
+  let userInfoEndpoint = req.auth?.payload?.aud?.find((aud) => aud.endsWith("/userinfo"));
+  if (!userInfoEndpoint) {
+    res.status(401).send("Unauthorized: missing userinfo endpoint");
+    return;
+  }
+
+  let userInfo = await fetch(userInfoEndpoint, {
+    headers: {
+      Authorization: req.headers.authorization,
+    },
+  }).then((res) => res.json());
+
+  let name = req.body.name;
+  let start_year = req.body.startYear;
+  let end_year = req.body.endYear;
+  let geojson = req.body.geojson;
+  let epoch = Date.now(); //used to make sure run is unique
+  let key = name + "_" + start_year + "_" + end_year + "_" + epoch;
 
   console.log("receiving start run request");
   console.log(`name: ${name}`);
@@ -124,6 +142,7 @@ router.post("/start_run", async (req, res) => {
     geo_json: run_directory + "/" + name + ".geojson",
     start_year: parseInt(start_year),
     end_year: parseInt(end_year),
+    user: userInfo,
   };
 
   let db = await constants.connectToDatabase();

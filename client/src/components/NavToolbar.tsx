@@ -21,16 +21,18 @@ import AddIcon from "@mui/icons-material/Add";
 import Logout from "@mui/icons-material/Logout";
 
 import useStore from "../utils/store";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import LoginButton from "./LoginButton";
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth0();
   const fetchQueue = useStore((state) => state.fetchQueue);
+  const fetchUserInfo = useStore((state) => state.fetchUserInfo);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchQueue();
+      fetchUserInfo();
     }
   }, [user, isAuthenticated]);
 
@@ -120,6 +122,9 @@ const NavToolbar = () => {
   const startNewJob = useStore((state) => state.startNewJob);
   const queue = useStore((state) => state.queue);
   const { isAuthenticated } = useAuth0();
+  const userInfo = useStore((state) => state.userInfo);
+  const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
+  const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
 
   return (
     <AppBar className="nav-area" position="static">
@@ -148,7 +153,15 @@ const NavToolbar = () => {
         >
           New Mexico Water Rights Visualizer
         </Typography>
-        <Tooltip title={isAuthenticated ? "Configure a new job" : "You must be logged in to start a job"}>
+        <Tooltip
+          title={
+            isAuthenticated
+              ? canWriteJobs
+                ? "Configure a new job"
+                : "You don't have permission to create jobs"
+              : "You must be logged in to start a job"
+          }
+        >
           <Typography
             color="inherit"
             component="div"
@@ -160,10 +173,13 @@ const NavToolbar = () => {
               padding: "0 8px",
               height: "100%",
               userSelect: "none",
-              ":hover": isAuthenticated ? { color: "var(--st-gray-10)", backgroundColor: "var(--st-gray-80)" } : {},
+              ":hover":
+                isAuthenticated && canWriteJobs
+                  ? { color: "var(--st-gray-10)", backgroundColor: "var(--st-gray-80)" }
+                  : {},
             }}
             onClick={() => {
-              if (isAuthenticated) {
+              if (isAuthenticated && canWriteJobs) {
                 startNewJob();
               }
             }}
@@ -174,24 +190,60 @@ const NavToolbar = () => {
         </Tooltip>
 
         <Box sx={{ ml: "auto", display: "flex", height: "100%", alignItems: "center" }}>
-          <Box
-            className={`nav-item ${isQueueOpen ? "active" : ""}`}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              height: "100%",
-              cursor: "pointer",
-              ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
-            }}
-            onClick={() => {
-              if (isBacklogOpen && !isQueueOpen) {
-                setIsBacklogOpen(false);
-              }
+          <Tooltip title={canReadJobs ? "View in progress jobs" : "You don't have permission to view the job queue"}>
+            <Box
+              className={`nav-item ${isQueueOpen ? "active" : ""}`}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                height: "100%",
+                cursor: "pointer",
+                ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
+              }}
+              onClick={() => {
+                if (isBacklogOpen && !isQueueOpen) {
+                  setIsBacklogOpen(false);
+                }
 
-              setIsQueueOpen(!isQueueOpen);
-            }}
-          >
-            <Badge badgeContent={queue.length} color="primary">
+                setIsQueueOpen(!isQueueOpen);
+              }}
+            >
+              <Badge badgeContent={queue.length} color="primary">
+                <Typography
+                  color="inherit"
+                  component="div"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0 8px",
+                    height: "fit-content",
+                    gap: "4px",
+                  }}
+                >
+                  <PendingActionsIcon />
+                  Queue
+                </Typography>
+              </Badge>
+            </Box>
+          </Tooltip>
+          <Tooltip title={canReadJobs ? "View completed jobs" : "You don't have permission to view completed jobs"}>
+            <Box
+              className={`nav-item ${isBacklogOpen ? "active" : ""}`}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                height: "100%",
+                cursor: "pointer",
+                ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
+              }}
+              onClick={() => {
+                if (isQueueOpen && !isBacklogOpen) {
+                  setIsQueueOpen(false);
+                }
+
+                setIsBacklogOpen(!isBacklogOpen);
+              }}
+            >
               <Typography
                 color="inherit"
                 component="div"
@@ -203,43 +255,11 @@ const NavToolbar = () => {
                   gap: "4px",
                 }}
               >
-                <PendingActionsIcon />
-                Queue
+                <ViewStreamIcon />
+                Backlog
               </Typography>
-            </Badge>
-          </Box>
-          <Box
-            className={`nav-item ${isBacklogOpen ? "active" : ""}`}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              height: "100%",
-              cursor: "pointer",
-              ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
-            }}
-            onClick={() => {
-              if (isQueueOpen && !isBacklogOpen) {
-                setIsQueueOpen(false);
-              }
-
-              setIsBacklogOpen(!isBacklogOpen);
-            }}
-          >
-            <Typography
-              color="inherit"
-              component="div"
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                padding: "0 8px",
-                height: "fit-content",
-                gap: "4px",
-              }}
-            >
-              <ViewStreamIcon />
-              Backlog
-            </Typography>
-          </Box>
+            </Box>
+          </Tooltip>
         </Box>
         <Profile />
       </Toolbar>

@@ -1,8 +1,6 @@
 require("log-timestamp");
 const express = require("express");
-const cors = require("cors"); // Don't forget to install this package using npm
-// const path = require('path');
-// const fs = require('fs');
+const cors = require("cors");
 const status = require("./routes/status");
 const logs = require("./routes/logs");
 const start_year = require("./routes/start_year");
@@ -16,6 +14,7 @@ const start_run = require("./routes/start_run/start_run");
 const runs = require("./routes/runs");
 const prepare_geojson = require("./routes/prepare_geojson/prepare_geojson");
 const queue = require("./routes/queue/queue");
+const user = require("./routes/user");
 const constants = require("./constants");
 
 const { auth } = require("express-oauth2-jwt-bearer");
@@ -35,14 +34,13 @@ console.log(`working directory: ${working_directory}`);
 const app = express();
 
 const verifyAuthToken = auth({
-  audience: "https://nmw-dev.jpl.nasa.gov/api",
-  issuerBaseURL: "https://water-rights-visualizer.us.auth0.com/",
+  audience: constants.auth0_audience,
+  issuerBaseURL: constants.issuer_base_url,
   tokenSigningAlg: "RS256",
 });
 
-app.use(cors()); // Use CORS middleware
+app.use(cors());
 app.use(express.json());
-// app.use(express.static(html_path));
 
 const basePath = "/api";
 
@@ -53,6 +51,7 @@ app.get(`${basePath}/`, (req, res) => {
   });
 });
 
+app.use(`${basePath}/`, verifyAuthToken, user);
 app.use(`${basePath}/`, verifyAuthToken, status);
 app.use(`${basePath}/`, verifyAuthToken, logs);
 app.use(`${basePath}/`, verifyAuthToken, start_year);

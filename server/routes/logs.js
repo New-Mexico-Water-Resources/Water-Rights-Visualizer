@@ -7,6 +7,12 @@ const constants = require("../constants");
 const run_directory_base = constants.run_directory_base;
 
 router.get("/job/logs", (req, res) => {
+  let canReadJob = req.auth?.payload?.permissions?.includes("read:jobs") || false;
+  if (!canReadJob) {
+    res.status(401).send("Unauthorized: missing read:jobs permission");
+    return;
+  }
+
   let key = req.query.key;
   if (!key) {
     res.status(400).send("key parameter is required");

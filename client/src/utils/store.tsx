@@ -41,6 +41,17 @@ export interface JobStatus {
   timeRemaining: number;
 }
 
+export interface UserInfo {
+  sub: string;
+  nickname: string;
+  name: string;
+  picture: string;
+  updated_at: string;
+  email: string;
+  email_verified: boolean;
+  permissions: string[];
+}
+
 interface Store {
   isQueueOpen: boolean;
   setIsQueueOpen: (isQueueOpen: boolean) => void;
@@ -99,6 +110,8 @@ interface Store {
   clearPendingJobs: () => void;
   authToken: string;
   setAuthToken: (authToken: string) => void;
+  userInfo: UserInfo | null;
+  fetchUserInfo: () => void;
   authAxios: () => AxiosInstance | null;
 }
 
@@ -141,7 +154,23 @@ const useStore = create<Store>()(
     backlog: [],
     setBacklog: (backlog) => set({ backlog }),
     authToken: "",
-    setAuthToken: (authToken) => set({ authToken }),
+    setAuthToken: (authToken) => {
+      set({ authToken });
+      if (authToken) {
+        get().fetchUserInfo();
+      }
+    },
+    userInfo: null,
+    fetchUserInfo: async () => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance.get(`${API_URL}/user_info`).then((response) => {
+        set({ userInfo: response.data });
+      });
+    },
     authAxios: () => {
       const token = get().authToken;
       if (!token) {

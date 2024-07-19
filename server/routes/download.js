@@ -10,6 +10,12 @@ const project_directory = constants.project_directory;
 const run_directory_base = constants.run_directory_base;
 
 router.get("/download", function (req, res) {
+  let canReadJob = req.auth?.payload?.permissions?.includes("read:jobs") || false;
+  if (!canReadJob) {
+    res.status(401).send("Unauthorized: missing read:jobs permission");
+    return;
+  }
+
   let key = req.query.key;
   let name = req.query.name;
 

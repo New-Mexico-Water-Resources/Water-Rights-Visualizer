@@ -114,6 +114,12 @@ const convertToGeoJSON = async (extractPath, baseName) => {
 };
 
 function prepareGeojson(req, res) {
+  let canWriteJob = req.auth?.payload?.permissions?.includes("write:jobs") || false;
+  if (!canWriteJob) {
+    res.status(401).send("Unauthorized: missing write:jobs permission");
+    return;
+  }
+
   const filePath = req.file.path;
   const extension = path.extname(req.file.originalname);
   const baseName = path.basename(req.file.originalname, extension);

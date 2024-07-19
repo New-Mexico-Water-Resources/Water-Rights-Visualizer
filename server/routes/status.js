@@ -67,6 +67,12 @@ const calculateYearsProcessed = (directory, startYear, endYear, startTime, isCom
 };
 
 router.get("/job/status", async (req, res) => {
+  let canReadJob = req.auth?.payload?.permissions?.includes("read:jobs") || false;
+  if (!canReadJob) {
+    res.status(401).send("Unauthorized: missing read:jobs permission");
+    return;
+  }
+
   let key = req.query.key;
   let jobName = req.query.name;
 
@@ -78,49 +84,6 @@ router.get("/job/status", async (req, res) => {
   let run_directory = path.join(run_directory_base, key);
   let status_filename = path.join(run_directory, "status.txt");
   let jobStatus = fs.existsSync(status_filename) ? fs.readFileSync(status_filename, "utf8") : "unknown";
-
-  // let report_queue_file = path.join(run_directory_base, "report_queue.json");
-  // fs.readFile(report_queue_file, (err, data) => {
-  //   let report_queue = [];
-
-  //   if (err) {
-  //     console.error(`Error reading ${report_queue_file}`);
-  //     res.status(500).send("Error reading report queue");
-  //     return;
-  //   }
-
-  //   try {
-  //     report_queue = JSON.parse(data);
-  //   } catch (e) {
-  //     console.error(`Error parsing JSON from ${report_queue_file}`);
-  //     res.status(500).send("Error parsing report queue");
-  //     return;
-  //   }
-
-  //   let job = report_queue.find((entry) => entry.key === key);
-  //   if (!job) {
-  //     res.status(404).send("Job not found");
-  //     return;
-  //   }
-
-  //   let totalYears = job.end_year - job.start_year + 1;
-  //   let processedYears = calculateYearsProcessed(
-  //     path.join(run_directory, "output", "subset", jobName),
-  //     job.start_year,
-  //     job.end_year,
-  //     job.started,
-  //     job.status === "Complete"
-  //   );
-
-  //   res.status(200).send({
-  //     status: jobStatus,
-  //     currentYear: processedYears.years.length,
-  //     totalYears,
-  //     fileCount: processedYears.count,
-  //     estimatedPercentComplete: job.status === "Complete" ? 1 : processedYears.estimatedPercentComplete,
-  //     timeRemaining: job.status === "Complete" ? 0 : processedYears.timeRemaining,
-  //   });
-  // });
 
   let db = await constants.connectToDatabase();
   let collection = db.collection(constants.report_queue_collection);
