@@ -69,7 +69,7 @@ const convertToGeoJSON = async (extractPath, baseName) => {
                 geojson = JSON.parse(data);
 
                 // If this is an individual feature, put in FeatureCollection
-                if (!geojson["name"] && geojson["type"] === "Feature") {
+                if (geojson["type"] === "Feature") {
                   geojson = {
                     type: "FeatureCollection",
                     name: baseName || "output",
@@ -149,6 +149,15 @@ function prepareGeojson(req, res) {
         return;
       }
       const geojson = JSON.parse(data);
+
+      // If this is an individual feature, put in FeatureCollection
+      if (geojson["type"] === "Feature") {
+        geojson = {
+          type: "FeatureCollection",
+          name: baseName || "output",
+          features: [geojson],
+        };
+      }
       const reprojectedGeojson = reprojectGeojson(geojson);
       res.send(reprojectedGeojson);
       removeFile();
