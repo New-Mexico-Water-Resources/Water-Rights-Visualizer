@@ -115,5 +115,14 @@ setup-amazon-linux:
 	make setup-scrollback-buffer
 	setup-data-directory-amazon-linux
 
+update-local:
+	cp .env.local .env
+	./update.sh
+
+update-jpl:
+	cp .env.jpl-production .env
+	./update.sh
+
 update:
+	cp .env.ose-production .env
 	./update.sh
