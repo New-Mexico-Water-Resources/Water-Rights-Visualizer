@@ -102,7 +102,15 @@ def dlog(text, new_line=True):
         print(text)
         
 def exec_report(record):                       
-    cmd = record['cmd'].split(" ")
+    cmd_parameters = record['cmd'].split(" ")
+    cmd = []
+    if len(cmd) <= 3:
+        cmd = cmd_parameters
+    else:
+        # Allow for spaces in the command parameters
+        cmd = [cmd_parameters[0], cmd_parameters[1], f"'{' '.join(cmd_parameters[2:])}'"]
+        
+        
     dlog("invoking cmd: {}".format(cmd))
     
     log_path = "{}/exec_report_log.txt".format(record['base_dir'])
