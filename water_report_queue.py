@@ -104,7 +104,7 @@ def dlog(text, new_line=True):
 def exec_report(record):                       
     cmd_parameters = record['cmd'].split(" ")
     cmd = []
-    if len(cmd) <= 3:
+    if len(cmd_parameters) <= 3:
         cmd = cmd_parameters
     else:
         # Allow for spaces in the command parameters
