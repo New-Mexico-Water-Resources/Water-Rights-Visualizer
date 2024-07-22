@@ -33,16 +33,16 @@ console.log(`working directory: ${working_directory}`);
 
 const app = express();
 
+app.use(cors());
+app.use(express.json());
+
+const basePath = "/api";
+
 const verifyAuthToken = auth({
   audience: constants.auth0_audience,
   issuerBaseURL: constants.issuer_base_url,
   tokenSigningAlg: "RS256",
 });
-
-app.use(cors());
-app.use(express.json());
-
-const basePath = "/api";
 
 // Health check
 app.get(`${basePath}/`, (req, res) => {
@@ -50,6 +50,8 @@ app.get(`${basePath}/`, (req, res) => {
     message: "New Mexico Water Rights Visualizer API is running",
   });
 });
+
+app.use(`${basePath}/`, download);
 
 app.use(`${basePath}/`, verifyAuthToken, user);
 app.use(`${basePath}/`, verifyAuthToken, status);
@@ -60,10 +62,9 @@ app.use(`${basePath}/`, verifyAuthToken, years_available);
 app.use(`${basePath}/`, verifyAuthToken, geojson);
 app.use(`${basePath}/`, verifyAuthToken, result);
 app.use(`${basePath}/`, verifyAuthToken, result_base64);
-app.use(`${basePath}/`, download);
 app.use(`${basePath}/`, verifyAuthToken, start_run);
 app.use(`${basePath}/`, verifyAuthToken, runs);
-app.use(`${basePath}/queue`, queue);
+app.use(`${basePath}/queue`, verifyAuthToken, queue);
 app.post(`${basePath}/prepare_geojson`, prepare_geojson.upload.single("file"), prepare_geojson.prepareGeojson);
 
 app.use((err, req, res, next) => {
