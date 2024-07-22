@@ -108,7 +108,7 @@ def exec_report(record):
         cmd = cmd_parameters
     else:
         # Allow for spaces in the command parameters
-        cmd = [cmd_parameters[0], cmd_parameters[1], f'"{' '.join(cmd_parameters[2:])}"']
+        cmd = [cmd_parameters[0], cmd_parameters[1], f'"{" ".join(cmd_parameters[2:])}"']
         
         
     dlog("invoking cmd: {}".format(cmd))
