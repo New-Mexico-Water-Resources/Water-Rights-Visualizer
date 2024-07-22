@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 import { API_URL } from "./constants";
 import { formatElapsedTime, formJobForQueue } from "./helpers";
 
@@ -27,6 +26,17 @@ export interface JobStatus {
   fileCount: number;
   estimatedPercentComplete: number;
   timeRemaining: number;
+}
+
+export interface UserInfo {
+  sub: string;
+  nickname: string;
+  name: string;
+  picture: string;
+  updated_at: string;
+  email: string;
+  email_verified: boolean;
+  permissions: string[];
 }
 
 interface Store {
@@ -80,11 +90,16 @@ interface Store {
   downloadJob: (jobKey: string) => void;
   startNewJob: () => void;
   closeNewJob: () => void;
-  fetchJobLogs: (jobKey: string) => Promise<{ logs: string }>;
+  fetchJobLogs: (jobKey: string) => Promise<{ logs: string }> | null;
   jobStatuses: Record<string, JobStatus>;
-  fetchJobStatus: (jobKey: string, jobName: string) => Promise<JobStatus>;
-  prepareGeoJSON: (shapefile: File) => Promise<any>;
+  fetchJobStatus: (jobKey: string, jobName: string) => Promise<JobStatus> | null;
+  prepareGeoJSON: (shapefile: File) => Promise<any> | null;
   clearPendingJobs: () => void;
+  authToken: string;
+  setAuthToken: (authToken: string) => void;
+  userInfo: UserInfo | null;
+  fetchUserInfo: () => void;
+  authAxios: () => AxiosInstance | null;
 }
 
 const useStore = create<Store>()(
@@ -125,8 +140,45 @@ const useStore = create<Store>()(
     setQueue: (queue) => set({ queue }),
     backlog: [],
     setBacklog: (backlog) => set({ backlog }),
+    authToken: "",
+    setAuthToken: (authToken) => {
+      set({ authToken });
+      if (authToken) {
+        get().fetchUserInfo();
+      }
+    },
+    userInfo: null,
+    fetchUserInfo: async () => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance.get(`${API_URL}/user_info`).then((response) => {
+        set({ userInfo: response.data });
+      });
+    },
+    authAxios: () => {
+      const token = get().authToken;
+      if (!token) {
+        return null;
+      }
+      const instance = axios.create();
+      instance.interceptors.request.use(async (config) => {
+        config.headers.Authorization = `Bearer ${token}`;
+        return config;
+      });
+
+      return instance;
+    },
     fetchQueue: async () => {
-      axios.get(`${API_URL}/queue/list`).then((response) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        // No token, don't fetch queue
+        return;
+      }
+
+      axiosInstance.get(`${API_URL}/queue/list`).then((response) => {
         if (!response?.data || !Array.isArray(response.data)) {
           return set({ queue: [], backlog: [] });
         }
@@ -149,7 +201,12 @@ const useStore = create<Store>()(
       });
     },
     deleteJob: async (jobKey, deleteFiles: boolean = true) => {
-      axios
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
         .delete(`${API_URL}/queue/delete_job?key=${jobKey}&deleteFiles=${deleteFiles ? "true" : "false"}`)
         .then(() => {
           set((state) => {
@@ -168,6 +225,7 @@ const useStore = create<Store>()(
             return {
               ...state,
               queue: job ? state.queue.filter((item) => item.key !== jobKey) : state.queue,
+              backlog: job ? state.backlog.filter((item) => item.key !== jobKey) : state.backlog,
               successMessage: job ? `Job "${job.name}" deleted successfully` : "",
               errorMessage: job ? "" : `Error deleting job: ${job.name} not found`,
             };
@@ -178,7 +236,12 @@ const useStore = create<Store>()(
         });
     },
     bulkDeleteJobs: async (jobKeys, deleteFiles: boolean = true) => {
-      axios
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
         .delete(`${API_URL}/queue/bulk_delete_jobs`, {
           data: { keys: jobKeys, deleteFiles },
         })
@@ -209,7 +272,12 @@ const useStore = create<Store>()(
       let jobName = get().jobName;
       let newJob = formJobForQueue(jobName, get().startYear, get().endYear, get().loadedGeoJSON);
 
-      axios
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
         .post(`${API_URL}/start_run`, {
           name: jobName,
           startYear: get().startYear,
@@ -255,10 +323,15 @@ const useStore = create<Store>()(
         });
     },
     submitMultipolygonJob: async (jobs: any[]) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
       try {
         let responses = [];
         for (const job of jobs) {
-          const response = await axios.post(`${API_URL}/start_run`, {
+          const response = await axiosInstance.post(`${API_URL}/start_run`, {
             name: job.name,
             startYear: job.start_year,
             endYear: job.end_year,
@@ -286,7 +359,12 @@ const useStore = create<Store>()(
       }
     },
     loadJob: (job) => {
-      axios
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
         .get(`${API_URL}/geojson?name=${job.name}&key=${job.key}`)
         .then((response) => {
           let loadedGeoJSON = null;
@@ -343,7 +421,12 @@ const useStore = create<Store>()(
       });
     },
     fetchJobLogs: (jobKey) => {
-      return axios
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return null;
+      }
+
+      return axiosInstance
         .get(`${API_URL}/job/logs?key=${jobKey}`)
         .then((response) => {
           return response.data;
@@ -355,7 +438,12 @@ const useStore = create<Store>()(
     },
     jobStatuses: {},
     fetchJobStatus: (jobKey, jobName) => {
-      return axios
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return null;
+      }
+
+      return axiosInstance
         .get(`${API_URL}/job/status?key=${jobKey}&name=${jobName}`)
         .then((response) => {
           set((state) => {
@@ -391,10 +479,15 @@ const useStore = create<Store>()(
         });
     },
     prepareGeoJSON: (geoFile: File) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return null;
+      }
+
       let formData = new FormData();
       formData.append("file", geoFile);
 
-      return axios
+      return axiosInstance
         .post(`${API_URL}/prepare_geojson`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",

@@ -13,16 +13,20 @@ from water_rights_visualizer.S3_source import S3Source
 from water_rights_visualizer.file_path_source import FilepathSource
 import cl
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
 # FIXME input and output bucket names need to be parameterized
-#input_bucket_name = "jpl-nmw-dev-inputs"
-#output_bucket_name = "jpl-nmw-dev-outputs"
+# input_bucket_name = "jpl-nmw-dev-inputs"
+# output_bucket_name = "jpl-nmw-dev-outputs"
 
 
 input_bucket_name = os.environ.get("S3_INPUT_BUCKET", "ose-dev-inputs")
 output_bucket_name = os.environ.get("S3_OUTPUT_BUCKET", "ose-dev-outputs")
-    
+
 delete_temp_files = True
 
 def write_status(status_filename: str, message: str):
@@ -127,6 +131,6 @@ def main(argv=sys.argv):
     end_time = time.time()
     total_mins = (end_time - start_time)/60                  
     logger.info(f"Total Run Time: {total_mins} minutes\n\n")
-                  
+
 if __name__ == "__main__":
     sys.exit(main(argv=sys.argv))

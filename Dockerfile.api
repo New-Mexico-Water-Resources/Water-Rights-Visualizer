@@ -1,0 +1,14 @@
+FROM node:21 AS build
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm install
+
+COPY init-api.sh /init-api.sh
+
+RUN chmod +x /init-api.sh
+
+COPY . .
+
+EXPOSE 5000

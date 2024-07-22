@@ -133,6 +133,20 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
         <Typography variant="body2">
           Status: <b>{job.status_msg || job.status}</b>
         </Typography>
+        {job?.user?.name && (
+          <Tooltip title={`Name: ${job.user.name}\nEmail: ${job.user.email}`}>
+            <Typography variant="body2" style={{ marginTop: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <img
+                  src={job?.user?.picture}
+                  alt="user"
+                  style={{ width: "20px", height: "20px", borderRadius: "50%" }}
+                />
+                <b style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "pre" }}>{job?.user?.name}</b>
+              </div>
+            </Typography>
+          </Tooltip>
+        )}
         <div>
           <JobProgressBar status={jobStatus} />
         </div>

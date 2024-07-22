@@ -35,11 +35,13 @@ PRINT_LOG = False
 
 def build_mongo_client_and_collection():
     #todo: read from ENV vars and then use defaults if not available
-    user = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "admin")
-    cred = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "mypassword")
-    host = os.environ.get("MONGO_HOST", "water-rights-visualizer-water_mongo-1")
+    user = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "")
+    cred = os.environ.get("MONGO_INITDB_ROOT_PASSWORD", "")
+    host = os.environ.get("MONGO_HOST", "water-rights-visualizer-mongo")
     #host = os.environ.get("MONGO_HOST", "localhost")
     port = os.environ.get("MONGO_PORT", 27017)
+    if isinstance(port, str) and port.isdigit():
+        port = int(port)
 
     database = os.environ.get("MONGO_DATABASE", "water")
     collection = os.environ.get("MONGO_COLLECTION", "report_queue")
@@ -50,7 +52,8 @@ def build_mongo_client_and_collection():
         host = host,
         username = user,
         password = cred,
-        port = port        
+        port = port,
+        directConnection = True
     )
     
     db = client[database]
@@ -99,7 +102,15 @@ def dlog(text, new_line=True):
         print(text)
         
 def exec_report(record):                       
-    cmd = record['cmd'].split(" ")
+    cmd_parameters = record['cmd'].split(" ")
+    cmd = []
+    if len(cmd_parameters) <= 3:
+        cmd = cmd_parameters
+    else:
+        # Allow for spaces in the command parameters
+        cmd = [cmd_parameters[0], cmd_parameters[1], f"{' '.join(cmd_parameters[2:])}"]
+        
+        
     dlog("invoking cmd: {}".format(cmd))
     
     log_path = "{}/exec_report_log.txt".format(record['base_dir'])

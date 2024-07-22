@@ -74,7 +74,14 @@ const UploadDialog = () => {
           setJobName(fileName);
         }
 
-        prepareGeoJSON(file).then((geojson) => {
+        let prepareRequest = prepareGeoJSON(file);
+        if (!prepareRequest) {
+          // User not authenticated
+          console.error("User not authenticated, cannot prepare GeoJSON.");
+          return;
+        }
+
+        prepareRequest.then((geojson) => {
           if (geojson.data && !geojson?.data?.multipolygon) {
             setLoadedGeoJSON(geojson.data);
             setMultipolygons([]);
