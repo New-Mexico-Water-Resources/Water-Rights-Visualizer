@@ -67,6 +67,23 @@ const convertToGeoJSON = async (extractPath, baseName) => {
               let geojson = { error: "Error reading geojson path" };
               try {
                 geojson = JSON.parse(data);
+
+                if (geojson["type"] === "Feature" || !geojson["name"]) {
+                  // If this is an individual feature, put in FeatureCollection
+                  if (geojson["type"] === "Feature") {
+                    geojson = {
+                      type: "FeatureCollection",
+                      name: baseName || "output",
+                      features: [geojson],
+                    };
+                  } else if (!geojson["name"]) {
+                    // Some other type, but missing name field, which the backend needs
+                    geojson["name"] = baseName || "output";
+                  }
+
+                  // Overwrite existing geojson if we had to reformat it
+                  fs.writeFileSync(geoJSONPath, JSON.stringify(geojson));
+                }
               } catch (error) {
                 try {
                   let multipolygon = data.split("\n");
@@ -114,6 +131,12 @@ const convertToGeoJSON = async (extractPath, baseName) => {
 };
 
 function prepareGeojson(req, res) {
+  let canWriteJob = req.auth?.payload?.permissions?.includes("write:jobs") || false;
+  if (!canWriteJob) {
+    res.status(401).send("Unauthorized: missing write:jobs permission");
+    return;
+  }
+
   const filePath = req.file.path;
   const extension = path.extname(req.file.originalname);
   const baseName = path.basename(req.file.originalname, extension);
@@ -131,6 +154,15 @@ function prepareGeojson(req, res) {
         return;
       }
       const geojson = JSON.parse(data);
+
+      // If this is an individual feature, put in FeatureCollection
+      if (geojson["type"] === "Feature") {
+        geojson = {
+          type: "FeatureCollection",
+          name: baseName || "output",
+          features: [geojson],
+        };
+      }
       const reprojectedGeojson = reprojectGeojson(geojson);
       res.send(reprojectedGeojson);
       removeFile();

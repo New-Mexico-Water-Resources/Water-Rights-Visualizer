@@ -33,8 +33,6 @@ router.get("/download", function (req, res) {
     throw err;
   });
 
-  // FIXME the `download` end-point is producing an empty zip-file when tested on AWS
-
   res.setHeader("Content-Type", "application/zip");
   res.setHeader("Content-Disposition", `attachment; filename=${name}.zip`);
 
@@ -57,6 +55,11 @@ router.get("/download", function (req, res) {
     console.log(`Adding CSV file: ${file}`);
     archive.file(file, { name: path.basename(file) });
   });
+
+  // Add geojson file to zip
+  let geojson_filename = path.join(run_directory_base, key, `${name}.geojson`);
+  console.log(`Adding GeoJSON file: ${geojson_filename}`);
+  archive.file(geojson_filename, { name: `${name}.geojson` });
 
   archive.finalize();
 });

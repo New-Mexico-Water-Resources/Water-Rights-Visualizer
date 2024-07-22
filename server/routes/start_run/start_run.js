@@ -13,13 +13,31 @@ const run_directory_base = constants.run_directory_base;
 const argv = process.argv.slice(2);
 const data_source = argv[0];
 
-router.post("/start_run", (req, res) => {
-  var name = req.body.name;
-  var start_year = req.body.startYear;
-  var end_year = req.body.endYear;
-  var geojson = req.body.geojson;
-  var epoch = Date.now(); //used to make sure run is unique
-  var key = name + "_" + start_year + "_" + end_year + "_" + epoch;
+router.post("/start_run", async (req, res) => {
+  let canWriteJob = req.auth?.payload?.permissions?.includes("write:jobs") || false;
+  if (!canWriteJob) {
+    res.status(401).send("Unauthorized: missing write:jobs permission");
+    return;
+  }
+
+  let userInfoEndpoint = req.auth?.payload?.aud?.find((aud) => aud.endsWith("/userinfo"));
+  if (!userInfoEndpoint) {
+    res.status(401).send("Unauthorized: missing userinfo endpoint");
+    return;
+  }
+
+  let userInfo = await fetch(userInfoEndpoint, {
+    headers: {
+      Authorization: req.headers.authorization,
+    },
+  }).then((res) => res.json());
+
+  let name = req.body.name;
+  let start_year = req.body.startYear;
+  let end_year = req.body.endYear;
+  let geojson = req.body.geojson;
+  let epoch = Date.now(); //used to make sure run is unique
+  let key = name + "_" + start_year + "_" + end_year + "_" + epoch;
 
   console.log("receiving start run request");
   console.log(`name: ${name}`);
@@ -105,71 +123,34 @@ router.post("/start_run", (req, res) => {
   console.log(`pipeline script: ${pipeline_script}`);
   var command = `/opt/conda/bin/python ${pipeline_script} ${config_filename}`;
   console.log(command);
-  //    var pid = spawn_child.spawn_child(command);
-  //
-  //    var pid_filename = path.join(run_directory, "pid.txt");
-  //    console.log(`writing process ID ${pid} to ${pid_filename}`);
-  //
-  //    fs.writeFile(pid_filename, pid.toString(), 'utf8', function(err){
-  //        if(err) throw err;
-  //        console.log(`successfully wrote process ID to ${pid_filename}`);
-  //    });
-  //
-  //json file that holds the list of all the reports that need processing
-  var report_queue_file = path.join(run_directory_base, "report_queue.json");
 
-  fs.readFile(report_queue_file, (err, data) => {
-    var report_queue = [];
+  var entry = {
+    key: key,
+    name: name,
+    cmd: command,
+    status: "Pending",
+    status_msg: null,
+    submitted: epoch,
+    started: null,
+    ended: null,
+    pid: null,
+    invoker: "to-do",
+    base_dir: run_directory,
+    png_dir: run_directory + "/output/figures/" + name,
+    csv_dir: run_directory + "/output/monthly_nan/" + name,
+    subset_dir: run_directory + "/output/subset/" + name,
+    geo_json: run_directory + "/" + name + ".geojson",
+    start_year: parseInt(start_year),
+    end_year: parseInt(end_year),
+    user: userInfo,
+  };
 
-    //        var years_processed = [];
-    //        var year_current = parseInt(start_year);
-    //        var year_end = parseInt(end_year);
-    //
-    //        while(year_current <= year_end) {
-    //            years_processed.push(year_current);
-    //            year_current++;
-    //        }
+  let db = await constants.connectToDatabase();
+  let collection = db.collection(constants.report_queue_collection);
+  await collection.insertOne(entry);
 
-    var entry = {
-      key: key,
-      name: name,
-      cmd: command,
-      status: "Pending",
-      status_msg: null,
-      submitted: epoch,
-      started: null,
-      ended: null,
-      pid: null,
-      invoker: "to-do",
-      base_dir: run_directory,
-      png_dir: run_directory + "/output/figures/" + name,
-      csv_dir: run_directory + "/output/monthly_nan/" + name,
-      subset_dir: run_directory + "/output/subset/" + name,
-      geo_json: run_directory + "/" + name + ".geojson",
-      start_year: parseInt(start_year),
-      end_year: parseInt(end_year),
-    };
-
-    if (!err && data) {
-      report_queue = JSON.parse(data);
-      console.log("Loaded report queue with " + data);
-    } else if (err) {
-      console.log("Error loading report queue:");
-      console.log(err);
-    } else {
-      console.log("No data in report queue file");
-    }
-
-    report_queue.push(entry);
-
-    fs.writeFile(report_queue_file, JSON.stringify(report_queue, null, 2), function (err) {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log("report queue saved to " + report_queue_file);
-      }
-    });
-  });
+  console.log("Writing entry to mongodb");
+  console.log(entry);
 
   res.status(200).send(`Queued report for ${name} from ${start_year} to ${end_year}`);
 });

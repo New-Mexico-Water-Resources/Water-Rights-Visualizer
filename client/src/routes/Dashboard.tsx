@@ -1,5 +1,5 @@
-import { Alert, Snackbar } from "@mui/material";
-import { useEffect } from "react";
+import { Alert, Snackbar, Typography } from "@mui/material";
+import { useEffect, useMemo } from "react";
 import { MapContainer, ScaleControl, TileLayer, ZoomControl } from "react-leaflet";
 import useStore from "../utils/store";
 
@@ -11,6 +11,9 @@ import CurrentJobChip from "../components/CurrentJobChip";
 import JobQueue from "../components/JobQueue";
 import MultiGeoJSONLayer from "../components/MultiGeoJsonLayer";
 import LayersControl from "../components/LayersControl";
+import { useAuth0 } from "@auth0/auth0-react";
+import LoginButton from "../components/LoginButton";
+import WaterDropIcon from "@mui/icons-material/WaterDrop";
 
 const Dashboard = () => {
   const loadedGeoJSON = useStore((state) => state.loadedGeoJSON);
@@ -26,6 +29,11 @@ const Dashboard = () => {
 
   const [pollCount, increasePollCount] = useStore((state) => [state.pollCount, state.increasePollCount]);
   const fetchQueue = useStore((state) => state.fetchQueue);
+
+  const { isAuthenticated } = useAuth0();
+  const userInfo = useStore((state) => state.userInfo);
+  const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
+  const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
 
   const handleKeyPress = (event: any) => {
     const isMac = navigator.userAgent.includes("Mac");
@@ -63,9 +71,60 @@ const Dashboard = () => {
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <NavToolbar />
-      {showUploadDialog && <UploadDialog />}
-      {multipolygons.length <= 1 && <CurrentJobChip />}
-      {multipolygons.length > 1 && previewMode && <LayersControl />}
+      {isAuthenticated && canWriteJobs && showUploadDialog && <UploadDialog />}
+      {isAuthenticated && multipolygons.length <= 1 && <CurrentJobChip />}
+      {isAuthenticated && multipolygons.length > 1 && previewMode && <LayersControl />}
+      {(!isAuthenticated || (!canReadJobs && userInfo)) && (
+        <div
+          style={{
+            position: "absolute",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+            background: "rgb(0 0 0 / 50%)",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--st-gray-90)",
+              padding: "16px",
+              borderRadius: "8px",
+              display: "flex",
+              flexDirection: "column",
+              width: "600px",
+              gap: "8px",
+            }}
+          >
+            <Typography variant="h4" style={{ lineHeight: "8px", textAlign: "center" }}>
+              <WaterDropIcon style={{ color: "var(--st-gray-30)", fontSize: "60px" }} />
+            </Typography>
+            <Typography
+              variant="h4"
+              style={{
+                color: "white",
+                textAlign: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              Water Rights Visualizer Tool
+            </Typography>
+            <Typography
+              variant="h4"
+              style={{ fontSize: "16px", color: "var(--st-gray-30)", textAlign: "center", marginBottom: "32px" }}
+            >
+              {!isAuthenticated
+                ? "Please login to continue"
+                : "You do not have permission to access this tool. Please contact your administrator."}
+            </Typography>
+            {!isAuthenticated && <LoginButton />}
+          </div>
+        </div>
+      )}
       <JobQueue />
       <MapContainer
         className="map-container"
