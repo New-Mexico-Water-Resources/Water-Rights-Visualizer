@@ -60,7 +60,7 @@ app.use(`${basePath}/`, verifyAuthToken, years_available);
 app.use(`${basePath}/`, verifyAuthToken, geojson);
 app.use(`${basePath}/`, verifyAuthToken, result);
 app.use(`${basePath}/`, verifyAuthToken, result_base64);
-app.use(`${basePath}/`, verifyAuthToken, download);
+app.use(`${basePath}/`, download);
 app.use(`${basePath}/`, verifyAuthToken, start_run);
 app.use(`${basePath}/`, verifyAuthToken, runs);
 app.use(`${basePath}/queue`, queue);
