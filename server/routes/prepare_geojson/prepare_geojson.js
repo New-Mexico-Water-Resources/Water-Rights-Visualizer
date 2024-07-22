@@ -67,6 +67,18 @@ const convertToGeoJSON = async (extractPath, baseName) => {
               let geojson = { error: "Error reading geojson path" };
               try {
                 geojson = JSON.parse(data);
+
+                // If this is an individual feature, put in FeatureCollection
+                if (!geojson["name"] && geojson["type"] === "Feature") {
+                  geojson = {
+                    type: "FeatureCollection",
+                    name: baseName || "output",
+                    features: [geojson],
+                  };
+                } else if (!geojson["name"]) {
+                  // Some other type, but missing name field, which the backend needs
+                  geojson["name"] = baseName || "output";
+                }
               } catch (error) {
                 try {
                   let multipolygon = data.split("\n");
