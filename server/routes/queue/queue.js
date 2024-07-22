@@ -52,11 +52,13 @@ router.delete("/delete_job", async (req, res) => {
   let result = await collection.deleteOne({ key });
 
   if (deleteFiles && job.base_dir) {
-    fs.rmdir(job.base_dir, { recursive: true }, (err) => {
-      if (err) {
-        console.error(`Error deleting ${job.base_dir}`, err);
-      }
-    });
+    if (fs.existsSync(job.base_dir)) {
+      fs.rmdir(job.base_dir, { recursive: true }, (err) => {
+        if (err) {
+          console.error(`Error deleting ${job.base_dir}`, err);
+        }
+      });
+    }
   }
 
   res.status(200).send(result);
@@ -91,11 +93,13 @@ router.delete("/bulk_delete_jobs", async (req, res) => {
     }
 
     if (deleteFiles && job.base_dir) {
-      fs.rmdir(job.base_dir, { recursive: true }, (err) => {
-        if (err) {
-          console.error(`Error deleting ${job.base_dir}`, err);
-        }
-      });
+      if (fs.existsSync(job.base_dir)) {
+        fs.rmdir(job.base_dir, { recursive: true }, (err) => {
+          if (err) {
+            console.error(`Error deleting ${job.base_dir}`, err);
+          }
+        });
+      }
     }
   });
 
