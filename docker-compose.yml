@@ -21,19 +21,7 @@ services:
     container_name: water-rights-visualizer-api
     restart: always
     command: "/init-api.sh ${WATER_RIGHTS_SOURCE:-S3}"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mypassword}
-      MONGO_HOST: ${MONGO_HOST:-water-rights-visualizer-mongo}
-      MONGO_PORT: ${MONGO_PORT:-27017}
-      MONGO_DATABASE: ${MONGO_DATABASE:-water}
-      MONGO_COLLECTION: ${MONGO_COLLECTION:-report_queue}
-      AUTH0_DOMAIN: ${AUTH0_DOMAIN:-water-rights-visualizer.us.auth0.com}
-      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID:-WwEYqC6Ji9pqUdTC0MXqM2kgQQv4NxAy}
-      AUTH0_SECRET: ${AUTH0_SECRET:-de471589294cc129aa117112a5ecb56b9ead3b5a5211a50e2d336bb91de5f6b5}
-      AUTH0_BASE_URL: ${AUTH0_BASE_URL:-http://localhost:5173}
-      AUTH0_ISSUER_BASE_URL: ${AUTH0_ISSUER_BASE_URL:-https://water-rights-visualizer.us.auth0.com}
-      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE:-https://nmw-dev.jpl.nasa.gov/api}
+    env_file: "production.env"
     ports:
       - "5000:5000"
     depends_on:
@@ -50,6 +38,7 @@ services:
     container_name: water-rights-visualizer
     restart: always
     command: "/init.sh ${WATER_RIGHTS_SOURCE:-S3}"
+    env_file: "production.env"
     depends_on:
       - water_mongo
     volumes:
@@ -60,9 +49,7 @@ services:
   water_mongo:
     image: mongo:7.0
     container_name: water-rights-visualizer-mongo
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mypassword}
+    env_file: "production.env"
     ports:
       - 27017:27017
     volumes:
