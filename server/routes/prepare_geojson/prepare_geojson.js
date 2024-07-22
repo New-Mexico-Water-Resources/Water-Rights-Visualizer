@@ -68,16 +68,21 @@ const convertToGeoJSON = async (extractPath, baseName) => {
               try {
                 geojson = JSON.parse(data);
 
-                // If this is an individual feature, put in FeatureCollection
-                if (geojson["type"] === "Feature") {
-                  geojson = {
-                    type: "FeatureCollection",
-                    name: baseName || "output",
-                    features: [geojson],
-                  };
-                } else if (!geojson["name"]) {
-                  // Some other type, but missing name field, which the backend needs
-                  geojson["name"] = baseName || "output";
+                if (geojson["type"] === "Feature" || !geojson["name"]) {
+                  // If this is an individual feature, put in FeatureCollection
+                  if (geojson["type"] === "Feature") {
+                    geojson = {
+                      type: "FeatureCollection",
+                      name: baseName || "output",
+                      features: [geojson],
+                    };
+                  } else if (!geojson["name"]) {
+                    // Some other type, but missing name field, which the backend needs
+                    geojson["name"] = baseName || "output";
+                  }
+
+                  // Overwrite existing geojson if we had to reformat it
+                  fs.writeFileSync(geoJSONPath, JSON.stringify(geojson));
                 }
               } catch (error) {
                 try {
