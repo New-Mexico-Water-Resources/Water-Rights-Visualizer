@@ -4,19 +4,6 @@ import axios, { AxiosInstance } from "axios";
 import { API_URL } from "./constants";
 import { formatElapsedTime, formJobForQueue } from "./helpers";
 
-// const authAxios = () => {
-//   const instance = axios.create();
-
-//   instance.interceptors.request.use(async (config) => {
-//     const { getAccessTokenSilently } = useAuth0();
-//     const token = await getAccessTokenSilently();
-//     config.headers.Authorization = `Bearer ${token}`;
-//     return config;
-//   });
-
-//   return instance;
-// };
-
 export interface PolygonLocation {
   visible: boolean;
   id: number;
@@ -238,6 +225,7 @@ const useStore = create<Store>()(
             return {
               ...state,
               queue: job ? state.queue.filter((item) => item.key !== jobKey) : state.queue,
+              backlog: job ? state.backlog.filter((item) => item.key !== jobKey) : state.backlog,
               successMessage: job ? `Job "${job.name}" deleted successfully` : "",
               errorMessage: job ? "" : `Error deleting job: ${job.name} not found`,
             };
