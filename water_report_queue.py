@@ -40,6 +40,8 @@ def build_mongo_client_and_collection():
     host = os.environ.get("MONGO_HOST", "water-rights-visualizer-mongo")
     #host = os.environ.get("MONGO_HOST", "localhost")
     port = os.environ.get("MONGO_PORT", 27017)
+    if isinstance(port, str) and port.isdigit():
+        port = int(port)
 
     database = os.environ.get("MONGO_DATABASE", "water")
     collection = os.environ.get("MONGO_COLLECTION", "report_queue")
