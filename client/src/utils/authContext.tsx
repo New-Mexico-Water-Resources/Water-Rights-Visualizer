@@ -5,21 +5,23 @@ import useStore from "./store";
 const AuthContext = createContext({ token: "" });
 
 export const AuthProvider = ({ children }: { children: any }) => {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
   const [token, setToken] = useStore((state) => [state.authToken, state.setAuthToken]);
 
   useEffect(() => {
     const fetchToken = async () => {
-      try {
-        const accessToken = await getAccessTokenSilently();
-        setToken(accessToken);
-      } catch (error) {
-        console.error("Failed to fetch token", error);
+      if (isAuthenticated) {
+        try {
+          const accessToken = await getAccessTokenSilently();
+          setToken(accessToken);
+        } catch (error) {
+          console.error("Failed to fetch token", error);
+        }
       }
     };
 
     fetchToken();
-  }, [getAccessTokenSilently]);
+  }, [getAccessTokenSilently, isAuthenticated, setToken]);
 
   return <AuthContext.Provider value={{ token }}>{children}</AuthContext.Provider>;
 };

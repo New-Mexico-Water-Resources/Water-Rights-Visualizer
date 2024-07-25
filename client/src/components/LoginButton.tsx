@@ -4,6 +4,7 @@ import { FC } from "react";
 
 const LoginButton: FC = () => {
   const { loginWithRedirect, user, isAuthenticated } = useAuth0();
+
   return (
     <Button
       variant="contained"

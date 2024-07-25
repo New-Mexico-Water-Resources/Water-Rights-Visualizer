@@ -16,6 +16,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         audience: authConfig.audience,
         redirect_uri: window.location.origin,
       }}
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
     >
       <AuthProvider>
         <App />
