@@ -107,6 +107,26 @@ const JobQueue = () => {
     return () => clearInterval(interval);
   }, [activeJobLogKey, jobLogsOpen]);
 
+  const [searchField, setSearchField] = useState("");
+
+  const filteredItemList = useMemo(() => {
+    let items = isBacklogOpen ? backlog : queue;
+    let searchTerm = searchField.toLowerCase();
+    return items.filter((item) => {
+      let fields = [
+        item.name.toLowerCase(),
+        `${item?.start_year}`,
+        `${item?.end_year}`,
+        item.user?.name.toLowerCase(),
+        item.user?.email.toLowerCase(),
+        item?.status.toLowerCase(),
+      ].filter((field) => field);
+
+      // Name, Start Year, End Year, Creator Name, Creator Email
+      return !searchField || fields.some((field) => field.includes(searchTerm));
+    });
+  }, [queue, backlog, isBacklogOpen, searchField]);
+
   return (
     <div className={`queue-container ${isQueueOpen || isBacklogOpen ? "open" : "closed"}`}>
       <Modal
@@ -232,8 +252,17 @@ const JobQueue = () => {
           </Button>
         )}
       </Typography>
+      <div className="search-bar">
+        <input
+          type="text"
+          placeholder="Search..."
+          className="search-input"
+          value={searchField}
+          onChange={(e) => setSearchField(e.target.value)}
+        />
+      </div>
       <div className="queue-list">
-        {(isBacklogOpen ? backlog : queue).map((job, index) => (
+        {filteredItemList.map((job, index) => (
           <JobQueueItem
             key={index}
             job={job}

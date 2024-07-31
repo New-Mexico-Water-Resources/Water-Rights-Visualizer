@@ -8,20 +8,25 @@ router.get("/user_info", async (req, res) => {
     return;
   }
 
-  let userInfo = await fetch(userInfoEndpoint, {
-    headers: {
-      Authorization: req.headers.authorization,
-    },
-  }).then((res) => res.json());
+  try {
+    let userInfo = await fetch(userInfoEndpoint, {
+      headers: {
+        Authorization: req.headers.authorization,
+      },
+    }).then((res) => res.json());
 
-  if (!userInfo) {
-    res.status(401).send("Unauthorized: missing userinfo");
+    if (!userInfo) {
+      res.status(401).send("Unauthorized: missing userinfo");
+      return;
+    }
+
+    userInfo.permissions = req.auth?.payload?.permissions || [];
+    res.status(200).send(userInfo);
+  } catch (error) {
+    console.error("Error fetching userinfo:", error);
+    res.status(500).send("Error fetching userinfo");
     return;
   }
-
-  userInfo.permissions = req.auth?.payload?.permissions || [];
-
-  res.status(200).send(userInfo);
 });
 
 module.exports = router;

@@ -16,6 +16,7 @@ const prepare_geojson = require("./routes/prepare_geojson/prepare_geojson");
 const queue = require("./routes/queue/queue");
 const user = require("./routes/user");
 const constants = require("./constants");
+const admin = require("./routes/admin/admin");
 
 const { auth } = require("express-oauth2-jwt-bearer");
 
@@ -66,6 +67,8 @@ app.use(`${basePath}/`, verifyAuthToken, start_run);
 app.use(`${basePath}/`, verifyAuthToken, runs);
 app.use(`${basePath}/queue`, verifyAuthToken, queue);
 app.post(`${basePath}/prepare_geojson`, prepare_geojson.upload.single("file"), prepare_geojson.prepareGeojson);
+
+app.use(`${basePath}/admin`, verifyAuthToken, admin);
 
 app.use((err, req, res, next) => {
   console.error("Error:", err.message, "Endpoint:", req.originalUrl);

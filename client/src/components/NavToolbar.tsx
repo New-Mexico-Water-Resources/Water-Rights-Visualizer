@@ -18,10 +18,12 @@ import ViewStreamIcon from "@mui/icons-material/ViewStream";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import AddIcon from "@mui/icons-material/Add";
 import Logout from "@mui/icons-material/Logout";
+import GroupIcon from "@mui/icons-material/Group";
 
 import useStore from "../utils/store";
 import { useEffect, useMemo, useState } from "react";
 import LoginButton from "./LoginButton";
+import { ROLES } from "../utils/constants";
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth0();
@@ -92,7 +94,7 @@ const Profile = () => {
               style={{ display: "flex", flexDirection: "column", fontSize: "12px", color: "var(--st-gray-30)" }}
             >
               <span className="email">{user?.email}</span>
-              <span className="role">{user?.profile}</span>
+              <span className="role">{user?.role}</span>
             </div>
           </div>
         </MenuItem>
@@ -118,12 +120,25 @@ const Profile = () => {
 const NavToolbar = () => {
   const [isQueueOpen, setIsQueueOpen] = useStore((state) => [state.isQueueOpen, state.setIsQueueOpen]);
   const [isBacklogOpen, setIsBacklogOpen] = useStore((state) => [state.isBacklogOpen, state.setIsBacklogOpen]);
+  const [isUsersPanelOpen, setIsUsersPanelOpen] = useStore((state) => [
+    state.isUsersPanelOpen,
+    state.setIsUsersPanelOpen,
+  ]);
+
   const startNewJob = useStore((state) => state.startNewJob);
   const queue = useStore((state) => state.queue);
   const { isAuthenticated } = useAuth0();
   const userInfo = useStore((state) => state.userInfo);
+
   const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
   const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
+  const isAdmin = useMemo(() => userInfo?.permissions.includes("write:admin"), [userInfo?.permissions]);
+
+  const users = useStore((state) => state.users);
+  const newUsers = useMemo(
+    () => users.filter((user) => user.roles.length <= 1 && user.roles.find((role) => role.id === ROLES.NEW_USER)),
+    [users]
+  );
 
   return (
     <AppBar className="nav-area" position="static">
@@ -205,6 +220,7 @@ const NavToolbar = () => {
                 }
 
                 setIsQueueOpen(!isQueueOpen);
+                setIsUsersPanelOpen(false);
               }}
             >
               <Badge badgeContent={queue.length} color="primary">
@@ -241,6 +257,7 @@ const NavToolbar = () => {
                 }
 
                 setIsBacklogOpen(!isBacklogOpen);
+                setIsUsersPanelOpen(false);
               }}
             >
               <Typography
@@ -259,6 +276,42 @@ const NavToolbar = () => {
               </Typography>
             </Box>
           </Tooltip>
+          {isAdmin && (
+            <Tooltip title="View Users">
+              <Box
+                className={`nav-item ${isUsersPanelOpen ? "active" : ""}`}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  height: "100%",
+                  cursor: "pointer",
+                  ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
+                }}
+                onClick={() => {
+                  setIsUsersPanelOpen(!isUsersPanelOpen);
+                  setIsBacklogOpen(false);
+                  setIsQueueOpen(false);
+                }}
+              >
+                <Badge badgeContent={newUsers.length} color="primary">
+                  <Typography
+                    color="inherit"
+                    component="div"
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "0 8px",
+                      height: "fit-content",
+                      gap: "4px",
+                    }}
+                  >
+                    <GroupIcon />
+                    Users
+                  </Typography>
+                </Badge>
+              </Box>
+            </Tooltip>
+          )}
         </Box>
         <Profile />
       </Toolbar>

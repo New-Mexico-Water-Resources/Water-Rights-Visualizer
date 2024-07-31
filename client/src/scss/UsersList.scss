@@ -1,0 +1,27 @@
+.users-container {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  right: 0;
+  height: calc(100vh - 45px);
+  z-index: 1001;
+  background-color: var(--st-gray-90);
+  transition: all 0.1s ease;
+
+  &.closed {
+    width: 0;
+  }
+
+  &.open {
+    width: 300px;
+  }
+
+  .users-list {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 12px;
+
+    overflow-y: auto;
+  }
+}

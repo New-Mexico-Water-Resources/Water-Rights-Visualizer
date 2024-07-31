@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import axios, { AxiosInstance } from "axios";
-import { API_URL } from "./constants";
+import { API_URL, ROLES } from "./constants";
 import { formatElapsedTime, formJobForQueue } from "./helpers";
 
 export interface PolygonLocation {
@@ -39,9 +39,39 @@ export interface UserInfo {
   permissions: string[];
 }
 
+export interface UserIdentity {
+  user_id: string;
+  provider: string;
+  isSocial: boolean;
+  connection: string;
+}
+
+export interface UserRole {
+  name: string;
+  id: string;
+}
+export interface UserListingDetails {
+  nickname: string;
+  updated_at: string;
+  identities: UserIdentity[];
+  picture: string;
+  created_at: string;
+  name: string;
+  email: string;
+  email_verified: boolean;
+  user_id: string;
+  last_login: string;
+  last_ip: string;
+  logins_count: number;
+  permissions: string[];
+  roles: UserRole[];
+}
+
 interface Store {
   isQueueOpen: boolean;
   setIsQueueOpen: (isQueueOpen: boolean) => void;
+  isUsersPanelOpen: boolean;
+  setIsUsersPanelOpen: (isUsersPanelOpen: boolean) => void;
   isBacklogOpen: boolean;
   setIsBacklogOpen: (isBacklogOpen: boolean) => void;
   jobName: string;
@@ -100,6 +130,10 @@ interface Store {
   userInfo: UserInfo | null;
   fetchUserInfo: () => void;
   authAxios: () => AxiosInstance | null;
+  users: UserListingDetails[];
+  adminFetchUsers: () => void;
+  adminDeleteUser: (userId: string) => void;
+  adminUpdateUser: (userId: string, roles: string[]) => void;
 }
 
 const useStore = create<Store>()(
@@ -108,6 +142,8 @@ const useStore = create<Store>()(
     setIsQueueOpen: (isQueueOpen) => set({ isQueueOpen }),
     isBacklogOpen: false,
     setIsBacklogOpen: (isBacklogOpen) => set({ isBacklogOpen }),
+    isUsersPanelOpen: false,
+    setIsUsersPanelOpen: (isUsersPanelOpen) => set({ isUsersPanelOpen }),
     jobName: "",
     setJobName: (jobName) => set({ jobName }),
     minYear: 1985,
@@ -314,9 +350,7 @@ const useStore = create<Store>()(
       return polygonLocations
         .filter((location) => location.visible)
         .map((location) => {
-          let roundedLat = Math.round(location.lat * 1000) / 1000;
-          let roundedLong = Math.round(location.long * 1000) / 1000;
-          let jobName = `${baseName} Part ${location.id + 1} (${roundedLat}, ${roundedLong})`;
+          let jobName = `${baseName} Part ${location.id + 1}`;
           let geojson = multipolygons[location.id];
 
           return formJobForQueue(jobName, get().startYear, get().endYear, geojson);
@@ -364,8 +398,9 @@ const useStore = create<Store>()(
         return;
       }
 
+      let escapedName = encodeURIComponent(job.name);
       axiosInstance
-        .get(`${API_URL}/geojson?name=${job.name}&key=${job.key}`)
+        .get(`${API_URL}/geojson?name=${escapedName}&key=${job.key}`)
         .then((response) => {
           let loadedGeoJSON = null;
           let multipolygons = [];
@@ -394,7 +429,9 @@ const useStore = create<Store>()(
         return;
       }
 
-      window.open(`${API_URL}/download?name=${job.name}&key=${job.key}`);
+      let shortName = job.name.replace(/[(),]/g, "");
+      let escapedName = encodeURIComponent(shortName);
+      window.open(`${API_URL}/download?name=${escapedName}&key=${job.key}`);
     },
     startNewJob: () => {
       set({
@@ -510,6 +547,84 @@ const useStore = create<Store>()(
       }
 
       get().bulkDeleteJobs(pendingJobs, true);
+    },
+    users: [],
+    adminFetchUsers: () => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
+        .get(`${API_URL}/admin/users`)
+        .then((response) => {
+          let users: UserListingDetails[] = response.data;
+          users.sort((a, b) => {
+            if (
+              a.roles.some((role) => role.id === ROLES.NEW_USER) &&
+              !b.roles.some((role) => role.id === ROLES.NEW_USER)
+            ) {
+              return -1;
+            } else if (
+              !a.roles.some((role) => role.id === ROLES.NEW_USER) &&
+              b.roles.some((role) => role.id === ROLES.NEW_USER)
+            ) {
+              return 1;
+            } else {
+              return new Date(b.last_login).getTime() - new Date(a.last_login).getTime();
+            }
+          });
+
+          set({ users });
+        })
+        .catch((error) => {
+          set({ errorMessage: error?.response?.data || error?.message || "Error fetching users" });
+        });
+    },
+    adminDeleteUser: (userId) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
+        .delete(`${API_URL}/admin/delete_user?userId=${userId}`)
+        .then(() => {
+          set((state) => {
+            let users = state.users.filter((user) => user.user_id !== userId);
+            state.adminFetchUsers();
+            return { users };
+          });
+        })
+        .catch((error) => {
+          get().adminFetchUsers();
+          set({ errorMessage: error?.response?.data || error?.message || "Error deleting user" });
+        });
+    },
+    adminUpdateUser: (userId, roles) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
+        .post(`${API_URL}/admin/update_user`, { userId, roles })
+        .then(() => {
+          set((state) => {
+            let users = state.users.map((user) => {
+              if (user.user_id === userId) {
+                user.roles = roles.map((role) => ({ name: role, id: role }));
+              }
+              return user;
+            });
+            state.adminFetchUsers();
+            return { users };
+          });
+        })
+        .catch((error) => {
+          get().adminFetchUsers();
+          set({ errorMessage: error?.response?.data || error?.message || "Error updating user" });
+        });
     },
   }))
 );

@@ -14,6 +14,7 @@ import LayersControl from "../components/LayersControl";
 import { useAuth0 } from "@auth0/auth0-react";
 import LoginButton from "../components/LoginButton";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import UsersList from "../components/UsersList";
 
 const Dashboard = () => {
   const loadedGeoJSON = useStore((state) => state.loadedGeoJSON);
@@ -26,6 +27,7 @@ const Dashboard = () => {
 
   const [isQueueOpen, setIsQueueOpen] = useStore((state) => [state.isQueueOpen, state.setIsQueueOpen]);
   const [isBacklogOpen, setIsBacklogOpen] = useStore((state) => [state.isBacklogOpen, state.setIsBacklogOpen]);
+  const setIsUsersPanelOpen = useStore((state) => state.setIsUsersPanelOpen);
 
   const [pollCount, increasePollCount] = useStore((state) => [state.pollCount, state.increasePollCount]);
   const fetchQueue = useStore((state) => state.fetchQueue);
@@ -34,6 +36,8 @@ const Dashboard = () => {
   const userInfo = useStore((state) => state.userInfo);
   const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
   const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
+
+  const isAdmin = useMemo(() => userInfo?.permissions.includes("write:admin"), [userInfo?.permissions]);
 
   const handleKeyPress = (event: any) => {
     const isMac = navigator.userAgent.includes("Mac");
@@ -45,6 +49,7 @@ const Dashboard = () => {
         setIsBacklogOpen(false);
       }
       setIsQueueOpen(!isQueueOpen);
+      setIsUsersPanelOpen(false);
     }
   };
 
@@ -126,6 +131,7 @@ const Dashboard = () => {
         </div>
       )}
       <JobQueue />
+      {isAdmin && <UsersList />}
       <MapContainer
         className="map-container"
         center={[34.5199, -105.8701]}

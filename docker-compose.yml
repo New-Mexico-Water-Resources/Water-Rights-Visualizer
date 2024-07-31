@@ -35,6 +35,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+    platform: "linux/amd64"
     container_name: water-rights-visualizer
     restart: always
     command: "/init.sh ${WATER_RIGHTS_SOURCE:-S3}"

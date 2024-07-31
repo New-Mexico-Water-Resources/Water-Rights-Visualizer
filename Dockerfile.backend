@@ -6,7 +6,7 @@ ENV APP_ROOT /app
 RUN apt-get update
 RUN apt update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata
-RUN apt install -y software-properties-common
+# RUN apt install -y software-properties-common
 
 # install fish shell
 RUN apt-add-repository ppa:fish-shell/release-3; apt-get -y install fish; chsh -s /usr/local/bin/fish; mamba init fish

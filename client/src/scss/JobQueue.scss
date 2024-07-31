@@ -1,3 +1,20 @@
 .react-lazylog-searchbar {
   background-color: var(--st-gray-100) !important;
 }
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px;
+
+  .search-input {
+    width: 100%;
+    background: var(--st-gray-80);
+    border: 1px solid var(--st-gray-60);
+    border-radius: 4px;
+    padding: 4px;
+    color: white;
+  }
+}
