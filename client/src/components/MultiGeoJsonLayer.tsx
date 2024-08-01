@@ -58,8 +58,8 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
         });
 
         let roundedAcres = Math.round(location.acres * 100) / 100;
-        let roundedLat = Math.round(location.lat * 1000000) / 1000000;
-        let roundedLong = Math.round(location.long * 1000000) / 1000000;
+        let roundedLat = location?.lat ? Math.round(location.lat * 1000000) / 1000000 : "NaN";
+        let roundedLong = location?.long ? Math.round(location.long * 1000000) / 1000000 : "NaN";
 
         geoJsonLayer.bindTooltip(
           `<div style='padding:1px 3px 1px 3px;display:flex;flex-direction:column;'>
