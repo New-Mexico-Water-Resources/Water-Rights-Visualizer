@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { Typography } from "@mui/material";
 
 import useStore, { UserListingDetails } from "../utils/store";
