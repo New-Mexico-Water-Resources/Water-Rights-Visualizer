@@ -27,11 +27,15 @@ const LayersControl: FC = () => {
 
   const LayerRow: FC<{ index: number; style: any }> = ({ index, style }) => {
     let row = rows[index];
+    if (!row) {
+      console.error("No row found for index", index);
+      return null;
+    }
 
-    let roundedLat = Math.round(row.lat * 1000) / 1000;
-    let roundedLong = Math.round(row.long * 1000) / 1000;
+    let roundedLat = row?.lat ? Math.round(row.lat * 1000) / 1000 : "NaN";
+    let roundedLong = row?.long ? Math.round(row.long * 1000) / 1000 : "NaN";
 
-    let roundedAcres = Math.round(row.acres * 100) / 100;
+    let roundedAcres = row?.acres ? Math.round(row.acres * 100) / 100 : "NaN";
 
     return (
       <div key={row.id} className={`layer-row ${row.id === activeRowId ? "active" : ""}`} style={style}>
@@ -178,8 +182,7 @@ const LayersControl: FC = () => {
         </Typography>
       )}
       <div className="layer-list">
-        {/* <LayerRow index={0} style={{}} /> */}
-        <List className="List" height={500} itemCount={1000} itemSize={85} width={275}>
+        <List className="List" height={500} itemCount={rows.length} itemSize={85} width={275}>
           {LayerRow}
         </List>
       </div>

@@ -336,7 +336,10 @@ const useStore = create<Store>()(
         });
     },
     locations: [],
-    setLocations: (locations) => set({ locations }),
+    setLocations: (locations) => {
+      let validLocations = locations.filter((location) => location?.id !== undefined);
+      set({ locations: validLocations });
+    },
     prepareMultipolygonJob: () => {
       let baseName = get().jobName;
       let multipolygons = get().multipolygons;
