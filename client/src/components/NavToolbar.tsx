@@ -102,7 +102,11 @@ const Profile = () => {
         <MenuItem
           onClick={() => {
             setAnchorEl(null);
-            logout();
+            logout({
+              logoutParams: {
+                returnTo: window.location.origin,
+              },
+            });
           }}
         >
           <ListItemIcon>
