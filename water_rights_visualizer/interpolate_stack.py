@@ -46,6 +46,6 @@ def interpolate_stack(stack: np.ndarray) -> np.ndarray:
 
             # Store the interpolated time series in the filled stack
             filled_stack[:, row, col] = y
-    
+
     # Return the filled stack
     return filled_stack

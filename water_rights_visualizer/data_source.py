@@ -6,6 +6,8 @@ class DataSource:
     Abstract base class for data sources.
     """
 
+    monthly = False
+
     @abstractmethod
     def inventory(self):
         """
@@ -29,4 +31,3 @@ class DataSource:
         """
 
         pass
-    

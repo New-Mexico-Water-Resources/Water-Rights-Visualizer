@@ -18,18 +18,18 @@ import raster as rt
 
 from .errors import FileUnavailable
 from .data_source import DataSource
+
 # from .google_drive import google_drive_login
 
 logger = logging.getLogger(__name__)
 
 REMOVE_TEMPORARY_FILES = True
 
-def read_geometry(
-        S3_URL: str,
-        session: boto3.session.Session = None) -> raster.RasterGeometry:
+
+def read_geometry(S3_URL: str, session: boto3.session.Session = None) -> raster.RasterGeometry:
     if session is None:
         session = assume_role()
-    
+
     with rasterio.Env(rasterio.session.AWSSession(session)) as env:
         with rasterio.open(S3_URL) as remote_file:
             source_CRS = remote_file.crs
@@ -37,37 +37,31 @@ def read_geometry(
             source_affine = remote_file.transform
 
             source_grid = raster.RasterGrid.from_affine(
-                affine=source_affine, 
-                rows=source_rows, 
-                cols=source_cols, 
-                crs=source_CRS
+                affine=source_affine, rows=source_rows, cols=source_cols, crs=source_CRS
             )
 
             return source_grid
 
-def read_subset(
-        S3_URL: str,
-        geometry: raster.RasterGeometry,
-        session: boto3.session.Session = None) -> raster.Raster:
+
+def read_subset(S3_URL: str, geometry: raster.RasterGeometry, session: boto3.session.Session = None) -> raster.Raster:
     if session is None:
         session = assume_role()
-    
+
     with rasterio.Env(rasterio.session.AWSSession(session)) as env:
-        subset = raster.Raster.open(
-            filename=S3_URL, 
-            geometry=geometry
-        )
-    
+        subset = raster.Raster.open(filename=S3_URL, geometry=geometry)
+
     return subset
+
 
 class S3Source(DataSource):
     def __init__(
-            self,
-            bucket_name: str = None,
-            region_name: str = None,
-            temporary_directory: str = None,
-            S3_table_filename: str = None,
-            remove_temporary_files: bool = None):
+        self,
+        bucket_name: str = None,
+        region_name: str = None,
+        temporary_directory: str = None,
+        S3_table_filename: str = None,
+        remove_temporary_files: bool = None,
+    ):
         if remove_temporary_files is None:
             remove_temporary_files = REMOVE_TEMPORARY_FILES
 
@@ -81,8 +75,7 @@ class S3Source(DataSource):
         makedirs(temporary_directory, exist_ok=True)
 
         if S3_table_filename is None:
-            S3_table_filename = join(
-                abspath(dirname(__file__)), "S3_filenames.csv")
+            S3_table_filename = join(abspath(dirname(__file__)), "S3_filenames.csv")
 
         S3_table = pd.read_csv(S3_table_filename)
 
@@ -97,10 +90,8 @@ class S3Source(DataSource):
         self.remove_temporary_files = remove_temporary_files
 
     def inventory(self):
-        dates_available = [parser.parse(str(d)).date()
-                           for d in self.S3_table.date]
-        years_available = list(
-            set(sorted([date_step.year for date_step in dates_available])))
+        dates_available = [parser.parse(str(d)).date() for d in self.S3_table.date]
+        years_available = list(set(sorted([date_step.year for date_step in dates_available])))
 
         return years_available, dates_available
 
@@ -119,15 +110,21 @@ class S3Source(DataSource):
 
         acquisition_date = acquisition_date.strftime("%Y-%m-%d")
 
-        filtered_table = self.S3_table[self.S3_table.apply(lambda row: row.tile == int(
-            tile) and row.variable == variable_name and parser.parse(str(row.date)).date().strftime(
-            "%Y-%m-%d") == acquisition_date, axis=1)]
+        filtered_table = self.S3_table[
+            self.S3_table.apply(
+                lambda row: row.tile == int(tile)
+                and row.variable == variable_name
+                and parser.parse(str(row.date)).date().strftime("%Y-%m-%d") == acquisition_date,
+                axis=1,
+            )
+        ]
 
         if len(filtered_table) == 0:
-            raise FileUnavailable(
-                f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
+            raise FileUnavailable(f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
 
-        filename_base = str(filtered_table.iloc[0].filename)
+        matching_file_metadata = filtered_table.iloc[0]
+
+        filename_base = str(matching_file_metadata.filename)
         filename = join(self.temporary_directory, filename_base)
 
         if exists(filename):
@@ -140,7 +137,8 @@ class S3Source(DataSource):
 
         if not exists(filename):
             logger.info(
-                f"retrieving {cl.file(filename_base)} from S3 bucket {cl.name(self.bucket_name)} to file: {cl.file(filename)}")
+                f"retrieving {cl.file(filename_base)} from S3 bucket {cl.name(self.bucket_name)} to file: {cl.file(filename)}"
+            )
             start_time = time.perf_counter()
             self.bucket.download_file(filename_base, filename)
             end_time = time.perf_counter()
@@ -149,9 +147,8 @@ class S3Source(DataSource):
             if not exists(filename):
                 raise IOError(f"unable to retrieve file: {filename}")
 
-            logger.info(
-                f"temporary file retrieved from S3 in {cl.time(duration_seconds)} seconds: {cl.file(filename)}")
-        
+            logger.info(f"temporary file retrieved from S3 in {cl.time(duration_seconds)} seconds: {cl.file(filename)}")
+
         self.filenames[key] = filename
 
         yield filename

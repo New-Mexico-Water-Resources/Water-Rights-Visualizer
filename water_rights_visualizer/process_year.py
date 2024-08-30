@@ -15,65 +15,65 @@ import cl
 from .file_path_source import FilepathSource
 from .ROI_area import ROI_area
 from .calculate_percent_nan import calculate_percent_nan
+from .calculate_cloud_coverage_percent import calculate_cloud_coverage_percent
 from .constants import WGS84, START_MONTH, END_MONTH, START_YEAR, END_YEAR
 from .data_source import DataSource
 from .display_image_tk import display_image_tk
+
 # from .display_text_tk import display_text_tk
 from .generate_figure import generate_figure
 from .generate_stack import generate_stack
 from .process_monthly import process_monthly
 from .write_status import write_status
+from .variable_types import get_available_variable_source_for_date
 
 logger = logging.getLogger(__name__)
 
+
 def process_year(
-        year: int,
-        dates_available,
-        ROI,
-        ROI_latlon,
-        ROI_acres,
-        ROI_for_nan,
-        input_datastore: DataSource = None,
-        output_directory: str = None,
-        start_year: int = START_YEAR,
-        end_year: int = END_YEAR,
-        start_month: int = START_MONTH,
-        end_month: int = END_MONTH,
-        ROI_name: str = None,
-        input_directory: str = None,
-        figure_directory: str = None,
-        working_directory: str = None,
-        subset_directory: str = None,
-        nan_subset_directory: str = None,
-        stack_directory: str = None,
-        monthly_sums_directory: str = None,
-        monthly_means_directory: str = None,
-        monthly_nan_directory: str = None,
-        target_CRS: str = None,
-        remove_working_directory: bool = True,
-        root: Tk = None,
-        image_panel: Text = None,
-        text_panel: ScrolledText = None,
-        status_filename: str = None,
-        debug: bool = False):
+    year: int,
+    dates_available,
+    ROI,
+    ROI_latlon,
+    ROI_acres,
+    ROI_for_nan,
+    input_datastore: DataSource = None,
+    output_directory: str = None,
+    start_year: int = START_YEAR,
+    end_year: int = END_YEAR,
+    start_month: int = START_MONTH,
+    end_month: int = END_MONTH,
+    ROI_name: str = None,
+    input_directory: str = None,
+    figure_directory: str = None,
+    working_directory: str = None,
+    subset_directory: str = None,
+    nan_subset_directory: str = None,
+    stack_directory: str = None,
+    monthly_sums_directory: str = None,
+    monthly_means_directory: str = None,
+    monthly_nan_directory: str = None,
+    target_CRS: str = None,
+    remove_working_directory: bool = True,
+    root: Tk = None,
+    image_panel: Text = None,
+    text_panel: ScrolledText = None,
+    status_filename: str = None,
+    debug: bool = False,
+):
     logger.info(f"processing year {cl.time(year)} at ROI {cl.name(ROI_name)}")
     message = f"processing: {year}"
 
-    write_status(
-        message="{message}\n",
-        status_filename=status_filename,
-        text_panel=text_panel,
-        root=root
-    )
+    write_status(message=f"{message}\n", status_filename=status_filename, text_panel=text_panel, root=root)
 
     stack_filename = join(stack_directory, f"{year:04d}_{ROI_name}_stack.h5")
 
     try:
         write_status(
-            message==f"loading stack: {stack_filename}\n",
+            message == f"loading stack: {stack_filename}\n",
             status_filename=status_filename,
             text_panel=text_panel,
-            root=root
+            root=root,
         )
 
         ET_stack, PET_stack, affine = generate_stack(
@@ -85,7 +85,7 @@ def process_year(
             subset_directory=subset_directory,
             dates_available=dates_available,
             stack_filename=stack_filename,
-            target_CRS=target_CRS
+            target_CRS=target_CRS,
         )
     except Exception as e:
         logger.exception(e)
@@ -107,31 +107,21 @@ def process_year(
         start_month=start_month,
         end_month=end_month,
         monthly_sums_directory=monthly_sums_directory,
-        monthly_means_directory=monthly_means_directory
+        monthly_means_directory=monthly_means_directory,
     )
 
     # monthly_means.append(monthly_means_df)
 
-    write_status(
-        message="Calculating uncertainty\n",
-        status_filename=status_filename,
-        text_panel=text_panel,
-        root=root
-    )
+    write_status(message="Calculating uncertainty\n", status_filename=status_filename, text_panel=text_panel, root=root)
 
-    calculate_percent_nan(
-        ROI_for_nan,
-        subset_directory,
-        nan_subset_directory,
-        monthly_nan_directory
-    )
+    # Check the variable to see if it's monthly
+    variable_source = get_available_variable_source_for_date("ET", datetime(year, 1, 1).date())
+    if variable_source and variable_source.monthly:
+        calculate_cloud_coverage_percent(ROI_for_nan, subset_directory, nan_subset_directory, monthly_nan_directory)
+    else:
+        calculate_percent_nan(ROI_for_nan, subset_directory, nan_subset_directory, monthly_nan_directory)
 
-    write_status(
-        message=="Generating figure\n",
-        status_filename=status_filename,
-        text_panel=text_panel,
-        root=root
-    )
+    write_status(message == "Generating figure\n", status_filename=status_filename, text_panel=text_panel, root=root)
 
     nan_means = []
     nd = pd.read_csv(f"{monthly_nan_directory}/{year}.csv")
@@ -143,12 +133,13 @@ def process_year(
     month_means.append(mm)
     # logger.info(f"application monthly means: \n {month_means}")
 
-    idx = {'Months': range(start_month, end_month + 1)}
-    df1 = pd.DataFrame(idx, columns=['Months'])
-    df2 = pd.DataFrame(idx, columns=['Months'])
+    idx = {"Months": range(start_month, end_month + 1)}
+    df1 = pd.DataFrame(idx, columns=["Months"])
+    df2 = pd.DataFrame(idx, columns=["Months"])
 
-    main_dfa = pd.merge(left=df1, right=mm, how='left', left_on="Months", right_on="Month")
-    main_df = pd.merge(left=main_dfa, right=nd, how='left', left_on="Months", right_on="month")
+    main_dfa = pd.merge(left=df1, right=mm, how="left", left_on="Months", right_on="Month")
+    main_df = pd.merge(left=main_dfa, right=nd, how="left", left_on="Months", right_on="month")
+
     main_df = main_df.replace(np.nan, 100)
     # logger.info(f'main_df: {main_df}')
     monthly_means_df = pd.concat(month_means, axis=0)
@@ -172,13 +163,10 @@ def process_year(
             message=f"figure exists in working directory\n",
             status_filename=status_filename,
             text_panel=text_panel,
-            root=root
+            root=root,
         )
 
-        display_image_tk(
-            filename=figure_filename,
-            image_panel=image_panel
-        )
+        display_image_tk(filename=figure_filename, image_panel=image_panel)
 
         # continue
     else:
@@ -200,7 +188,7 @@ def process_year(
                 root=root,
                 text_panel=text_panel,
                 image_panel=image_panel,
-                status_filename=status_filename
+                status_filename=status_filename,
             )
         except Exception as e:
             logger.exception(e)

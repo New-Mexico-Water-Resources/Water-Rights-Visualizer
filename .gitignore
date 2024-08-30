@@ -2,6 +2,7 @@
 __pycache__
 .DS_Store
 google_drive_key.txt
+google_drive_api_key.txt
 client_secrets.json
 water_rights_visualizer/google_drive_key.txt
 water_rights_visualizer/client_secrets.json
@@ -18,3 +19,7 @@ node_modules
 uploads
 .env
 .env.secrets
+.virtual_documents
+local_files
+local_test
+.ipynb_checkpoints

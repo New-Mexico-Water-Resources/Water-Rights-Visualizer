@@ -24,23 +24,25 @@ END_YEAR = 2020
 START_MONTH = 1
 END_MONTH = 12
 
+
 def water_rights_visualizer(
-        boundary_filename: str,
-        output_directory: str,
-        figure_directory: str = None,
-        monthly_means_directory: str = None,
-        input_datastore: DataSource = None,
-        input_directory: str = None,
-        google_drive_temporary_directory: str = None,
-        google_drive_key_filename: str = None,
-        google_drive_client_secrets_filename: str = None,
-        remove_temporary_google_files: bool = None,
-        start_year: int = START_YEAR,
-        end_year: int = END_YEAR,
-        start_month: int = START_MONTH,
-        end_month: int = END_MONTH,
-        status_filename: str = None,
-        debug=False):
+    boundary_filename: str,
+    output_directory: str,
+    figure_directory: str = None,
+    monthly_means_directory: str = None,
+    input_datastore: DataSource = None,
+    input_directory: str = None,
+    google_drive_temporary_directory: str = None,
+    google_drive_key_filename: str = None,
+    google_drive_client_secrets_filename: str = None,
+    remove_temporary_google_files: bool = None,
+    start_year: int = START_YEAR,
+    end_year: int = END_YEAR,
+    start_month: int = START_MONTH,
+    end_month: int = END_MONTH,
+    status_filename: str = None,
+    debug=False,
+):
     boundary_filename = abspath(expanduser(boundary_filename))
     output_directory = abspath(expanduser(output_directory))
 
@@ -56,7 +58,7 @@ def water_rights_visualizer(
                 temporary_directory=google_drive_temporary_directory,
                 key_filename=google_drive_key_filename,
                 client_secrets_filename=google_drive_client_secrets_filename,
-                remove_temporary_files=remove_temporary_google_files
+                remove_temporary_files=remove_temporary_google_files,
             )
         elif input_directory is not None:
             logger.info(f"using local file path data source in directory: {input_directory}")
@@ -104,7 +106,7 @@ def water_rights_visualizer(
             monthly_nan_directory=None,
             target_CRS=None,
             status_filename=status_filename,
-            debug=debug
+            debug=debug,
         )
 
     elif isdir(ROI):
@@ -130,7 +132,7 @@ def water_rights_visualizer(
                     monthly_nan_directory=None,
                     target_CRS=None,
                     status_filename=status_filename,
-                    debug=debug
+                    debug=debug,
                 )
     else:
         logger.warning(f"invalid ROI: {ROI}")
@@ -188,8 +190,9 @@ def main(argv=sys.argv):
         google_drive_client_secrets_filename=google_drive_client_secrets_filename,
         start_year=start_year,
         end_year=end_year,
-        debug=debug
+        debug=debug,
     )
+
 
 if __name__ == "__main__":
     sys.exit(main(argv=sys.argv))

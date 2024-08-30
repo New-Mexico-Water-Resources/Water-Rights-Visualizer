@@ -1,0 +1,129 @@
+from datetime import datetime
+
+
+class VariableType:
+    def __init__(
+        self,
+        name: str,
+        variable: str,
+        mapped_variable: str,
+        file_prefix: str,
+        monthly: bool,
+        parent_dir: str,
+        start: datetime.date,
+        end: datetime.date,
+    ):
+        self.name = name
+        self.variable = variable
+        self.mapped_variable = mapped_variable
+        self.file_prefix = file_prefix
+        self.monthly = monthly
+        self.parent_dir = parent_dir
+        self.start = start
+        self.end = end
+
+
+VARIABLE_TYPES = [
+    VariableType(
+        name="Landsat PT-JPL ET",
+        variable="ET",
+        mapped_variable="ET",
+        file_prefix="LC08_",
+        monthly=False,
+        parent_dir="",
+        start=datetime(1985, 1, 1).date(),
+        end=datetime(2019, 10, 1).date(),
+    ),
+    VariableType(
+        name="Landsat PT-JPL ESI",
+        variable="ESI",
+        mapped_variable="ESI",
+        file_prefix="LC08_",
+        monthly=False,
+        parent_dir="",
+        start=datetime(1985, 1, 1).date(),
+        end=datetime(2019, 10, 1).date(),
+    ),
+    VariableType(
+        name="OpenET Ensemble ET",
+        variable="ET",
+        mapped_variable="ET",
+        file_prefix="OPENET_ENSEMBLE_",
+        monthly=True,
+        parent_dir="monthly",
+        start=datetime(2019, 10, 1).date(),
+        end=datetime(2025, 1, 1).date(),
+    ),
+    VariableType(
+        name="OpenET Ensemble CCOUNT",
+        variable="CCOUNT",
+        mapped_variable="CCOUNT",
+        file_prefix="OPENET_ENSEMBLE_",
+        monthly=True,
+        parent_dir="monthly",
+        start=datetime(2019, 10, 1).date(),
+        end=datetime(2025, 1, 1).date(),
+    ),
+    VariableType(
+        name="IDAHO EPSCOR GRIDMET ETO",
+        variable="PET",
+        mapped_variable="ETO",
+        file_prefix="IDAHO_EPSCOR_GRIDMET_",
+        monthly=True,
+        parent_dir="monthly",
+        start=datetime(2019, 10, 1).date(),
+        end=datetime(2025, 1, 1).date(),
+    ),
+]
+
+
+def get_available_variables_for_date(date: datetime.date) -> list[VariableType]:
+    """
+    Get the available variables for a given date.
+
+    Args:
+        date (datetime.date): The date for which to get available variables.
+
+    Returns:
+        list[VariableType]: The available variables for the given date.
+    """
+    variables = []
+    for variable in VARIABLE_TYPES:
+        if variable.start <= date < variable.end:
+            variables.append(variable)
+    return variables
+
+
+def get_sources_for_variable(variable: str) -> list[VariableType]:
+    """
+    Get the available sources for a given variable.
+
+    Args:
+        variable (str): The variable for which to get available sources.
+
+    Returns:
+        list[VariableType]: The available sources for the given variable.
+    """
+    sources = []
+    for variable_type in VARIABLE_TYPES:
+        if variable_type.variable == variable:
+            sources.append(variable_type)
+    return sources
+
+
+def get_available_variable_source_for_date(variable: str, date: datetime.date) -> VariableType | None:
+    """
+    Get the first available source for a given variable and date.
+
+    Args:
+        variable (str): The variable for which to get available sources.
+        date (datetime.date): The date for which to get available sources.
+
+    Returns:
+        VariableType: The available source for the given variable and date.
+    """
+    for source in VARIABLE_TYPES:
+        if source.variable == variable and date >= source.start and date < source.end:
+            return source
+
+    return None

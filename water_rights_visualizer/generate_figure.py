@@ -15,6 +15,7 @@ from shapely.geometry import Polygon
 
 from .constants import START_MONTH, END_MONTH
 from .display_image_tk import display_image_tk
+
 # from .display_text_tk import display_text_tk
 from .generate_patch import generate_patch
 
@@ -24,23 +25,24 @@ logger = getLogger(__name__)
 
 
 def generate_figure(
-        ROI_name: str,
-        ROI_latlon: Polygon,
-        ROI_acres: float,
-        creation_date: date,
-        year: int,
-        vmin: float,
-        vmax: float,
-        affine: Affine,
-        main_df: pd.DataFrame,
-        monthly_sums_directory: str,
-        figure_filename: str,
-        start_month: int = START_MONTH,
-        end_month: int = END_MONTH,
-        root: Tk = None,
-        text_panel: ScrolledText = None,
-        image_panel: Text = None,
-        status_filename: str = None):
+    ROI_name: str,
+    ROI_latlon: Polygon,
+    ROI_acres: float,
+    creation_date: date,
+    year: int,
+    vmin: float,
+    vmax: float,
+    affine: Affine,
+    main_df: pd.DataFrame,
+    monthly_sums_directory: str,
+    figure_filename: str,
+    start_month: int = START_MONTH,
+    end_month: int = END_MONTH,
+    root: Tk = None,
+    text_panel: ScrolledText = None,
+    image_panel: Text = None,
+    status_filename: str = None,
+):
     """
     Generate a figure displaying evapotranspiration data for a specific region of interest (ROI).
 
@@ -62,17 +64,17 @@ def generate_figure(
         text_panel (ScrolledText, optional): Text panel for displaying messages. Defaults to None.
         image_panel (Text, optional): Image panel for displaying the generated figure. Defaults to None.
     """
-    
+
     # Create a new figure
     fig = plt.figure()
     # print(f"ROI name: {ROI_name}")
     # print(f"year: {year}")
     # print(f"ROI_acres: {ROI_acres}")
     fig.suptitle((f"Evapotranspiration For {ROI_name} - {year} - {ROI_acres} acres"), fontsize=14)
-    
+
     n_months = end_month - start_month + 1
     grid_cols = int(n_months / 2)
-    
+
     grid = plt.GridSpec(3, grid_cols, wspace=0.4, hspace=0.3)
 
     # Generate sub-figures for each month
@@ -96,14 +98,7 @@ def generate_figure(
         ax.get_yaxis().set_visible(False)
 
         # Define the colors for the evapotranspiration data
-        ET_COLORS = [
-            "#f6e8c3",
-            "#d8b365",
-            "#99974a",
-            "#53792d",
-            "#6bdfd2",
-            "#1839c5"
-        ]
+        ET_COLORS = ["#f6e8c3", "#d8b365", "#99974a", "#53792d", "#6bdfd2", "#1839c5"]
 
         # Create a colormap for the evapotranspiration data
         cmap = LinearSegmentedColormap.from_list("ET", ET_COLORS)
@@ -115,7 +110,12 @@ def generate_figure(
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     # fig.colorbar(im, cax=cbar_ax, ticks=[], label=f'Low                                                            High')
-    fig.colorbar(im, cax=cbar_ax, ticks=[], label=f'{round(vmin)} mm                                                      {round(vmax)} mm')
+    fig.colorbar(
+        im,
+        cax=cbar_ax,
+        ticks=[],
+        label=f"{round(vmin)} mm                                                      {round(vmax)} mm",
+    )
 
     # Create a subplot for the main data
     ax = plt.subplot(grid[2, :])
@@ -128,14 +128,15 @@ def generate_figure(
     # print(f"y (PET): {y}")
     y2 = df["ET"]
     # print(f"y2 (ET): {y2}")
-    ci = df["percent_nan"]
+    ci_pet = df["percent_nan"] / 100 * y
+    ci_et = df["percent_nan"] / 100 * y2
     # print(f"ci (nan%): {ci}")
     sns.lineplot(x=x, y=y, ax=ax, color="blue", label="PET")
     sns.lineplot(x=x, y=y2, ax=ax, color="green", label="ET")
-    ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1)
-    ax.fill_between(x, (y2 - ci), (y2 + ci), color='g', alpha=.1)
-    plt.legend(labels=['ET'], loc='upper right')
-    ax.legend(loc='upper left', fontsize=6)
+    ax.fill_between(x, (y - ci_pet), (y + ci_pet), color="b", alpha=0.1)
+    ax.fill_between(x, (y2 - ci_et), (y2 + ci_et), color="g", alpha=0.1)
+    plt.legend(labels=["ET"], loc="upper right")
+    ax.legend(loc="upper left", fontsize=6)
     # ax.set(xlabel="Month", ylabel="ET (mm)")
     ax.set(xlabel="Month", ylabel="")
     ymin = min(min(main_df["ET"]), min(main_df["ET"]))
@@ -151,7 +152,7 @@ def generate_figure(
     # caption = "ET and PET calculated by the PT-JPL retrieval: Fisher et al. (2008) with Landsat data"
     caption = f"ET and PET calculated from Landsat with PT-JPL (Fisher et al. 2008), created {creation_date.date()}"
     # caption2 = f"Visualization created {creation_date}"
-    plt.figtext(0.48, 0.001, caption, wrap=True, verticalalignment='bottom', horizontalalignment='center', fontsize=5)
+    plt.figtext(0.48, 0.001, caption, wrap=True, verticalalignment="bottom", horizontalalignment="center", fontsize=5)
     # plt.figtext(0.93, 0.001, caption2, wrap=True, verticalalignment='bottom', horizontalalignment='right', fontsize=5)
     plt.tight_layout()
 
@@ -161,35 +162,29 @@ def generate_figure(
         message=f"generate_figure end time:{end_time}\n",
         status_filename=status_filename,
         text_panel=text_panel,
-        root=root
-    )    
+        root=root,
+    )
 
-    #check to make sure the subdir exists first before writing the file(think matlab savfig does not create it?)
+    # check to make sure the subdir exists first before writing the file(think matlab savfig does not create it?)
     subdir = dirname(figure_filename)
     if not exists(subdir):
         write_status(
-            message=f"Creating subdir {subdir}\n",
-            status_filename=status_filename,
-            text_panel=text_panel,
-            root=root
-        )    
+            message=f"Creating subdir {subdir}\n", status_filename=status_filename, text_panel=text_panel, root=root
+        )
         makedirs(subdir)
-    
+
     # Display messages in the text panel
     write_status(
         message=f"Saving figure to {figure_filename}\n",
         status_filename=status_filename,
         text_panel=text_panel,
-        root=root
-    )    
-    
+        root=root,
+    )
+
     # Save the figure to a file
     plt.savefig(figure_filename, dpi=300)
 
     # Display the generated figure in the image panel
-    display_image_tk(
-        filename=figure_filename,
-        image_panel=image_panel
-    )
+    display_image_tk(filename=figure_filename, image_panel=image_panel)
 
     logger.info("finished generating figure")

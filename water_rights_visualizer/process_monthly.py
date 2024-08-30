@@ -9,6 +9,7 @@ from affine import Affine
 import rasterio
 from rasterio.features import geometry_mask
 from dateutil.relativedelta import relativedelta
+from .date_helpers import get_one_month_slice
 
 import raster as rt
 
@@ -16,18 +17,20 @@ from .constants import START_MONTH, END_MONTH
 
 logger = logging.getLogger(__name__)
 
+
 def process_monthly(
-        ET_stack: np.ndarray,
-        PET_stack: np.ndarray,
-        ROI_latlon: Polygon,
-        ROI_name: str,
-        subset_affine: Affine,
-        CRS: str,
-        year: int,
-        monthly_sums_directory: str,
-        monthly_means_directory: str,
-        start_month: int = START_MONTH,
-        end_month: int = END_MONTH) -> pd.DataFrame:
+    ET_stack: np.ndarray,
+    PET_stack: np.ndarray,
+    ROI_latlon: Polygon,
+    ROI_name: str,
+    subset_affine: Affine,
+    CRS: str,
+    year: int,
+    monthly_sums_directory: str,
+    monthly_means_directory: str,
+    start_month: int = START_MONTH,
+    end_month: int = END_MONTH,
+) -> pd.DataFrame:
     """
     Process monthly values for a given year and generate monthly means.
 
@@ -47,7 +50,7 @@ def process_monthly(
     """
     logger.info("generating monthly means")
     monthly_means_filename = join(monthly_means_directory, f"{year}_monthly_means.csv")
-    
+
     if exists(monthly_means_filename):
         logger.info(f"loading monthly means: {monthly_means_filename}")
         monthly_means_df = pd.read_csv(monthly_means_filename)
@@ -67,15 +70,7 @@ def process_monthly(
 
             ET_monthly_filename = join(monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
-            start = datetime(year, month, 1).date()
-            logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
-            start_index = start.timetuple().tm_yday
-            logger.info(f"start index: {start_index}")
-
-            end = start + relativedelta(months=1)
-            logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
-            end_index = end.timetuple().tm_yday
-            logger.info(f"end index: {end_index}")
+            start_index, end_index = get_one_month_slice(year, month)
             ET_month_stack = ET_stack[start_index:end_index, :, :]
             ET_monthly = np.nansum(ET_month_stack, axis=0)
 
@@ -84,19 +79,10 @@ def process_monthly(
             ET_monthly_raster = rt.Raster(array=ET_monthly, geometry=subset_geometry)
             ET_monthly_raster.to_geotiff(ET_monthly_filename)
 
+            PET_monthly_filename = join(
+                monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_PET_monthly_sum.tif"
+            )
 
-            PET_monthly_filename = join(monthly_sums_directory,
-                                        f"{year:04d}_{month:02d}_{ROI_name}_PET_monthly_sum.tif")
-
-
-            start = datetime(year, month, 1).date()
-            logger.info("start creation_date: " + start.strftime("%Y-%m-%d"))
-            start_index = start.timetuple().tm_yday
-            logger.info(f"start index: {start_index}")
-
-            end = start + relativedelta(months=1)
-            logger.info("end creation_date: " + end.strftime("%Y-%m-%d"))
-            end_index = end.timetuple().tm_yday
             logger.info(f"end index: {end_index}")
             PET_month_stack = PET_stack[start_index:end_index, :, :]
             PET_monthly = np.nansum(PET_month_stack, axis=0)
@@ -111,7 +97,7 @@ def process_monthly(
 
             ET_monthly_mean = np.nanmean(ET_values)
             PET_monthly_mean = np.nanmean(PET_values)
-            
+
             monthly_means.append([year, month, ET_monthly_mean, PET_monthly_mean])
 
         if not exists(monthly_means_directory):
@@ -120,5 +106,5 @@ def process_monthly(
         monthly_means_df = pd.DataFrame(monthly_means, columns=["Year", "Month", "ET", "PET"])
         logger.info(f"writing monthly means: {monthly_means_filename}")
         monthly_means_df.to_csv(monthly_means_filename)
-    
+
     return monthly_means_df
