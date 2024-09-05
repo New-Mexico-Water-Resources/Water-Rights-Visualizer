@@ -100,7 +100,7 @@ def generate_stack(
         ESI_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ESI_subset.tif")
         logger.info(f"ESI subset file: {ESI_subset_filename}")
         PET_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_PET_subset.tif")
-        logger.info(f"pET subset file: {ESI_subset_filename}")
+        logger.info(f"PET subset file: {PET_subset_filename}")
 
         try:
             # ET_subset, affine = generate_subset(
@@ -147,6 +147,10 @@ def generate_stack(
 
         # Check for PET layers first, then use ESI if not available
         try:
+            pet_source = get_available_variable_source_for_date("PET", date_step)
+            if not pet_source:
+                raise FileUnavailable(f"no PET source available for date {date_step.strftime('%Y-%m-%d')}")
+
             # ESI_subset, affine = generate_subset(
             PET_subset = generate_subset(
                 input_datastore=input_datastore,
