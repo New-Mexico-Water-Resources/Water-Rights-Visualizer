@@ -115,17 +115,19 @@ def generate_stack(
                 target_CRS=target_CRS,
             )
 
-            # This is just used to get error percentage
-            ET_CCOUNT_subset = generate_subset(
-                input_datastore=input_datastore,
-                acquisition_date=date_step,
-                ROI_name=ROI_name,
-                ROI_latlon=ROI_latlon,
-                ROI_acres=ROI_acres,
-                variable_name="CCOUNT",
-                subset_filename=ET_CCOUNT_subset_filename,
-                target_CRS=target_CRS,
-            )
+            ccount_source = get_available_variable_source_for_date("CCOUNT", date_step)
+            if ccount_source and ccount_source.monthly:
+                # This is just used to get error percentage
+                ET_CCOUNT_subset = generate_subset(
+                    input_datastore=input_datastore,
+                    acquisition_date=date_step,
+                    ROI_name=ROI_name,
+                    ROI_latlon=ROI_latlon,
+                    ROI_acres=ROI_acres,
+                    variable_name="CCOUNT",
+                    subset_filename=ET_CCOUNT_subset_filename,
+                    target_CRS=target_CRS,
+                )
 
             affine = ET_subset.geometry.affine
         except BlankOutput as e:
@@ -226,14 +228,15 @@ def generate_stack(
         ET_doy_image = ET_sparse_stack[day_of_year, :, :]
         ET_sparse_stack[day_of_year, :, :] = np.where(np.isnan(ET_doy_image), ET_subset, ET_doy_image)
         source = get_available_variable_source_for_date("PET", date_step)
-        if source.monthly:
+        if source and source.monthly:
             # Fill in the rest of the month
             ET_sparse_stack[day_of_year:last_doy, :, :] = ET_subset / days_in_month
 
         if not PET_subset and PET_sparse_stack is None:
             ESI_doy_image = ESI_sparse_stack[day_of_year, :, :]
             ESI_sparse_stack[day_of_year, :, :] = np.where(np.isnan(ESI_doy_image), ESI_subset, ESI_doy_image)
-            if source.monthly:
+            source = get_available_variable_source_for_date("ESI", date_step)
+            if source and source.monthly:
                 # Fill in the rest of the month
                 ESI_sparse_stack[day_of_year:last_doy, :, :] = ESI_subset / days_in_month
 

@@ -18,6 +18,7 @@ import raster as rt
 
 from .errors import FileUnavailable
 from .data_source import DataSource
+from .variable_types import get_available_variable_source_for_date
 
 # from .google_drive import google_drive_login
 
@@ -100,27 +101,32 @@ class S3Source(DataSource):
         if isinstance(acquisition_date, str):
             acquisition_date = parser.parse(acquisition_date).date()
 
-        key = f"{int(tile):06d}_{str(variable_name)}_{acquisition_date:%Y-%m-%d}"
+        variable_source = get_available_variable_source_for_date(variable_name, acquisition_date)
+        if not variable_source:
+            logger.warn(f"no variable source found for {variable_name} on {acquisition_date}")
+            return ""
+        mapped_variable = variable_source.mapped_variable
+
+        date_str = f"{acquisition_date:%Y-%m}-01" if variable_source.monthly else f"{acquisition_date:%Y-%m-%d}"
+
+        key = f"{int(tile):06d}_{str(mapped_variable)}_{date_str}"
 
         if key in self.filenames:
             return self.filenames[key]
 
-        if isinstance(acquisition_date, str):
-            acquisition_date = parser.parse(acquisition_date).date()
-
-        acquisition_date = acquisition_date.strftime("%Y-%m-%d")
+        # acquisition_date = acquisition_date.strftime("%Y-%m-%d")
 
         filtered_table = self.S3_table[
             self.S3_table.apply(
                 lambda row: row.tile == int(tile)
-                and row.variable == variable_name
-                and parser.parse(str(row.date)).date().strftime("%Y-%m-%d") == acquisition_date,
+                and row.variable == mapped_variable
+                and parser.parse(str(row.date)).date().strftime("%Y-%m-%d") == date_str,
                 axis=1,
             )
         ]
 
         if len(filtered_table) == 0:
-            raise FileUnavailable(f"no files found for tile {tile} variable {variable_name} date {acquisition_date}")
+            raise FileUnavailable(f"no files found for tile {tile} variable {variable_name} date {date_str}")
 
         matching_file_metadata = filtered_table.iloc[0]
 

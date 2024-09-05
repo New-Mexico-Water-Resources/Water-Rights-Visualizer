@@ -114,13 +114,6 @@ class FilepathSource(DataSource):
         mapped_variable = variable_source.mapped_variable
 
         if variable_source.monthly:
-            # if variable_name == "PET":
-            #     pattern = join(self.directory, f"*_ETO_{tile}_{acquisition_date:%Y%m%d}_*_{variable_name}.tif")
-            # else:
-            #     pattern = join(self.directory, f"*_{tile}_{acquisition_date:%Y%m%d}_*_{variable_name}.tif")
-            # # pattern = join(self.directory, f"*_{tile}_{acquisition_date:%Y%m%d}_*_{variable_name}.tif")
-            # logger.info(f"searching monthly pattern: {cl.val(pattern)}")
-            # matches = sorted(glob(pattern))
             pattern = join(
                 self.directory,
                 variable_source.parent_dir,

@@ -31,7 +31,7 @@ VARIABLE_TYPES = [
         file_prefix="LC08_",
         monthly=False,
         parent_dir="",
-        start=datetime(1985, 1, 1).date(),
+        start=datetime(1983, 1, 1).date(),
         end=datetime(2019, 10, 1).date(),
     ),
     VariableType(
@@ -41,7 +41,7 @@ VARIABLE_TYPES = [
         file_prefix="LC08_",
         monthly=False,
         parent_dir="",
-        start=datetime(1985, 1, 1).date(),
+        start=datetime(1983, 1, 1).date(),
         end=datetime(2019, 10, 1).date(),
     ),
     VariableType(
