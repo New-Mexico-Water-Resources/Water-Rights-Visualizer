@@ -1,0 +1,3 @@
+pydrive2
+tqdm
+boto3

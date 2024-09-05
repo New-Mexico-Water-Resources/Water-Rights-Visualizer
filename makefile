@@ -126,3 +126,11 @@ update-jpl:
 update:
 	cp .env.ose-production .env
 	./update.sh
+
+gdrive-credentials:
+	@echo "Please paste the contents of your Google Drive credentials file (Ctrl-D to finish):";
+	@cat > misc/water_rights_gdrive_creds.txt;
+	@echo "Saving credentials to misc/water_rights_gdrive_creds.txt";
+
+sync-openet:
+	cd misc && pip install -r requirements.txt && python copy_openet_to_s3.py
