@@ -32,7 +32,8 @@ VARIABLE_TYPES = [
         monthly=False,
         parent_dir="",
         start=datetime(1983, 1, 1).date(),
-        end=datetime(2019, 10, 1).date(),
+        # end=datetime(2019, 10, 1).date(),
+        end=datetime(2016, 1, 1).date(),
     ),
     VariableType(
         name="Landsat PT-JPL ESI",
@@ -42,7 +43,8 @@ VARIABLE_TYPES = [
         monthly=False,
         parent_dir="",
         start=datetime(1983, 1, 1).date(),
-        end=datetime(2019, 10, 1).date(),
+        # end=datetime(2019, 10, 1).date(),
+        end=datetime(2016, 1, 1).date(),
     ),
     VariableType(
         name="OpenET Ensemble ET",
@@ -51,7 +53,8 @@ VARIABLE_TYPES = [
         file_prefix="OPENET_ENSEMBLE_",
         monthly=True,
         parent_dir="monthly",
-        start=datetime(2019, 10, 1).date(),
+        # start=datetime(2019, 10, 1).date(),
+        start=datetime(2016, 1, 1).date(),
         end=datetime(2025, 1, 1).date(),
     ),
     VariableType(
@@ -61,7 +64,8 @@ VARIABLE_TYPES = [
         file_prefix="OPENET_ENSEMBLE_",
         monthly=True,
         parent_dir="monthly",
-        start=datetime(2019, 10, 1).date(),
+        # start=datetime(2019, 10, 1).date(),
+        start=datetime(2016, 1, 1).date(),
         end=datetime(2025, 1, 1).date(),
     ),
     VariableType(
@@ -71,7 +75,8 @@ VARIABLE_TYPES = [
         file_prefix="IDAHO_EPSCOR_GRIDMET_",
         monthly=True,
         parent_dir="monthly",
-        start=datetime(2019, 10, 1).date(),
+        # start=datetime(2019, 10, 1).date(),
+        start=datetime(2016, 1, 1).date(),
         end=datetime(2025, 1, 1).date(),
     ),
 ]
