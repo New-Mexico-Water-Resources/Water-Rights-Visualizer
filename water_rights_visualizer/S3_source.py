@@ -91,11 +91,27 @@ class S3Source(DataSource):
         self.remove_temporary_files = remove_temporary_files
 
     def inventory(self):
-        dates_available = [parser.parse(str(available_date)).date() for available_date in self.S3_table.date]
-        valid_dates = [date for date in dates_available if len(get_available_variables_for_date(date)) > 0]
-        years_available = list(set(sorted([date_step.year for date_step in valid_dates])))
+        dates_available = []
+        for date in self.S3_table.date:
+            try:
+                available_date = parser.parse(str(date)).date()
+                # Check variables to see if we care about this date
+                variables = get_available_variables_for_date(available_date)
+                if len(variables) > 0:
+                    if available_date.day == 1:
+                        dates_available.append(available_date)
+                    else:
+                        # If it's not the first of the month, make sure we have a non-monthly data source
+                        for variable in variables:
+                            if not variable.monthly:
+                                dates_available.append(available_date)
+                                break
+            except Exception as e:
+                logger.warning(e)
+                logger.warning(f"unable to parse date: {date}")
+        years_available = list(set(sorted([date_step.year for date_step in dates_available])))
 
-        return years_available, valid_dates
+        return years_available, dates_available
 
     @contextlib.contextmanager
     def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
