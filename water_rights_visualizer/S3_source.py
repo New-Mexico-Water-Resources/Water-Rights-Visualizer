@@ -18,7 +18,7 @@ import raster as rt
 
 from .errors import FileUnavailable
 from .data_source import DataSource
-from .variable_types import get_available_variable_source_for_date
+from .variable_types import get_available_variable_source_for_date, get_available_variables_for_date
 
 # from .google_drive import google_drive_login
 
@@ -91,10 +91,11 @@ class S3Source(DataSource):
         self.remove_temporary_files = remove_temporary_files
 
     def inventory(self):
-        dates_available = [parser.parse(str(d)).date() for d in self.S3_table.date]
-        years_available = list(set(sorted([date_step.year for date_step in dates_available])))
+        dates_available = [parser.parse(str(available_date)).date() for available_date in self.S3_table.date]
+        valid_dates = [date for date in dates_available if len(get_available_variables_for_date(date)) > 0]
+        years_available = list(set(sorted([date_step.year for date_step in valid_dates])))
 
-        return years_available, dates_available
+        return years_available, valid_dates
 
     @contextlib.contextmanager
     def get_filename(self, tile: str, variable_name: str, acquisition_date: str) -> str:
