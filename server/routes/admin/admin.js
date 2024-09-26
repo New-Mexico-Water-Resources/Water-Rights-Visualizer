@@ -133,4 +133,25 @@ router.post("/update_user", async (req, res) => {
   }
 });
 
+router.post("/reverify_email", async (req, res) => {
+  let userId = req.body.userId;
+  if (!userId) {
+    res.status(400).send({ error: "Missing userId" });
+    return;
+  }
+
+  if (userId !== req.auth.payload.sub) {
+    res.status(401).send({ error: "Unauthorized: userId does not match authenticated user" });
+    return;
+  }
+
+  try {
+    await managementClient.jobs.verifyEmail({ user_id: userId });
+    res.status(200).send({ message: "Verification email sent" });
+  } catch (error) {
+    console.error("Failed to send verification email from Auth0:", error);
+    res.status(500).send({ error: "Failed to send verification email" });
+  }
+});
+
 module.exports = router;

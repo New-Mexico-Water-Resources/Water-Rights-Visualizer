@@ -134,6 +134,7 @@ interface Store {
   adminFetchUsers: () => void;
   adminDeleteUser: (userId: string) => void;
   adminUpdateUser: (userId: string, roles: string[]) => void;
+  reverifyEmail: (userId: string) => void;
 }
 
 const useStore = create<Store>()(
@@ -627,6 +628,21 @@ const useStore = create<Store>()(
         .catch((error) => {
           get().adminFetchUsers();
           set({ errorMessage: error?.response?.data || error?.message || "Error updating user" });
+        });
+    },
+    reverifyEmail: (userId) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
+        .post(`${API_URL}/admin/reverify_email`, { userId })
+        .then(() => {
+          set({ successMessage: "Email verification sent" });
+        })
+        .catch((error) => {
+          set({ errorMessage: error?.response?.data || error?.message || "Error sending email verification" });
         });
     },
   }))

@@ -169,7 +169,7 @@ const NavToolbar = () => {
             textDecoration: "none",
           }}
         >
-          New Mexico Water Rights Visualizer
+          New Mexico ET Reporting Tool
         </Typography>
         <Tooltip
           title={

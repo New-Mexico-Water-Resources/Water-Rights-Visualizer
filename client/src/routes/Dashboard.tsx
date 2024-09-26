@@ -1,4 +1,4 @@
-import { Alert, Snackbar, Typography } from "@mui/material";
+import { Alert, Button, Snackbar, Typography } from "@mui/material";
 import { useEffect, useMemo } from "react";
 import { MapContainer, ScaleControl, TileLayer, ZoomControl } from "react-leaflet";
 import useStore from "../utils/store";
@@ -31,8 +31,12 @@ const Dashboard = () => {
 
   const [pollCount, increasePollCount] = useStore((state) => [state.pollCount, state.increasePollCount]);
   const fetchQueue = useStore((state) => state.fetchQueue);
+  const reverifyEmail = useStore((state) => state.reverifyEmail);
 
-  const { isAuthenticated } = useAuth0();
+  const { isAuthenticated, user, loginWithRedirect } = useAuth0();
+  useEffect(() => {
+    console.log("user", user, isAuthenticated);
+  }, [isAuthenticated, user]);
   const userInfo = useStore((state) => state.userInfo);
   const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
   const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
@@ -63,7 +67,29 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchQueue();
-  }, [pollCount]);
+  }, [pollCount, isAuthenticated, user?.email_verified]);
+
+  // Poll for email verification
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isAuthenticated && !user?.email_verified) {
+        loginWithRedirect();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user?.email_verified]);
+
+  // Poll for permissions
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isAuthenticated && user?.email_verified && !canReadJobs) {
+        loginWithRedirect();
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user?.email_verified, canReadJobs]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -116,17 +142,32 @@ const Dashboard = () => {
                 justifyContent: "center",
               }}
             >
-              Water Rights Visualizer Tool
+              New Mexico ET Reporting Tool
             </Typography>
             <Typography
               variant="h4"
               style={{ fontSize: "16px", color: "var(--st-gray-30)", textAlign: "center", marginBottom: "32px" }}
             >
               {!isAuthenticated
-                ? "Please login to continue"
-                : "You do not have permission to access this tool. Please contact your administrator."}
+                ? "Please login or sign up for an account to continue"
+                : // : "You do not have permission to access this tool. Please contact your administrator."
+                user?.email_verified
+                ? "Thanks for creating an account. Your email address has been verified. NM OSE staff will review your request for access shortly."
+                : "Please verify your email address and then log out and back in to continue."}
             </Typography>
-            {!isAuthenticated && <LoginButton />}
+            {isAuthenticated && !user?.email_verified && (
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (user?.sub) {
+                    reverifyEmail(user?.sub);
+                  }
+                }}
+              >
+                Resend Email
+              </Button>
+            )}
+            {!isAuthenticated && <LoginButton title="Login/Sign Up" />}
           </div>
         </div>
       )}
