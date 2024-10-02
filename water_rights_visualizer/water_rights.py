@@ -12,6 +12,7 @@ import time
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+from glob import glob
 
 import cl
 from .file_path_source import FilepathSource
@@ -187,7 +188,18 @@ def water_rights(
 
     report_filename = join(figure_directory, f"{ROI_name}_Report.pdf")
     report_pdf = PdfPages(report_filename)
-    for year in years_x:
+
+    png_glob = glob(join(figure_directory, "*.png"))
+    sorted_years = []
+    for png_path in png_glob:
+        png_filename = basename(png_path)
+        if len(png_filename.split("_")) > 1:
+            year = int(png_filename.split("_")[0])
+            if year:
+                sorted_years.append(year)
+
+    sorted_years = sorted(set(sorted_years))
+    for year in sorted_years:
         figure_filename = join(figure_directory, f"{year}_{ROI_name}.png")
         figure_image = plt.imread(figure_filename)
         fig = plt.figure(figsize=(19.2, 14.4))
