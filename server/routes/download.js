@@ -39,10 +39,16 @@ router.get("/download", function (req, res) {
   archive.pipe(res);
 
   let figure_directory = path.join(run_directory_base, key, "output", "figures", name);
-  let figure_files = glob.sync(path.join(figure_directory, "*.png"));
 
+  let figure_files = glob.sync(path.join(figure_directory, "*.png"));
   figure_files.forEach((file) => {
     console.log(`Adding figure file: ${file}`);
+    archive.file(file, { name: path.basename(file) });
+  });
+
+  let report_files = glob.sync(path.join(figure_directory, "*.pdf"));
+  report_files.forEach((file) => {
+    console.log(`Adding report file: ${file}`);
     archive.file(file, { name: path.basename(file) });
   });
 
