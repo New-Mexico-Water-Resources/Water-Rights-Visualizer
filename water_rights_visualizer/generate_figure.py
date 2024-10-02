@@ -20,6 +20,7 @@ from .display_image_tk import display_image_tk
 from .generate_patch import generate_patch
 
 from .write_status import write_status
+from .variable_types import get_available_variable_source_for_date
 
 logger = getLogger(__name__)
 
@@ -149,8 +150,13 @@ def generate_figure(
 
     # Set the title and captions for the figure
     plt.title(f"Area of Interest Average Monthly Water Use", fontsize=10)
-    # caption = "ET and PET calculated by the PT-JPL retrieval: Fisher et al. (2008) with Landsat data"
-    caption = f"ET and PET calculated from Landsat with PT-JPL (Fisher et al. 2008), created {creation_date.date()}"
+
+    start_date = datetime(year, start_month, 1).date()
+    available_et = get_available_variable_source_for_date("ET", start_date)
+    if available_et and available_et.file_prefix == "OPENET_ENSEMBLE_":
+        caption = f"ET and PET (ETo) calculated from Landsat with the OpenET Ensemble (Melton et al. 2021) the Idaho EPSCOR GRIDMET (Abatzoglou 2012) models, created {creation_date.date()}"
+    else:
+        caption = f"ET and PET calculated from Landsat with PT-JPL (Fisher et al. 2008), created {creation_date.date()}"
     # caption2 = f"Visualization created {creation_date}"
     plt.figtext(0.48, 0.001, caption, wrap=True, verticalalignment="bottom", horizontalalignment="center", fontsize=5)
     # plt.figtext(0.93, 0.001, caption2, wrap=True, verticalalignment='bottom', horizontalalignment='right', fontsize=5)
