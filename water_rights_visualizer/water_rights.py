@@ -138,8 +138,6 @@ def water_rights(
     else:
         years_x = [*range(int(start_year), int(end_year) + 1)]
 
-    report_filename = join(figure_directory, f"{ROI_name} - Report.pdf")
-    report_pdf = PdfPages(report_filename)
     for i, year in enumerate(years_x):
         year_start_time = time.time()
 
@@ -187,6 +185,9 @@ def water_rights(
             root=root,
         )
 
+    report_filename = join(figure_directory, f"{ROI_name}_Report.pdf")
+    report_pdf = PdfPages(report_filename)
+    for year in years_x:
         figure_filename = join(figure_directory, f"{year}_{ROI_name}.png")
         figure_image = plt.imread(figure_filename)
         fig = plt.figure(figsize=(19.2, 14.4))
