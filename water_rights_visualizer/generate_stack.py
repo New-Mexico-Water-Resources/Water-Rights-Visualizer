@@ -236,7 +236,7 @@ def generate_stack(
             # Fill in the rest of the month
             ET_sparse_stack[day_of_year:last_doy, :, :] = ET_subset / days_in_month
 
-        if not PET_subset and PET_sparse_stack is None:
+        if not PET_subset and PET_sparse_stack is None and ESI_subset:
             ESI_doy_image = ESI_sparse_stack[day_of_year, :, :]
             ESI_sparse_stack[day_of_year, :, :] = np.where(np.isnan(ESI_doy_image), ESI_subset, ESI_doy_image)
             source = get_available_variable_source_for_date("ESI", date_step)
