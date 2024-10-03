@@ -89,8 +89,7 @@ def calculate_cloud_coverage_percent(
             ccount_data = ccount_data[ccount_data != ccount_subset_src.nodata]
             ccount_average = np.mean(ccount_data)
             # There are 6 models that are part of the ET ensemble. Error is represented as a percentage of the total number of models.
-            ccount_percent = ccount_average / NUMBER_OF_MODELS
-
+            ccount_percent = (NUMBER_OF_MODELS - ccount_average) / NUMBER_OF_MODELS
             # Old cloud count percentage calculation - this works for OpenET PT-JPL data (not Ensemble)
             # ccount_percent = ccount_average / days_in_month
 
