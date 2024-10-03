@@ -13,6 +13,8 @@ import datetime
 
 logger = getLogger(__name__)
 
+NUMBER_OF_MODELS = 6
+
 
 def get_days_in_month(year, month):
     # Calculate the first day of the next month
@@ -86,7 +88,11 @@ def calculate_cloud_coverage_percent(
             ccount_data = ccount_subset_src.read(1)
             ccount_data = ccount_data[ccount_data != ccount_subset_src.nodata]
             ccount_average = np.mean(ccount_data)
-            ccount_percent = ccount_average / days_in_month
+            # There are 6 models that are part of the ET ensemble. Error is represented as a percentage of the total number of models.
+            ccount_percent = ccount_average / NUMBER_OF_MODELS
+
+            # Old cloud count percentage calculation - this works for OpenET PT-JPL data (not Ensemble)
+            # ccount_percent = ccount_average / days_in_month
 
             yearly_ccount_percentages[year][month] = ccount_percent
 

@@ -34,9 +34,6 @@ const Dashboard = () => {
   const reverifyEmail = useStore((state) => state.reverifyEmail);
 
   const { isAuthenticated, user, loginWithRedirect } = useAuth0();
-  useEffect(() => {
-    console.log("user", user, isAuthenticated);
-  }, [isAuthenticated, user]);
   const userInfo = useStore((state) => state.userInfo);
   const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
   const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
