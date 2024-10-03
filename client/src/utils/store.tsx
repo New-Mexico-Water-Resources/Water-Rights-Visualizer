@@ -444,7 +444,7 @@ const useStore = create<Store>()(
         multipolygons: [],
         jobName: "",
         startYear: 1985,
-        endYear: 2020,
+        endYear: 2023,
         showUploadDialog: true,
         previewMode: false,
       });
@@ -458,7 +458,7 @@ const useStore = create<Store>()(
         multipolygons: [],
         jobName: "",
         startYear: 1985,
-        endYear: 2020,
+        endYear: 2023,
       });
     },
     fetchJobLogs: (jobKey) => {
