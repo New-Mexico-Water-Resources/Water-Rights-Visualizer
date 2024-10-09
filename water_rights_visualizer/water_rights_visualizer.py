@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 mpl.use("Agg")
 
 START_YEAR = 1985
-END_YEAR = 2020
+END_YEAR = 2023
 START_MONTH = 1
 END_MONTH = 12
 
