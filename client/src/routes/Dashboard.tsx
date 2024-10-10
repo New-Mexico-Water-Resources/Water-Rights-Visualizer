@@ -35,7 +35,7 @@ const Dashboard = () => {
 
   const { isAuthenticated, user, loginWithRedirect } = useAuth0();
   const userInfo = useStore((state) => state.userInfo);
-  const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
+  const canSubmitJobs = useMemo(() => userInfo?.permissions.includes("submit:jobs"), [userInfo?.permissions]);
   const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
 
   const isAdmin = useMemo(() => userInfo?.permissions.includes("write:admin"), [userInfo?.permissions]);
@@ -99,7 +99,7 @@ const Dashboard = () => {
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <NavToolbar />
-      {isAuthenticated && canWriteJobs && showUploadDialog && <UploadDialog />}
+      {isAuthenticated && canSubmitJobs && showUploadDialog && <UploadDialog />}
       {isAuthenticated && multipolygons.length <= 1 && <CurrentJobChip />}
       {isAuthenticated && multipolygons.length > 1 && previewMode && <LayersControl />}
       {(!isAuthenticated || (!canReadJobs && userInfo)) && (
