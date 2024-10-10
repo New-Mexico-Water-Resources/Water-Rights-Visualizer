@@ -93,7 +93,6 @@ router.delete("/delete_user", async (req, res) => {
 
 router.post("/update_user", async (req, res) => {
   let canUpdateUsers = req.auth?.payload?.permissions?.includes("write:admin") || false;
-  console.log("canUpdateUsers", canUpdateUsers, req.body, req.auth?.payload?.permissions);
   if (!canUpdateUsers) {
     res.status(401).send({ error: "Unauthorized: missing write:admin permission" });
     return;

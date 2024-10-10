@@ -41,15 +41,18 @@ router.delete("/delete_job", async (req, res) => {
     return;
   }
 
-  if (!["Complete", "Failed"].includes(job.status) && job.pid) {
-    try {
-      process.kill(job.pid, "SIGKILL");
-    } catch (e) {
-      console.error(`Error killing process ${job.pid}`, e);
-    }
+  let result = null;
+  if (!["Complete", "Failed"].includes(job.status) && job?.pid) {
+    // Update status to "Killed" and let the cron handle it
+    result = await collection.updateOne({ key }, { $set: { status: "Killed" } });
+    // try {
+    //   process.kill(job.pid, "SIGKILL");
+    // } catch (e) {
+    //   console.error(`Error killing process ${job.pid}`, e);
+    // }
+  } else if (["Complete", "Failed"].includes(job.status)) {
+    result = await collection.deleteOne({ key });
   }
-
-  let result = await collection.deleteOne({ key });
 
   if (deleteFiles && job.base_dir) {
     if (fs.existsSync(job.base_dir)) {

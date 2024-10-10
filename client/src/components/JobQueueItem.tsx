@@ -46,6 +46,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
 
   const currentUserInfo = useStore((state) => state.userInfo);
   const canApproveJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
+  const canDeleteJobs = useMemo(() => currentUserInfo?.permissions?.includes("delete:jobs"), [currentUserInfo]);
 
   const approveJob = useStore((state) => state.approveJob);
 
@@ -92,23 +93,25 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             </span>
           </Typography>
         </Tooltip>
-        <IconButton
-          onClick={() => {
-            confirm({
-              title: "Delete Job",
-              description: `Are you sure you want to delete the job "${job.name}"?`,
-              confirmationButtonProps: { color: "primary", variant: "contained" },
-              cancellationButtonProps: { color: "secondary", variant: "contained" },
-              titleProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
-              contentProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
-              dialogActionsProps: { sx: { backgroundColor: "var(--st-gray-90)" } },
-            }).then(() => {
-              deleteJob(job.key, true);
-            });
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
+        {canDeleteJobs && (
+          <IconButton
+            onClick={() => {
+              confirm({
+                title: "Delete Job",
+                description: `Are you sure you want to delete the job "${job.name}"?`,
+                confirmationButtonProps: { color: "primary", variant: "contained" },
+                cancellationButtonProps: { color: "secondary", variant: "contained" },
+                titleProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                contentProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                dialogActionsProps: { sx: { backgroundColor: "var(--st-gray-90)" } },
+              }).then(() => {
+                deleteJob(job.key, true);
+              });
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        )}
       </div>
       <div className="item-body">
         {job.status === "WaitingApproval" && (
