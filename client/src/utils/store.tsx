@@ -238,7 +238,9 @@ const useStore = create<Store>()(
         let queue = formattedQueue.filter((job: any) =>
           ["Pending", "In Progress", "WaitingApproval"].includes(job.status)
         );
-        let backlog = formattedQueue.filter((job: any) => !["Pending", "In Progress"].includes(job.status));
+        let backlog = formattedQueue.filter(
+          (job: any) => !["Pending", "In Progress", "WaitingApproval"].includes(job.status)
+        );
 
         set({ queue, backlog });
       });
