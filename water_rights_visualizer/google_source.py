@@ -61,6 +61,7 @@ class GoogleSource(DataSource):
         self.monthly = monthly
 
     def inventory(self):
+
         dates_available = [parser.parse(str(d)).date() for d in self.ID_table.date]
         years_available = list(set(sorted([date_step.year for date_step in dates_available])))
 

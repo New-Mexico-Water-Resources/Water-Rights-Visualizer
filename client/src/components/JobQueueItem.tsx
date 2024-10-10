@@ -45,8 +45,11 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const [jobStatuses, fetchJobStatus] = useStore((state) => [state.jobStatuses, state.fetchJobStatus]);
 
   const currentUserInfo = useStore((state) => state.userInfo);
-  const canApproveJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
-  const canDeleteJobs = useMemo(() => currentUserInfo?.permissions?.includes("delete:jobs"), [currentUserInfo]);
+  const canApproveJobs = useMemo(
+    () => currentUserInfo?.permissions?.includes("submit:jobs") || currentUserInfo?.permissions?.includes("write:jobs"),
+    [currentUserInfo]
+  );
+  const canDeleteJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
 
   const approveJob = useStore((state) => state.approveJob);
 
