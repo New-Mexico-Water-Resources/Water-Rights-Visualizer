@@ -47,8 +47,10 @@ const JobQueue = () => {
 
   const confirm = useConfirm();
 
+  const canDeleteJobs = useStore((state) => state.userInfo?.permissions.includes("write:jobs"));
+
   const pendingJobCount = useMemo(() => {
-    return queue.reduce((acc, job) => (job.status === "Pending" ? acc + 1 : acc), 0);
+    return queue.reduce((acc, job) => (["Pending", "WaitingApproval"].includes(job.status) ? acc + 1 : acc), 0);
   }, [queue]);
 
   const viewingJob = useMemo(() => {
@@ -250,7 +252,7 @@ const JobQueue = () => {
       >
         {isBacklogOpen ? "Backlog" : "Queue"}
 
-        {!isBacklogOpen && (
+        {!isBacklogOpen && canDeleteJobs && (
           <Button
             variant="text"
             disabled={!pendingJobCount}

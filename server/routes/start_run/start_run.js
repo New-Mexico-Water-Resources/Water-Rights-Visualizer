@@ -14,9 +14,9 @@ const argv = process.argv.slice(2);
 const data_source = argv[0];
 
 router.post("/start_run", async (req, res) => {
-  let canWriteJob = req.auth?.payload?.permissions?.includes("write:jobs") || false;
-  if (!canWriteJob) {
-    res.status(401).send("Unauthorized: missing write:jobs permission");
+  let canSubmitJob = req.auth?.payload?.permissions?.includes("submit:jobs") || false;
+  if (!canSubmitJob) {
+    res.status(401).send("Unauthorized: missing submit:jobs permission");
     return;
   }
 
@@ -124,11 +124,13 @@ router.post("/start_run", async (req, res) => {
   var command = `/opt/conda/bin/python ${pipeline_script} ${config_filename}`;
   console.log(command);
 
+  let canWriteJob = req.auth?.payload?.permissions?.includes("write:jobs") || false;
+
   var entry = {
     key: key,
     name: name,
     cmd: command,
-    status: "Pending",
+    status: canWriteJob ? "Pending" : "WaitingApproval",
     status_msg: null,
     submitted: epoch,
     started: null,

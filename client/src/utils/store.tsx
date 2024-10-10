@@ -137,6 +137,8 @@ interface Store {
   reverifyEmail: (userId: string) => void;
   sortAscending: boolean;
   setSortAscending: (sortAscending: boolean) => void;
+  approveJob: (jobKey: string) => void;
+  bulkApproveJobs: (jobKeys: string[]) => void;
 }
 
 const useStore = create<Store>()(
@@ -233,7 +235,9 @@ const useStore = create<Store>()(
           return job;
         });
 
-        let queue = formattedQueue.filter((job: any) => ["Pending", "In Progress"].includes(job.status));
+        let queue = formattedQueue.filter((job: any) =>
+          ["Pending", "In Progress", "WaitingApproval"].includes(job.status)
+        );
         let backlog = formattedQueue.filter((job: any) => !["Pending", "In Progress"].includes(job.status));
 
         set({ queue, backlog });
@@ -649,6 +653,42 @@ const useStore = create<Store>()(
     },
     sortAscending: true,
     setSortAscending: (sortAscending) => set({ sortAscending }),
+    approveJob: (jobKey) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
+        .post(`${API_URL}/queue/approve_job`, { key: jobKey })
+        .then((response) => {
+          get().fetchQueue();
+          if (response?.data?.modifiedCount === 1) {
+            set({ successMessage: "Job approved, it will be added to the queue" });
+          }
+        })
+        .catch((error) => {
+          set({ errorMessage: error?.response?.data || error?.message || "Error approving job" });
+        });
+    },
+    bulkApproveJobs: (jobKeys) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
+        .post(`${API_URL}/queue/bulk_approve_jobs`, { keys: jobKeys })
+        .then((response) => {
+          get().fetchQueue();
+          if (response?.data?.modifiedCount > 0) {
+            set({ successMessage: `${response?.data?.modifiedCount} jobs approved and added to the queue` });
+          }
+        })
+        .catch((error) => {
+          set({ errorMessage: error?.response?.data || error?.message || "Error approving jobs" });
+        });
+    },
   }))
 );
 

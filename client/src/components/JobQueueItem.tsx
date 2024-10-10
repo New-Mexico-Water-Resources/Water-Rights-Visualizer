@@ -44,6 +44,11 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const downloadJob = useStore((state) => state.downloadJob);
   const [jobStatuses, fetchJobStatus] = useStore((state) => [state.jobStatuses, state.fetchJobStatus]);
 
+  const currentUserInfo = useStore((state) => state.userInfo);
+  const canApproveJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
+
+  const approveJob = useStore((state) => state.approveJob);
+
   const jobStatus = useMemo(() => {
     let jobStatus: JobStatus = jobStatuses[job.key];
     if (!jobStatus) {
@@ -106,6 +111,19 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
         </IconButton>
       </div>
       <div className="item-body">
+        {job.status === "WaitingApproval" && (
+          <Button
+            disabled={!canApproveJobs}
+            variant="contained"
+            size="small"
+            style={{ marginBottom: "8px" }}
+            onClick={() => {
+              approveJob(job.key);
+            }}
+          >
+            {canApproveJobs ? "Approve Job" : "Waiting Approval..."}
+          </Button>
+        )}
         <Typography variant="body2">
           Years:{" "}
           <b>
