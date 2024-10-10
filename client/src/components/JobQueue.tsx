@@ -278,7 +278,7 @@ const JobQueue = () => {
             sx={{ marginLeft: "auto" }}
             value={sortAscending ? "asc" : "desc"}
             exclusive
-            onChange={(evt, sortMode) => setSortAscending(sortMode === "asc")}
+            onChange={(_, sortMode) => setSortAscending(sortMode === "asc")}
           >
             <ToggleButton
               size="small"
