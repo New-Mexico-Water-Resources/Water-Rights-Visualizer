@@ -341,7 +341,7 @@ const UploadDialog = () => {
             <Typography
               variant="body2"
               className="note"
-              style={{ marginRight: "auto", fontSize: "12px", color: "gray", marginLeft: "16px" }}
+              style={{ marginRight: "auto", fontSize: "12px", color: "var(--st-gray-40)", marginLeft: "16px" }}
             >
               You only have permission to submit jobs. <br />
               An admin must approve these jobs before they are processed.

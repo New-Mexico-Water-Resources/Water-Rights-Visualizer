@@ -131,9 +131,12 @@ const convertToGeoJSON = async (extractPath, baseName) => {
 };
 
 function prepareGeojson(req, res) {
-  let canWriteJob = req.auth?.payload?.permissions?.includes("write:jobs") || false;
-  if (!canWriteJob) {
-    res.status(401).send("Unauthorized: missing write:jobs permission");
+  let canSubmitJobs =
+    req.auth?.payload?.permissions?.includes("submit:jobs") ||
+    req.auth?.payload?.permissions?.includes("write:jobs") ||
+    false;
+  if (!canSubmitJobs) {
+    res.status(401).send("Unauthorized: missing submit:jobs permission");
     return;
   }
 
