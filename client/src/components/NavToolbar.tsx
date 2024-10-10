@@ -138,7 +138,6 @@ const NavToolbar = () => {
     () => userInfo?.permissions.includes("submit:jobs") || userInfo?.permissions.includes("write:jobs"),
     [userInfo?.permissions]
   );
-  const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
   const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
   const isAdmin = useMemo(() => userInfo?.permissions.includes("write:admin"), [userInfo?.permissions]);
 
