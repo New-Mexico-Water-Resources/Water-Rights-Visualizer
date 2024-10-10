@@ -61,6 +61,9 @@ const UploadDialog = () => {
     return Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
   }, [startYear, endYear]);
 
+  const userInfo = useStore((state) => state.userInfo);
+  const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     acceptedFiles.forEach((file) => {
       const reader = new FileReader();
@@ -334,6 +337,16 @@ const UploadDialog = () => {
           className="bottom-buttons"
           style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-end" }}
         >
+          {!canWriteJobs && (
+            <Typography
+              variant="body2"
+              className="note"
+              style={{ marginRight: "auto", fontSize: "12px", color: "gray", marginLeft: "16px" }}
+            >
+              You only have permission to submit jobs. <br />
+              An admin must approve these jobs before they are processed.
+            </Typography>
+          )}
           <Button
             disabled={!canSubmitJob && !canSubmitBulkJob}
             variant="contained"

@@ -134,6 +134,10 @@ const NavToolbar = () => {
   const { isAuthenticated } = useAuth0();
   const userInfo = useStore((state) => state.userInfo);
 
+  const canSubmitJobs = useMemo(
+    () => userInfo?.permissions.includes("submit:jobs") || userInfo?.permissions.includes("write:jobs"),
+    [userInfo?.permissions]
+  );
   const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
   const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
   const isAdmin = useMemo(() => userInfo?.permissions.includes("write:admin"), [userInfo?.permissions]);
@@ -174,7 +178,7 @@ const NavToolbar = () => {
         <Tooltip
           title={
             isAuthenticated
-              ? canWriteJobs
+              ? canSubmitJobs
                 ? "Configure a new job"
                 : "You don't have permission to create jobs"
               : "You must be logged in to start a job"
@@ -192,12 +196,12 @@ const NavToolbar = () => {
               height: "100%",
               userSelect: "none",
               ":hover":
-                isAuthenticated && canWriteJobs
+                isAuthenticated && canSubmitJobs
                   ? { color: "var(--st-gray-10)", backgroundColor: "var(--st-gray-80)" }
                   : {},
             }}
             onClick={() => {
-              if (isAuthenticated && canWriteJobs) {
+              if (isAuthenticated && canSubmitJobs) {
                 startNewJob();
               }
             }}
