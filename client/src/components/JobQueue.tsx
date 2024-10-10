@@ -109,6 +109,10 @@ const JobQueue = () => {
 
   const [searchField, setSearchField] = useState("");
 
+  useEffect(() => {
+    setSearchField("");
+  }, [isQueueOpen]);
+
   const filteredItemList = useMemo(() => {
     let items = isBacklogOpen ? backlog : queue;
     let searchTerm = searchField.toLowerCase();

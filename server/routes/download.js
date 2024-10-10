@@ -52,19 +52,58 @@ router.get("/download", function (req, res) {
     archive.file(file, { name: path.basename(file) });
   });
 
-  // FIXME the zip-file also needs to contain the CSV files produced for each year
-
   let CSV_directory = path.join(run_directory_base, key, "output", "monthly_means", name);
   let CSV_files = glob.sync(path.join(CSV_directory, "*.csv"));
 
+  let header = "Year,Month,ET (mm/month),PET (mm/month)";
+
   CSV_files.forEach((file) => {
-    console.log(`Adding CSV file: ${file}`);
+    // If 5 columns, remove the first index column
+    // Make sure units are in header
+    let data = fs.readFileSync(file, "utf8");
+    let lines = data.trim().split("\n");
+    let existingHeader = lines.shift();
+    if (existingHeader.split(",").length === 5) {
+      lines.forEach((line, i) => {
+        let columns = line.split(",").map((x) => x.trim());
+        if (columns.length === 5) {
+          columns.shift(); // remove the first index column
+          lines[i] = columns.join(",");
+        }
+      });
+    }
+    let new_data = [header].concat(lines).join("\n");
+    fs.writeFileSync(file, new_data);
+
     archive.file(file, { name: path.basename(file) });
   });
 
+  // Combine all CSV files into one
+  let combined_csv = path.join(CSV_directory, `${name}_combined.csv`);
+  let combined_csv_stream = fs.createWriteStream(combined_csv);
+  combined_csv_stream.write(`${header}\n`);
+  CSV_files.forEach((file) => {
+    if (file.endsWith("_combined.csv")) {
+      return;
+    }
+
+    let data = fs.readFileSync(file, "utf8");
+    let lines = data.trim().split("\n");
+    lines.shift(); // remove header
+    lines.forEach((line) => {
+      let columns = line.split(",").map((x) => x.trim());
+      if (columns.length === 5) {
+        columns.shift(); // remove the first index column
+      }
+      combined_csv_stream.write(columns.join(",") + "\n");
+    });
+  });
+
+  combined_csv_stream.end();
+  archive.file(combined_csv, { name: `${name}_combined.csv` });
+
   // Add geojson file to zip
   let geojson_filename = path.join(run_directory_base, key, `${name}.geojson`);
-  console.log(`Adding GeoJSON file: ${geojson_filename}`);
   archive.file(geojson_filename, { name: `${name}.geojson` });
 
   archive.finalize();
