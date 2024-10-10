@@ -1,10 +1,12 @@
-import { Box, Button, IconButton, Modal, Typography } from "@mui/material";
+import { Box, Button, IconButton, Modal, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useStore, { JobStatus } from "../utils/store";
 import { useEffect, useMemo, useState } from "react";
 import { LazyLog } from "@melloware/react-logviewer";
 import FileDownloadSharpIcon from "@mui/icons-material/FileDownloadSharp";
 import FileDownloadOffSharpIcon from "@mui/icons-material/FileDownloadOffSharp";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 import "../scss/JobQueue.scss";
 import JobQueueItem from "./JobQueueItem";
@@ -23,6 +25,8 @@ const JobQueue = () => {
   const [jobLogsOpen, setJobLogsOpen] = useState(false);
 
   const [pauseLogs, setPauseLogs] = useState(false);
+
+  const [sortAscending, setSortAscending] = useStore((state) => [state.sortAscending, state.setSortAscending]);
 
   const [jobStatuses, fetchJobStatus] = useStore((state) => [state.jobStatuses, state.fetchJobStatus]);
   const jobStatus = useMemo(() => {
@@ -116,7 +120,7 @@ const JobQueue = () => {
   const filteredItemList = useMemo(() => {
     let items = isBacklogOpen ? backlog : queue;
     let searchTerm = searchField.toLowerCase();
-    return items.filter((item) => {
+    let filteredItems = items.filter((item) => {
       let fields = [
         item.name.toLowerCase(),
         `${item?.start_year}`,
@@ -129,7 +133,20 @@ const JobQueue = () => {
       // Name, Start Year, End Year, Creator Name, Creator Email
       return !searchField || fields.some((field) => field.includes(searchTerm));
     });
-  }, [queue, backlog, isBacklogOpen, searchField]);
+
+    filteredItems.sort((a, b) => {
+      // by started "10/3/2024, 11:13:38 AM"
+      let aStartedDate = new Date(a.started);
+      let bStartedDate = new Date(b.started);
+      if (sortAscending) {
+        return aStartedDate.getTime() - bStartedDate.getTime();
+      } else {
+        return bStartedDate.getTime() - aStartedDate.getTime();
+      }
+    });
+
+    return filteredItems;
+  }, [queue, backlog, isBacklogOpen, searchField, sortAscending]);
 
   return (
     <div className={`queue-container ${isQueueOpen || isBacklogOpen ? "open" : "closed"}`}>
@@ -254,6 +271,32 @@ const JobQueue = () => {
           >
             Clear Pending
           </Button>
+        )}
+
+        {isBacklogOpen && (
+          <ToggleButtonGroup
+            sx={{ marginLeft: "auto" }}
+            value={sortAscending ? "asc" : "desc"}
+            exclusive
+            onChange={(evt, sortMode) => setSortAscending(sortMode === "asc")}
+          >
+            <ToggleButton
+              size="small"
+              value="asc"
+              aria-label="Ascending"
+              sx={sortAscending ? { backgroundColor: "#334155 !important" } : {}}
+            >
+              <ArrowUpwardIcon />
+            </ToggleButton>
+            <ToggleButton
+              size="small"
+              value="desc"
+              aria-label="Descending"
+              sx={!sortAscending ? { backgroundColor: "#334155 !important" } : {}}
+            >
+              <ArrowDownwardIcon />
+            </ToggleButton>
+          </ToggleButtonGroup>
         )}
       </Typography>
       <div className="search-bar">

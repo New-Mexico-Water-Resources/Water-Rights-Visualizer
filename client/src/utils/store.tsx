@@ -135,6 +135,8 @@ interface Store {
   adminDeleteUser: (userId: string) => void;
   adminUpdateUser: (userId: string, roles: string[]) => void;
   reverifyEmail: (userId: string) => void;
+  sortAscending: boolean;
+  setSortAscending: (sortAscending: boolean) => void;
 }
 
 const useStore = create<Store>()(
@@ -645,6 +647,8 @@ const useStore = create<Store>()(
           set({ errorMessage: error?.response?.data || error?.message || "Error sending email verification" });
         });
     },
+    sortAscending: true,
+    setSortAscending: (sortAscending) => set({ sortAscending }),
   }))
 );
 
