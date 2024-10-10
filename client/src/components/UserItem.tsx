@@ -24,7 +24,9 @@ const UserItem: FC<{ user: UserListingDetails }> = ({ user }) => {
 
   const roles = [
     { id: ROLES.ADMIN, name: "Admin" },
+    { id: ROLES.JOB_APPROVER, name: "Job Approver" },
     { id: ROLES.NEW_MEXICO_USER, name: "New Mexico User" },
+    { id: ROLES.JOB_SUBMITTER, name: "Job Submitter" },
     { id: ROLES.NEW_USER, name: "New User", default: true },
   ];
 
