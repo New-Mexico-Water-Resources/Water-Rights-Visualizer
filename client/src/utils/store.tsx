@@ -444,7 +444,16 @@ const useStore = create<Store>()(
 
       let shortName = job.name.replace(/[(),]/g, "");
       let escapedName = encodeURIComponent(shortName);
-      window.open(`${API_URL}/download?name=${escapedName}&key=${job.key}`);
+
+      // Check if it's a 404 first
+      axios
+        .get(`${API_URL}/download?name=${escapedName}&key=${job.key}`)
+        .then(() => {
+          window.open(`${API_URL}/download?name=${escapedName}&key=${job.key}`);
+        })
+        .catch((error) => {
+          set({ errorMessage: error?.message || "Error downloading job" });
+        });
     },
     restartJob: (jobKey) => {
       let axiosInstance = get().authAxios();
