@@ -40,6 +40,12 @@ router.get("/download", function (req, res) {
 
   let figure_directory = path.join(run_directory_base, key, "output", "figures", name);
 
+  if (!fs.existsSync(figure_directory)) {
+    console.log(`Figure directory ${figure_directory} does not exist`);
+    res.status(404).send(`Figure directory ${figure_directory} does not exist`);
+    return;
+  }
+
   let figure_files = glob.sync(path.join(figure_directory, "*.png"));
   figure_files.forEach((file) => {
     console.log(`Adding figure file: ${file}`);
