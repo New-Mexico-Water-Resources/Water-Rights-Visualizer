@@ -42,11 +42,13 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const deleteJob = useStore((state) => state.deleteJob);
   const loadJob = useStore((state) => state.loadJob);
   const downloadJob = useStore((state) => state.downloadJob);
+  const restartJob = useStore((state) => state.restartJob);
   const [jobStatuses, fetchJobStatus] = useStore((state) => [state.jobStatuses, state.fetchJobStatus]);
 
   const currentUserInfo = useStore((state) => state.userInfo);
   const canApproveJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
   const canDeleteJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
+  const canRestartJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
 
   const approveJob = useStore((state) => state.approveJob);
 
@@ -127,6 +129,20 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             {canApproveJobs ? "Approve Job" : "Waiting Approval..."}
           </Button>
         )}
+        {job.status === "Failed" && canRestartJobs && (
+          <Tooltip title="Restart job from where it failed">
+            <Button
+              variant="contained"
+              size="small"
+              style={{ marginBottom: "8px" }}
+              onClick={() => {
+                restartJob(job.key);
+              }}
+            >
+              Restart Job
+            </Button>
+          </Tooltip>
+        )}
         <Typography variant="body2">
           Years:{" "}
           <b>
@@ -198,17 +214,19 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
         >
           Logs
         </Button>
-        <Button
-          disabled={job.status !== "Complete"}
-          variant="contained"
-          color="secondary"
-          size="small"
-          onClick={() => {
-            downloadJob(job.key);
-          }}
-        >
-          Download
-        </Button>
+        <Tooltip title={job.status === "Complete" ? "Download Completed Job" : "Download partial job"}>
+          <Button
+            disabled={["Pending", "In Progress", "WaitingApproval"].includes(job.status)}
+            variant="contained"
+            color="secondary"
+            size="small"
+            onClick={() => {
+              downloadJob(job.key);
+            }}
+          >
+            Download
+          </Button>
+        </Tooltip>
       </div>
     </div>
   );

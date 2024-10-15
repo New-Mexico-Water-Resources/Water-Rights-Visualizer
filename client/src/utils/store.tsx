@@ -118,6 +118,7 @@ interface Store {
   submitMultipolygonJob: (jobs: any[]) => void;
   loadJob: (job: any) => void;
   downloadJob: (jobKey: string) => void;
+  restartJob: (jobKey: string) => void;
   startNewJob: () => void;
   closeNewJob: () => void;
   fetchJobLogs: (jobKey: string) => Promise<{ logs: string }> | null;
@@ -444,6 +445,22 @@ const useStore = create<Store>()(
       let shortName = job.name.replace(/[(),]/g, "");
       let escapedName = encodeURIComponent(shortName);
       window.open(`${API_URL}/download?name=${escapedName}&key=${job.key}`);
+    },
+    restartJob: (jobKey) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
+        .post(`${API_URL}/queue/restart_job`, { key: jobKey })
+        .then(() => {
+          get().fetchQueue();
+          set({ successMessage: "Job restarted" });
+        })
+        .catch((error) => {
+          set({ errorMessage: error?.message || "Error restarting job" });
+        });
     },
     startNewJob: () => {
       set({

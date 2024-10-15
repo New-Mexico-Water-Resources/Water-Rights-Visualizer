@@ -104,6 +104,23 @@ router.delete("/bulk_delete_jobs", async (req, res) => {
   res.status(200).send(deleted);
 });
 
+router.post("/restart_job", async (req, res) => {
+  let canWriteJobs = req.auth?.payload?.permissions?.includes("write:jobs") || false;
+  if (!canWriteJobs) {
+    res.status(401).send("Unauthorized: missing write:jobs permission");
+    return;
+  }
+
+  let key = req.body.key;
+
+  // Change job status to "Pending" and let the cron handle it
+  let db = await constants.connectToDatabase();
+  let collection = db.collection(constants.report_queue_collection);
+  let result = await collection.updateOne({ key }, { $set: { status: "Pending" } });
+
+  res.status(200).send(result);
+});
+
 router.post("/approve_job", async (req, res) => {
   let canWriteJobs = req.auth?.payload?.permissions?.includes("write:jobs") || false;
   if (!canWriteJobs) {
