@@ -34,7 +34,6 @@ const JobQueue = () => {
   const clearPendingJobs = useStore((state) => state.clearPendingJobs);
   const fetchJobLogs = useStore((state) => state.fetchJobLogs);
 
-  const availableStatusFilters = ["Pending", "WaitingApproval", "Processing", "Complete", "Failed", "Cancelled"];
   const [activeStatusFilters, setActiveStatusFilters] = useState<string[]>([]);
   const [activeAuthorFilters, setActiveAuthorFilters] = useState<string[]>([]);
 
@@ -185,6 +184,16 @@ const JobQueue = () => {
       authors.add(job.user?.name);
     });
     return Array.from(authors);
+  }, [queue, backlog, isBacklogOpen]);
+
+  const availableStatusFilters = useMemo(() => {
+    let statuses = new Set<string>();
+
+    let items = isBacklogOpen ? backlog : queue;
+    items.forEach((job) => {
+      statuses.add(job.status);
+    });
+    return Array.from(statuses);
   }, [queue, backlog, isBacklogOpen]);
 
   return (
