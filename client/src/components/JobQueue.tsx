@@ -1,4 +1,18 @@
-import { Box, Button, IconButton, Modal, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Modal,
+  OutlinedInput,
+  Select,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useStore, { JobStatus } from "../utils/store";
 import { useEffect, useMemo, useState } from "react";
@@ -19,6 +33,10 @@ const JobQueue = () => {
   const isQueueOpen = useStore((state) => state.isQueueOpen);
   const clearPendingJobs = useStore((state) => state.clearPendingJobs);
   const fetchJobLogs = useStore((state) => state.fetchJobLogs);
+
+  const availableStatusFilters = ["Pending", "WaitingApproval", "Processing", "Complete", "Failed", "Cancelled"];
+  const [activeStatusFilters, setActiveStatusFilters] = useState<string[]>([]);
+  const [activeAuthorFilters, setActiveAuthorFilters] = useState<string[]>([]);
 
   const [jobLogs, setJobLogs] = useState<Record<string, { timestamp: number; logs: string }>>({});
   const [activeJobLogKey, setActiveJobLogKey] = useState("");
@@ -122,6 +140,15 @@ const JobQueue = () => {
   const filteredItemList = useMemo(() => {
     let items = isBacklogOpen ? backlog : queue;
     let searchTerm = searchField.toLowerCase();
+
+    if (activeAuthorFilters.length) {
+      items = items.filter((item) => activeAuthorFilters.includes(item.user?.name));
+    }
+
+    if (activeStatusFilters.length) {
+      items = items.filter((item) => activeStatusFilters.includes(item.status));
+    }
+
     let filteredItems = items.filter((item) => {
       let fields = [
         item.name.toLowerCase(),
@@ -148,7 +175,17 @@ const JobQueue = () => {
     });
 
     return filteredItems;
-  }, [queue, backlog, isBacklogOpen, searchField, sortAscending]);
+  }, [queue, backlog, isBacklogOpen, searchField, sortAscending, activeAuthorFilters, activeStatusFilters]);
+
+  const authors = useMemo(() => {
+    let authors = new Set<string>();
+
+    let items = isBacklogOpen ? backlog : queue;
+    items.forEach((job) => {
+      authors.add(job.user?.name);
+    });
+    return Array.from(authors);
+  }, [queue, backlog, isBacklogOpen]);
 
   return (
     <div className={`queue-container ${isQueueOpen || isBacklogOpen ? "open" : "closed"}`}>
@@ -301,14 +338,69 @@ const JobQueue = () => {
           </ToggleButtonGroup>
         )}
       </Typography>
-      <div className="search-bar">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="search-input"
-          value={searchField}
-          onChange={(e) => setSearchField(e.target.value)}
-        />
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <div className="search-bar">
+          <input
+            style={{ height: "36px" }}
+            type="text"
+            placeholder="Search..."
+            className="search-input"
+            value={searchField}
+            onChange={(e) => setSearchField(e.target.value)}
+          />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            padding: "8px",
+            paddingTop: 0,
+            borderBottom: "1px solid var(--st-gray-80)",
+            gap: "8px",
+          }}
+        >
+          <FormControl size="small" sx={{ flex: 1 }}>
+            <InputLabel size="small" id="author-filter-label">
+              Author
+            </InputLabel>
+            <Select
+              size="small"
+              labelId="author-filter-label"
+              multiple
+              value={activeAuthorFilters}
+              onChange={(evt) => {
+                setActiveAuthorFilters(evt.target.value as string[]);
+              }}
+            >
+              {authors.map((name) => (
+                <MenuItem key={name} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ flex: 1 }}>
+            <InputLabel size="small" id="status-filter-label">
+              Status
+            </InputLabel>
+            <Select
+              size="small"
+              labelId="status-filter-label"
+              multiple
+              value={activeStatusFilters}
+              onChange={(evt) => {
+                setActiveStatusFilters(evt.target.value as string[]);
+              }}
+            >
+              {availableStatusFilters.map((name) => (
+                <MenuItem key={name} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </div>
       </div>
       <div className="queue-list">
         {filteredItemList.map((job, index) => (
