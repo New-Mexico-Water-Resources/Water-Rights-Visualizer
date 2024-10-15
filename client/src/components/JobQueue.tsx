@@ -132,6 +132,8 @@ const JobQueue = () => {
 
   useEffect(() => {
     setSearchField("");
+    setActiveAuthorFilters([]);
+    setActiveStatusFilters([]);
   }, [isQueueOpen]);
 
   const filteredItemList = useMemo(() => {
