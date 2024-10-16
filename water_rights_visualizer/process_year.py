@@ -30,22 +30,10 @@ from .variable_types import get_available_variable_source_for_date
 logger = logging.getLogger(__name__)
 
 
-def generate_monthly_means_df(
-    monthly_nan_directory: str, monthly_means_directory: str, year: int, start_month: int, end_month: int
-):
-    nd = pd.read_csv(f"{monthly_nan_directory}/{year}.csv")
+def generate_monthly_means_df(monthly_means_directory: str, year: int):
     month_means = []
     mm = pd.read_csv(f"{monthly_means_directory}/{year}_monthly_means.csv")
     month_means.append(mm)
-
-    idx = {"Months": range(start_month, end_month + 1)}
-    df1 = pd.DataFrame(idx, columns=["Months"])
-    df2 = pd.DataFrame(idx, columns=["Months"])
-
-    main_dfa = pd.merge(left=df1, right=mm, how="left", left_on="Months", right_on="Month")
-    main_df = pd.merge(left=main_dfa, right=nd, how="left", left_on="Months", right_on="month")
-
-    main_df = main_df.replace(np.nan, 100)
     return pd.concat(month_means, axis=0)
 
 
@@ -87,7 +75,7 @@ def process_year(
     figure_filename = join(figure_directory, f"{year}_{ROI_name}.png")
     monthly_means_filename = join(monthly_means_directory, f"{year}_monthly_means.csv")
     if exists(figure_filename) and exists(monthly_means_filename):
-        logger.info(f"figure already exists: {cl.file(figure_filename)}")
+        logger.info(f"figure already exists: {cl.file(figure_filename)}, skipping...")
         write_status(
             message=f"figure exists in working directory\n",
             status_filename=status_filename,
@@ -95,7 +83,7 @@ def process_year(
             root=root,
         )
 
-        return generate_monthly_means_df(monthly_nan_directory, monthly_means_directory, year, start_month, end_month)
+        return generate_monthly_means_df(monthly_means_directory, year)
 
     write_status(message=f"{message}\n", status_filename=status_filename, text_panel=text_panel, root=root)
 
