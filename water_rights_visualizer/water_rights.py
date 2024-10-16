@@ -206,6 +206,7 @@ def water_rights(
         plt.imshow(figure_image)
         plt.axis("off")
         report_pdf.savefig(fig)
+        plt.close(fig)
 
     report_pdf.close()
 
