@@ -376,6 +376,7 @@ const JobQueue = () => {
             <Select
               size="small"
               labelId="author-filter-label"
+              label="Author"
               multiple
               value={activeAuthorFilters}
               onChange={(evt) => {
@@ -396,6 +397,7 @@ const JobQueue = () => {
             <Select
               size="small"
               labelId="status-filter-label"
+              label="Status"
               multiple
               value={activeStatusFilters}
               onChange={(evt) => {
