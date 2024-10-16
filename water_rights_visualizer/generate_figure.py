@@ -190,6 +190,9 @@ def generate_figure(
     # Save the figure to a file
     plt.savefig(figure_filename, dpi=300)
 
+    # Close the figure
+    plt.close(fig)
+
     # Display the generated figure in the image panel
     display_image_tk(filename=figure_filename, image_panel=image_panel)
 
