@@ -14,7 +14,6 @@ import subprocess
 import pymongo
 
 from datetime import datetime
-from water_rights_visualizer.job_database import build_mongo_client_and_collection
 
 DEFAULT_QUEUE = "/root/data/water_rights_runs/report_queue.json"
 
@@ -35,6 +34,29 @@ class WaterReportException(Exception):
 
 
 PRINT_LOG = False
+
+
+def build_mongo_client_and_collection():
+    # todo: read from ENV vars and then use defaults if not available
+    user = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "")
+    cred = os.environ.get("MONGO_INITDB_ROOT_PASSWORD", "")
+    host = os.environ.get("MONGO_HOST", "water-rights-visualizer-mongo")
+    # host = os.environ.get("MONGO_HOST", "localhost")
+    port = os.environ.get("MONGO_PORT", 27017)
+    if isinstance(port, str) and port.isdigit():
+        port = int(port)
+
+    database = os.environ.get("MONGO_DATABASE", "water")
+    collection = os.environ.get("MONGO_COLLECTION", "report_queue")
+
+    mongo_str = "mongodb://{}:{}@{}:{}".format(user, cred, host, port)
+
+    client = pymongo.MongoClient(host=host, username=user, password=cred, port=port, directConnection=True)
+
+    db = client[database]
+    collect = db[collection]
+
+    return collect
 
 
 # does a system call to tail -1000 to make sure files do not grow too large
