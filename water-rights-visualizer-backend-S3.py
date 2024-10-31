@@ -124,7 +124,6 @@ def main(argv=sys.argv):
             write_status(status_filename, f"job paused for {name} at {year}")
             # Update record to say we paused at this year and clear pid
             report_queue.update_one({"key": key}, {"$set": {"status": "Paused", "paused_year": year, "pid": None}})
-
             return
         elif record is not None:
             report_queue.update_one({"key": key}, {"$set": {"last_generated_year": year}})

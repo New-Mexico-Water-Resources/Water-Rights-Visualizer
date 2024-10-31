@@ -158,7 +158,13 @@ def exec_report(record):
 
     # todo: run tail_cleanup() on the log files after we have run this tool in prod for awhile
     # and we are sure the err checks above catch all the problems
-    status = "Success"
+
+    # Check the record in mongo
+    report_queue = build_mongo_client_and_collection()
+    db_record = report_queue.find_one({"key": record["key"]})
+
+    if db_record and db_record["status"] != "Paused":
+        status = "Success"
     return status
 
 
@@ -236,6 +242,9 @@ def write_record(record):
 def process_report(record):
     try:
         status_msg = exec_report(record)
+        if status_msg == "Paused":
+            return
+
         dlog("Status of invocation: {}".format(status_msg))
         record["status_msg"] = status_msg
 

@@ -199,7 +199,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             {job.start_year} - {job.end_year}
           </b>
         </Typography>
-        {job.status === "In Progress" && job?.last_generated_year && (
+        {["In Progress", "Paused"].includes(job.status) && job?.last_generated_year && (
           <Typography variant="body2">
             Processing Year: <b>{job?.last_generated_year || "N/A"}</b>
           </Typography>
