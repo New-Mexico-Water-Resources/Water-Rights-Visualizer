@@ -11,6 +11,7 @@ import os
 from water_rights_visualizer import water_rights_visualizer
 from water_rights_visualizer.S3_source import S3Source
 from water_rights_visualizer.file_path_source import FilepathSource
+from water_rights_visualizer.job_database import build_mongo_client_and_collection
 import cl
 
 from dotenv import load_dotenv
@@ -29,11 +30,13 @@ output_bucket_name = os.environ.get("S3_OUTPUT_BUCKET", "ose-dev-outputs")
 
 delete_temp_files = True
 
+
 def write_status(status_filename: str, message: str):
     logger.info(message)
 
     with open(status_filename, "w") as file:
         file.write(message)
+
 
 def main(argv=sys.argv):
     logger.info("running operational backend")
@@ -45,22 +48,22 @@ def main(argv=sys.argv):
 
     key = config["key"]
     logger.info(f"key: {key}")
-    
+
     name = config["name"]
     logger.info(f"name: {name}")
-    
+
     start_year = int(config["start_year"])
     logger.info(f"start year: {start_year}")
-    
-    end_year = int(config['end_year'])
+
+    end_year = int(config["end_year"])
     logger.info(f"end year: {end_year}")
-    
+
     working_directory = config["working_directory"]
     logger.info(f"working directory: {working_directory}")
-    
+
     geojson_filename = config["geojson_filename"]
     logger.info(f"GeoJSON file: {geojson_filename}")
-    
+
     status_filename = config["status_filename"]
     logger.info(f"status file: {status_filename}")
 
@@ -72,9 +75,7 @@ def main(argv=sys.argv):
     monthly_means_directory = None
 
     input_datastore = S3Source(
-        bucket_name=input_bucket_name,
-        temporary_directory=temporary_directory, 
-        remove_temporary_files=delete_temp_files
+        bucket_name=input_bucket_name, temporary_directory=temporary_directory, remove_temporary_files=delete_temp_files
     )
 
     session = boto3.Session()
@@ -86,8 +87,25 @@ def main(argv=sys.argv):
     years = range(start_year, end_year + 1)
 
     start_time = time.time()
-    
+
+    report_queue = build_mongo_client_and_collection()
+    record = report_queue.find_one({"key": key})
+    if record is not None and record["status"] == "Pending" and record["paused_year"]:
+        start_year = record["paused_year"]
+        write_status(status_filename, f"resuming {name} from {start_year}")
+
     for year in years:
+        # Check if the job is paused, if so stop the job
+        record = report_queue.find_one({"key": key})
+        if record is not None and record["status"] == "Paused":
+            write_status(status_filename, f"job paused for {name} at {year}")
+            # Update record to say we paused at this year and clear pid
+            report_queue.update_one({"key": key}, {"$set": {"status": "Paused", "paused_year": year, "pid": None}})
+
+            return
+        elif record is not None:
+            report_queue.update_one({"key": key}, {"$set": {"last_generated_year": year}})
+
         write_status(status_filename, f"processing {name} for {year}")
 
         water_rights_visualizer(
@@ -100,37 +118,38 @@ def main(argv=sys.argv):
             end_year=year,
         )
 
-        #check and upload the png file to s3
+        # check and upload the png file to s3
         figure_output_filename = join(output_directory, "figures", name, f"{year}_{name}.png")
 
         if not exists(figure_output_filename):
             write_status(status_filename, f"problem producing figure for {figure_output_filename} for {year}")
             continue
-        
-#        figure_output_s3_name = key + "/" + basename(figure_output_filename)
-#        output_bucket.upload_file(figure_output_filename, figure_output_s3_name)
 
-        #check and uplaod the csv file to s3
+        #        figure_output_s3_name = key + "/" + basename(figure_output_filename)
+        #        output_bucket.upload_file(figure_output_filename, figure_output_s3_name)
+
+        # check and uplaod the csv file to s3
         CSV_output_filename = join(output_directory, "monthly_means", name, f"{year}_monthly_means.csv")
 
         if not exists(CSV_output_filename):
             write_status(status_filename, f"problem producing CSV for {CSV_output_filename} for {year}")
             continue
-        
-#        CSV_output_s3_name = key + "/" + basename(CSV_output_filename)
-#        output_bucket.upload_file(CSV_output_filename, CSV_output_s3_name)
 
-        #todo:
-        #pull out csv file that corresponds to png and store somewhere on disk it will not get deleted
-        #maybe something like /data/saved_runs/ ?
-        #png found in: /home/ec2-user/data/water_rights_runs/Smith/output/figures
-        #csv found in: /home/ec2-user/data/water_rights_runs/Smith/output/monthly_means        
-        
+    #        CSV_output_s3_name = key + "/" + basename(CSV_output_filename)
+    #        output_bucket.upload_file(CSV_output_filename, CSV_output_s3_name)
+
+    # todo:
+    # pull out csv file that corresponds to png and store somewhere on disk it will not get deleted
+    # maybe something like /data/saved_runs/ ?
+    # png found in: /home/ec2-user/data/water_rights_runs/Smith/output/figures
+    # csv found in: /home/ec2-user/data/water_rights_runs/Smith/output/monthly_means
+
     write_status(status_filename, f"completed {name} from {start_year} to {end_year}")
-    
+
     end_time = time.time()
-    total_mins = (end_time - start_time)/60                  
+    total_mins = (end_time - start_time) / 60
     logger.info(f"Total Run Time: {total_mins} minutes\n\n")
+
 
 if __name__ == "__main__":
     sys.exit(main(argv=sys.argv))

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import axios, { AxiosInstance } from "axios";
-import { API_URL, ROLES } from "./constants";
+import { API_URL, QUEUE_STATUSES, ROLES } from "./constants";
 import { formatElapsedTime, formJobForQueue } from "./helpers";
 
 export interface PolygonLocation {
@@ -119,6 +119,8 @@ interface Store {
   loadJob: (job: any) => void;
   downloadJob: (jobKey: string) => void;
   restartJob: (jobKey: string) => void;
+  pauseJob: (jobKey: string) => void;
+  resumeJob: (jobKey: string) => void;
   startNewJob: () => void;
   closeNewJob: () => void;
   fetchJobLogs: (jobKey: string) => Promise<{ logs: string }> | null;
@@ -236,12 +238,8 @@ const useStore = create<Store>()(
           return job;
         });
 
-        let queue = formattedQueue.filter((job: any) =>
-          ["Pending", "In Progress", "WaitingApproval"].includes(job.status)
-        );
-        let backlog = formattedQueue.filter(
-          (job: any) => !["Pending", "In Progress", "WaitingApproval"].includes(job.status)
-        );
+        let queue = formattedQueue.filter((job: any) => QUEUE_STATUSES.includes(job.status));
+        let backlog = formattedQueue.filter((job: any) => !QUEUE_STATUSES.includes(job.status));
 
         set({ queue, backlog });
       });
@@ -469,6 +467,38 @@ const useStore = create<Store>()(
         })
         .catch((error) => {
           set({ errorMessage: error?.message || "Error restarting job" });
+        });
+    },
+    pauseJob: (jobKey) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
+        .post(`${API_URL}/queue/pause_job`, { key: jobKey })
+        .then(() => {
+          get().fetchQueue();
+          set({ successMessage: "Job paused" });
+        })
+        .catch((error) => {
+          set({ errorMessage: error?.message || "Error pausing job" });
+        });
+    },
+    resumeJob: (jobKey) => {
+      let axiosInstance = get().authAxios();
+      if (!axiosInstance) {
+        return;
+      }
+
+      axiosInstance
+        .post(`${API_URL}/queue/resume_job`, { key: jobKey })
+        .then(() => {
+          get().fetchQueue();
+          set({ successMessage: "Job resumed" });
+        })
+        .catch((error) => {
+          set({ errorMessage: error?.message || "Error resuming job" });
         });
     },
     startNewJob: () => {

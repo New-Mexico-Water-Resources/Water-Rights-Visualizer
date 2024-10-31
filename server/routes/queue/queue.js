@@ -176,4 +176,66 @@ router.post("/bulk_approve_jobs", async (req, res) => {
   res.status(200).send(result);
 });
 
+router.post("/pause_job", async (req, res) => {
+  let canWriteJobs = req.auth?.payload?.permissions?.includes("write:jobs") || false;
+  if (!canWriteJobs) {
+    res.status(401).send("Unauthorized: missing write:jobs permission");
+    return;
+  }
+
+  let key = req.body.key;
+
+  if (!key) {
+    res.status(400).send("Missing key");
+    return;
+  }
+
+  let db = await constants.connectToDatabase();
+  let collection = db.collection(constants.report_queue_collection);
+  let result = await collection.updateOne({ key }, { $set: { status: "Paused" } });
+
+  res.status(200).send(result);
+});
+
+router.post("/bulk_pause_jobs", async (req, res) => {
+  let canWriteJobs = req.auth?.payload?.permissions?.includes("write:jobs") || false;
+  if (!canWriteJobs) {
+    res.status(401).send("Unauthorized: missing write:jobs permission");
+    return;
+  }
+
+  let keys = req.body.keys;
+
+  if (!keys) {
+    res.status(400).send("Missing keys");
+  }
+
+  let db = await constants.connectToDatabase();
+  let collection = db.collection(constants.report_queue_collection);
+  let result = await collection.updateMany({ key: { $in: keys } }, { $set: { status: "Paused" } });
+
+  res.status(200).send(result);
+});
+
+router.post("/resume_job", async (req, res) => {
+  let canWriteJobs = req.auth?.payload?.permissions?.includes("write:jobs") || false;
+  if (!canWriteJobs) {
+    res.status(401).send("Unauthorized: missing write:jobs permission");
+    return;
+  }
+
+  let key = req.body.key;
+
+  if (!key) {
+    res.status(400).send("Missing key");
+    return;
+  }
+
+  let db = await constants.connectToDatabase();
+  let collection = db.collection(constants.report_queue_collection);
+  let result = await collection.updateOne({ key }, { $set: { status: "Pending" } });
+
+  res.status(200).send(result);
+});
+
 module.exports = router;

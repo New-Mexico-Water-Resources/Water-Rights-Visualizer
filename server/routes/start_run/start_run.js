@@ -131,6 +131,8 @@ router.post("/start_run", async (req, res) => {
     name: name,
     cmd: command,
     status: canWriteJob ? "Pending" : "WaitingApproval",
+    paused_year: null,
+    last_generated_year: null,
     status_msg: null,
     submitted: epoch,
     started: null,

@@ -13,3 +13,5 @@ export const ROLES = {
   JOB_APPROVER: import.meta.env.VITE_JOB_APPROVER,
   JOB_SUBMITTER: import.meta.env.VITE_JOB_SUBMITTER,
 };
+
+export const QUEUE_STATUSES = ["Pending", "In Progress", "WaitingApproval", "Paused"];

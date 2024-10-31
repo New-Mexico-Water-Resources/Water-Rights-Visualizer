@@ -1,6 +1,8 @@
 import { Box, Button, IconButton, LinearProgress, Tooltip, Typography } from "@mui/material";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import CloseIcon from "@mui/icons-material/Close";
+import PauseIcon from "@mui/icons-material/Pause";
+import PlayIcon from "@mui/icons-material/PlayArrow";
 import StatusIcon from "./StatusIcon";
 
 import { useConfirm } from "material-ui-confirm";
@@ -43,12 +45,15 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const loadJob = useStore((state) => state.loadJob);
   const downloadJob = useStore((state) => state.downloadJob);
   const restartJob = useStore((state) => state.restartJob);
+  const pauseJob = useStore((state) => state.pauseJob);
+  const resumeJob = useStore((state) => state.resumeJob);
   const [jobStatuses, fetchJobStatus] = useStore((state) => [state.jobStatuses, state.fetchJobStatus]);
 
   const currentUserInfo = useStore((state) => state.userInfo);
   const canApproveJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
   const canDeleteJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
   const canRestartJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
+  const canPauseJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
 
   const approveJob = useStore((state) => state.approveJob);
 
@@ -67,6 +72,17 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
 
     return jobStatus;
   }, [job.key, jobStatuses]);
+
+  const jobStatusColor = useMemo(() => {
+    switch (job.status) {
+      case "In Progress":
+        return "#50AC34";
+      case "Pending":
+        return "#ffeb3b";
+      default:
+        return "var(--st-gray-10)";
+    }
+  }, [job.status]);
 
   useEffect(() => {
     fetchJobStatus(job.key, job.name);
@@ -143,12 +159,51 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             </Button>
           </Tooltip>
         )}
+        {job.status === "In Progress" && canPauseJobs && (
+          <Tooltip title="Restart job from where it failed">
+            <Button
+              variant="contained"
+              size="small"
+              style={{ marginBottom: "8px" }}
+              onClick={() => {
+                pauseJob(job.key);
+              }}
+            >
+              <IconButton sx={{ padding: 0 }}>
+                <PauseIcon />
+              </IconButton>
+              Pause
+            </Button>
+          </Tooltip>
+        )}
+        {job.status === "Paused" && canPauseJobs && (
+          <Tooltip title="Restart job from where it failed">
+            <Button
+              variant="contained"
+              size="small"
+              style={{ marginBottom: "8px" }}
+              onClick={() => {
+                resumeJob(job.key);
+              }}
+            >
+              <IconButton sx={{ padding: 0 }}>
+                <PlayIcon />
+              </IconButton>
+              {job.paused_year ? "Resume from " + job?.paused_year : "Resume (Pausing...)"}
+            </Button>
+          </Tooltip>
+        )}
         <Typography variant="body2">
           Years:{" "}
           <b>
             {job.start_year} - {job.end_year}
           </b>
         </Typography>
+        {job.status === "In Progress" && job?.last_generated_year && (
+          <Typography variant="body2">
+            Processing Year: <b>{job?.last_generated_year || "N/A"}</b>
+          </Typography>
+        )}
         {!job.started && (
           <Typography variant="body2">
             Submitted: <b>{job.submitted || "Not started yet"}</b>
@@ -168,7 +223,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           </Typography>
         )}
         <Typography variant="body2">
-          Status: <b>{job.status_msg || job.status}</b>
+          Status: <b style={{ color: jobStatusColor }}>{job.status_msg || job.status}</b>
         </Typography>
         {job?.user?.name && (
           <Tooltip title={`Name: ${job.user.name}\nEmail: ${job.user.email}`}>
