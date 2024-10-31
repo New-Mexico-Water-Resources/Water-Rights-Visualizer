@@ -145,7 +145,7 @@ def update_status(record, state):
 
     record["status"] = state
 
-    if state == "In Progress" and not record["paused_year"]:
+    if state == "In Progress" and not record.get("paused_year", ""):
         record["started"] = now
     elif state == "Complete":
         record["ended"] = now
