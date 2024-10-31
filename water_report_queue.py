@@ -163,8 +163,7 @@ def exec_report(record):
     report_queue = build_mongo_client_and_collection()
     db_record = report_queue.find_one({"key": record["key"]})
 
-    if db_record and db_record["status"] != "Paused":
-        status = "Success"
+    status = "Success" if db_record and db_record["status"] != "Paused" else "Paused"
     return status
 
 
