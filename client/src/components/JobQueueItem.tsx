@@ -160,7 +160,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           </Tooltip>
         )}
         {job.status === "In Progress" && canPauseJobs && (
-          <Tooltip title="Restart job from where it failed">
+          <Tooltip title="Pause the job after the current year finishes">
             <Button
               variant="contained"
               size="small"
@@ -177,7 +177,11 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           </Tooltip>
         )}
         {job.status === "Paused" && canPauseJobs && (
-          <Tooltip title="Restart job from where it failed">
+          <Tooltip
+            title={
+              job.paused_year ? "Resume from " + job?.paused_year : "Job will pause after the current year is processed"
+            }
+          >
             <Button
               variant="contained"
               size="small"
