@@ -39,10 +39,12 @@ jobs:
 
       - name: Bump Version
         working-directory: ./client
-        run: npm version ${{ steps.version_type.outputs.version_type }} -m "Bump version to %s [skip ci]"
+        run: |
+          NEW_VERSION=$(npm version ${{ steps.version_type.outputs.version_type }})
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Push Changes
         run: |
           git add client/package.json
-          git commit -m "Bump version [skip ci]"
+          git commit -m "Bump version to ${{ steps.bump_version.outputs.new_version }} [skip ci]"
           git push origin ${{ github.ref_name }}
