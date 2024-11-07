@@ -7,6 +7,7 @@ import packageJson from "../../package.json";
 
 export interface PolygonLocation {
   visible: boolean;
+  exists?: boolean;
   id: number;
   name: string;
   crop?: string;

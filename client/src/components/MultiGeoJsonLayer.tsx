@@ -18,11 +18,13 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
       if (selectedMapLayer !== null) {
         if (["Delete", "Backspace"].includes(event.key)) {
           locations[selectedMapLayer].visible = false;
+          locations[selectedMapLayer].exists = true;
           setLocations([...locations]);
           setSelectedMapLayer(null);
         } else if (event.key === "Enter") {
           // Re-select
           locations[selectedMapLayer].visible = true;
+          locations[selectedMapLayer].exists = true;
           setLocations([...locations]);
         }
       }
@@ -46,12 +48,18 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
       let bounds: Leaflet.LatLngBounds | null = null;
       let destructors: Function[] = [];
 
+      let fitToBounds = true;
+
       locations.forEach((location) => {
         if (!data[location.id]) {
           return;
         }
 
         const layer = data[location.id];
+        if (location?.exists) {
+          fitToBounds = false;
+        }
+
         let style: Record<string, any> = {};
         if (!location.visible) {
           style.fillOpacity = 0.5;
@@ -103,7 +111,7 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
 
       setDestructors(destructors);
 
-      if (bounds) {
+      if (fitToBounds && bounds) {
         map.fitBounds(bounds);
       }
     }
