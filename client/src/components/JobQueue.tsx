@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useStore, { JobStatus } from "../utils/store";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LazyLog } from "@melloware/react-logviewer";
 import FileDownloadSharpIcon from "@mui/icons-material/FileDownloadSharp";
 import FileDownloadOffSharpIcon from "@mui/icons-material/FileDownloadOffSharp";
@@ -23,6 +23,9 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import "../scss/JobQueue.scss";
 import JobQueueItem from "./JobQueueItem";
 import { useConfirm } from "material-ui-confirm";
+
+import { FixedSizeList as List, ListChildComponentProps } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 const JobQueue = () => {
   const queue = useStore((state) => state.queue);
@@ -166,7 +169,6 @@ const JobQueue = () => {
     });
 
     filteredItems.sort((a, b) => {
-      // by started "10/3/2024, 11:13:38 AM"
       let aStartedDate = new Date(a.started);
       let bStartedDate = new Date(b.started);
       if (sortAscending) {
@@ -199,6 +201,25 @@ const JobQueue = () => {
     return Array.from(statuses);
   }, [queue, backlog, isBacklogOpen]);
 
+  const handleOpenLogs = useCallback(
+    (key: string) => {
+      setActiveJobLogKey(key);
+      setJobLogsOpen(true);
+    },
+    [setActiveJobLogKey, setJobLogsOpen]
+  );
+
+  const Row = useCallback(
+    ({ index, style }: ListChildComponentProps) => {
+      const job = filteredItemList[index];
+      return (
+        <div style={style}>
+          <JobQueueItem job={job} onOpenLogs={() => handleOpenLogs(job.key)} />
+        </div>
+      );
+    },
+    [filteredItemList, handleOpenLogs]
+  );
   return (
     <div className={`queue-container ${isQueueOpen || isBacklogOpen ? "open" : "closed"}`}>
       <Modal
@@ -417,16 +438,13 @@ const JobQueue = () => {
         </div>
       </div>
       <div className="queue-list">
-        {filteredItemList.map((job, index) => (
-          <JobQueueItem
-            key={index}
-            job={job}
-            onOpenLogs={() => {
-              setActiveJobLogKey(job.key);
-              setJobLogsOpen(true);
-            }}
-          />
-        ))}
+        <AutoSizer>
+          {({ height, width }) => (
+            <List height={height} itemCount={filteredItemList.length} itemSize={300} width={width}>
+              {Row}
+            </List>
+          )}
+        </AutoSizer>
       </div>
     </div>
   );

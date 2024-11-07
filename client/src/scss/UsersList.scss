@@ -3,10 +3,15 @@
   flex-direction: column;
   position: absolute;
   right: 0;
-  height: calc(100vh - 45px);
   z-index: 1001;
   background-color: var(--st-gray-90);
   transition: all 0.1s ease;
+
+  margin-top: 4px;
+  border-radius: 8px;
+  margin-right: 4px;
+
+  height: calc(100vh - 52px);
 
   &.closed {
     width: 0;

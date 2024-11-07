@@ -20,7 +20,6 @@ const Dashboard = () => {
   const loadedGeoJSON = useStore((state) => state.loadedGeoJSON);
   const multipolygons = useStore((state) => state.multipolygons);
   const locations = useStore((state) => state.locations);
-  const previewMode = useStore((state) => state.previewMode);
   const showUploadDialog = useStore((state) => state.showUploadDialog);
   const [successMessage, setSuccessMessage] = useStore((state) => [state.successMessage, state.setSuccessMessage]);
   const [errorMessage, setErrorMessage] = useStore((state) => [state.errorMessage, state.setErrorMessage]);
@@ -35,10 +34,10 @@ const Dashboard = () => {
 
   const { isAuthenticated, user, loginWithRedirect } = useAuth0();
   const userInfo = useStore((state) => state.userInfo);
-  const canSubmitJobs = useMemo(() => userInfo?.permissions.includes("submit:jobs"), [userInfo?.permissions]);
   const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
-
   const isAdmin = useMemo(() => userInfo?.permissions.includes("write:admin"), [userInfo?.permissions]);
+
+  const loadVersion = useStore((state) => state.loadVersion);
 
   const handleKeyPress = (event: any) => {
     const isMac = navigator.userAgent.includes("Mac");
@@ -89,6 +88,8 @@ const Dashboard = () => {
   }, [isAuthenticated, user?.email_verified, canReadJobs]);
 
   useEffect(() => {
+    loadVersion();
+
     const interval = setInterval(() => {
       increasePollCount();
     }, 5000);
@@ -99,9 +100,8 @@ const Dashboard = () => {
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <NavToolbar />
-      {isAuthenticated && canSubmitJobs && showUploadDialog && <UploadDialog />}
       {isAuthenticated && multipolygons.length <= 1 && <CurrentJobChip />}
-      {isAuthenticated && multipolygons.length > 1 && previewMode && <LayersControl />}
+      {isAuthenticated && showUploadDialog && <LayersControl />}
       {(!isAuthenticated || (!canReadJobs && userInfo)) && (
         <div
           style={{

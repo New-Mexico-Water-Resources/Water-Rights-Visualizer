@@ -94,7 +94,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   }, [job.key]);
 
   return (
-    <div className="queue-item">
+    <div className="queue-item" style={{ height: "100%", justifyContent: "space-between" }}>
       <div className="item-header">
         <Tooltip title={`${job.name}\nStatus: ${job.status}`}>
           <Typography
@@ -131,7 +131,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           </IconButton>
         )}
       </div>
-      <div className="item-body">
+      <div className="item-body" style={{ flex: 1, justifyContent: "space-around" }}>
         {job.status === "WaitingApproval" && (
           <Button
             disabled={!canApproveJobs}
@@ -159,9 +159,10 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             </Button>
           </Tooltip>
         )}
-        {job.status === "In Progress" && canPauseJobs && (
+        {["In Progress", "Pending"].includes(job.status) && (
           <Tooltip title="Pause the job after the current year finishes">
             <Button
+              disabled={job.status !== "In Progress" || !canPauseJobs}
               variant="contained"
               size="small"
               style={{ marginBottom: "8px" }}
@@ -170,7 +171,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
               }}
             >
               <IconButton sx={{ padding: 0 }}>
-                <PauseIcon />
+                <PauseIcon color={job.status !== "In Progress" || !canPauseJobs ? "disabled" : undefined} />
               </IconButton>
               Pause
             </Button>
@@ -203,11 +204,6 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             {job.start_year} - {job.end_year}
           </b>
         </Typography>
-        {["In Progress", "Paused"].includes(job.status) && job?.last_generated_year && (
-          <Typography variant="body2">
-            Processing Year: <b>{job?.last_generated_year || "N/A"}</b>
-          </Typography>
-        )}
         {!job.started && (
           <Typography variant="body2">
             Submitted: <b>{job.submitted || "Not started yet"}</b>
@@ -216,9 +212,16 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
         <Typography variant="body2">
           Started: <b>{job.started || "Not started yet"}</b>
         </Typography>
-        {job.started && (
+        {["In Progress", "Paused", "Pending", "WaitingApproval"].includes(job.status) && (
           <Typography variant="body2" sx={{ display: "flex", alignItems: "center" }}>
-            Finished: {job.ended ? <b style={{ marginLeft: "4px" }}>{job.ended}</b> : <MoreHorizIcon />}
+            Processing Year:{" "}
+            <b style={{ display: "flex", marginLeft: "4px" }}>{job?.last_generated_year || <MoreHorizIcon />}</b>
+          </Typography>
+        )}
+        {job.started && job.ended && (
+          <Typography variant="body2" sx={{ display: "flex", alignItems: "center" }}>
+            Finished:{" "}
+            {job.ended ? <b style={{ display: "flex", marginLeft: "4px" }}>{job.ended}</b> : <MoreHorizIcon />}
           </Typography>
         )}
         {job.ended && job.started && (
@@ -250,7 +253,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
       <div className="action-buttons">
         <Button
           variant="contained"
-          color="primary"
+          color="secondary"
           size="small"
           onClick={() => {
             if (job.loaded_geo_json) {
@@ -274,17 +277,19 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           Logs
         </Button>
         <Tooltip title={job.status === "Complete" ? "Download Completed Job" : "Download partial job"}>
-          <Button
-            disabled={["Pending", "In Progress", "WaitingApproval"].includes(job.status)}
-            variant="contained"
-            color="secondary"
-            size="small"
-            onClick={() => {
-              downloadJob(job.key);
-            }}
-          >
-            Download
-          </Button>
+          <span>
+            <Button
+              disabled={["Pending", "In Progress", "WaitingApproval"].includes(job.status)}
+              variant="contained"
+              color="secondary"
+              size="small"
+              onClick={() => {
+                downloadJob(job.key);
+              }}
+            >
+              Download
+            </Button>
+          </span>
         </Tooltip>
       </div>
     </div>

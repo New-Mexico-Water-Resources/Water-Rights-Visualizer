@@ -132,9 +132,7 @@ const convertToGeoJSON = async (extractPath, baseName) => {
 
 function prepareGeojson(req, res) {
   let canSubmitJobs =
-    req.auth?.payload?.permissions?.includes("submit:jobs") ||
-    req.auth?.payload?.permissions?.includes("write:jobs") ||
-    false;
+    req.auth?.payload?.permissions?.includes("submit:jobs") || req.auth?.payload?.permissions?.includes("write:jobs");
   if (!canSubmitJobs) {
     res.status(401).send("Unauthorized: missing submit:jobs permission");
     return;
@@ -158,17 +156,37 @@ function prepareGeojson(req, res) {
       }
       const geojson = JSON.parse(data);
 
-      // If this is an individual feature, put in FeatureCollection
-      if (geojson["type"] === "Feature") {
-        geojson = {
-          type: "FeatureCollection",
-          name: baseName || "output",
-          features: [geojson],
-        };
+      if (geojson["type"] === "FeatureCollection" && geojson["features"].length === 0) {
+        res.status(400).send("Invalid GeoJSON: empty FeatureCollection");
+        removeFile();
+        return;
+      } else if (geojson["type"] === "FeatureCollection" && geojson["features"].length > 1) {
+        let polygonMeta = JSON.parse(JSON.stringify(geojson));
+        polygonMeta["features"] = [];
+        let multipolygon = [];
+        geojson["features"].forEach((feature) => {
+          let polygon = JSON.parse(JSON.stringify(polygonMeta));
+          polygon["features"] = [feature];
+          let reprojectedGeojson = reprojectGeojson(polygon);
+          multipolygon.push(reprojectedGeojson);
+        });
+
+        res.send({ multipolygon: true, geojsons: multipolygon });
+        removeFile();
+        return;
+      } else {
+        // If this is an individual feature, put in FeatureCollection
+        if (geojson["type"] === "Feature") {
+          geojson = {
+            type: "FeatureCollection",
+            name: baseName || "output",
+            features: [geojson],
+          };
+        }
+        const reprojectedGeojson = reprojectGeojson(geojson);
+        res.send(reprojectedGeojson);
+        removeFile();
       }
-      const reprojectedGeojson = reprojectGeojson(geojson);
-      res.send(reprojectedGeojson);
-      removeFile();
     });
   } else if (extension === ".zip") {
     const extractPath = path.join("./uploads", `${baseName}-extracted`);

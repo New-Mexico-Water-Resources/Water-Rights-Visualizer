@@ -133,6 +133,7 @@ const NavToolbar = () => {
   const queue = useStore((state) => state.queue);
   const { isAuthenticated } = useAuth0();
   const userInfo = useStore((state) => state.userInfo);
+  const version = useStore((state) => state.version);
 
   const canSubmitJobs = useMemo(
     () => userInfo?.permissions.includes("submit:jobs") || userInfo?.permissions.includes("write:jobs"),
@@ -173,6 +174,18 @@ const NavToolbar = () => {
           }}
         >
           New Mexico ET Reporting Tool
+        </Typography>
+        <Typography
+          noWrap
+          component="div"
+          sx={{
+            fontSize: "12px",
+            display: "flex",
+            color: "var(--st-gray-30)",
+            textDecoration: "none",
+          }}
+        >
+          v{version}
         </Typography>
         <Tooltip
           title={

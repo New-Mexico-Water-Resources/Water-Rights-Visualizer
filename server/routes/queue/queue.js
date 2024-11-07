@@ -233,7 +233,7 @@ router.post("/resume_job", async (req, res) => {
 
   let db = await constants.connectToDatabase();
   let collection = db.collection(constants.report_queue_collection);
-  let result = await collection.updateOne({ key }, { $set: { status: "Pending" } });
+  let result = await collection.updateOne({ key }, { $set: { status: "Pending", paused_year: null } });
 
   res.status(200).send(result);
 });

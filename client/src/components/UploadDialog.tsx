@@ -133,26 +133,39 @@ const UploadDialog = () => {
   const [rows, setRows] = useStore((state) => [state.locations, state.setLocations]);
   const visibleRows = useMemo(() => rows.filter((row) => row.visible), [rows]);
 
-  const generateRows = (multipolygons: any[]) => {
+  const generateRows = useCallback((multipolygons: any[]) => {
     const rows: PolygonLocation[] = multipolygons.map((geojson, index) => {
+      let defaultName = `${geojson?.county || ""} ${index + 1}`;
+      let name = geojson?.features[0]?.properties?.name || defaultName;
+
+      let lat = geojson?.geometry?.coordinates[0][0][0];
+      let long = geojson?.geometry?.coordinates[0][0][1];
+
+      if (!lat || !long) {
+        // Get from first point in polygon
+        lat = geojson?.features[0]?.geometry?.coordinates[0][0][0];
+        long = geojson?.features[0]?.geometry?.coordinates[0][0][1];
+      }
+
       return {
         visible: true,
-        acres: geojson.properties.Acres,
-        comments: geojson.properties.Comments,
-        county: geojson.properties.County,
-        polygon_So: geojson.properties.Polygon_So,
-        shape_Area: geojson.properties.Shape_Area,
-        shape_Leng: geojson.properties.Shape_Leng,
-        source: geojson.properties.Source,
-        wUR_Basin: geojson.properties.WUR_Basin,
+        name: name,
+        acres: geojson?.properties?.Acres,
+        comments: geojson?.properties?.Comments,
+        county: geojson?.properties?.County,
+        polygon_So: geojson?.properties?.Polygon_So,
+        shape_Area: geojson?.properties?.Shape_Area,
+        shape_Leng: geojson?.properties?.Shape_Leng,
+        source: geojson?.properties?.Source,
+        wUR_Basin: geojson?.properties?.WUR_Basin,
         id: index,
-        lat: geojson.geometry.coordinates[0][0][0],
-        long: geojson.geometry.coordinates[0][0][1],
+        lat: lat,
+        long: long,
       };
     });
 
     setRows(rows);
-  };
+  }, []);
 
   const VirtuosoTableComponents: TableComponents<PolygonLocation> = useMemo(
     () => ({

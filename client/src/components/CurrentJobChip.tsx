@@ -57,9 +57,10 @@ const CurrentJobChip = () => {
           </b>
         </Typography>
       )}
-      {jobStatus?.status && (
+
+      {activeJob && (
         <Typography variant="body2" style={{ color: "var(--st-gray-40)" }}>
-          Status: <b>{jobStatus.status}</b>
+          Status: <b>{jobStatus?.status || "N/A"}</b>
         </Typography>
       )}
       {previewMode && (

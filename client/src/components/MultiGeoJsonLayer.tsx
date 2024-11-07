@@ -15,10 +15,16 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
   // Listen to delete keypress
   useEffect(() => {
     const handleKeyPress = (event: any) => {
-      if (["Delete", "Backspace"].includes(event.key) && selectedMapLayer !== null) {
-        locations[selectedMapLayer].visible = false;
-        setLocations([...locations]);
-        setSelectedMapLayer(null);
+      if (selectedMapLayer !== null) {
+        if (["Delete", "Backspace"].includes(event.key)) {
+          locations[selectedMapLayer].visible = false;
+          setLocations([...locations]);
+          setSelectedMapLayer(null);
+        } else if (event.key === "Enter") {
+          // Re-select
+          locations[selectedMapLayer].visible = true;
+          setLocations([...locations]);
+        }
       }
     };
 
@@ -41,12 +47,18 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
       let destructors: Function[] = [];
 
       locations.forEach((location) => {
-        if (!data[location.id] || !location.visible) {
+        if (!data[location.id]) {
           return;
         }
 
         const layer = data[location.id];
-        const geoJsonLayer = new Leaflet.GeoJSON(layer);
+        let style: Record<string, any> = {};
+        if (!location.visible) {
+          style.fillOpacity = 0.5;
+          style.color = "black";
+          style.fillColor = "black";
+        }
+        const geoJsonLayer = new Leaflet.GeoJSON(layer, { style });
         geoJsonLayer.on({
           dblclick: () => {
             setSelectedMapLayer(location.id);
@@ -63,10 +75,11 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
 
         geoJsonLayer.bindTooltip(
           `<div style='padding:1px 3px 1px 3px;display:flex;flex-direction:column;'>
-            <b>${location.county} ${location.id + 1}</b>
+            <b>${location.name}</b>
             <b>Acres: ${roundedAcres}</b>
             <b>Coordinates: ${roundedLat}, ${roundedLong}</b>
             <b>Comments: ${location.comments || "None"}</b>
+            ${location.crop ? `<b>Crop: ${location.crop}</b>` : ""}
           </div>`,
           {
             direction: "right",

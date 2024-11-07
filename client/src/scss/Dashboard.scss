@@ -156,7 +156,13 @@
   &.closed {
     width: 0;
   }
-  height: calc(100vh - 45px);
+
+  margin-top: 4px;
+  border-radius: 8px;
+  margin-right: 4px;
+
+  // height: calc(100vh - 45px);
+  height: calc(100vh - 52px);
   z-index: 1001;
   background-color: var(--st-gray-90);
 

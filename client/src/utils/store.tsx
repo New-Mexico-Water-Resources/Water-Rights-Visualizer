@@ -3,10 +3,13 @@ import { devtools } from "zustand/middleware";
 import axios, { AxiosInstance } from "axios";
 import { API_URL, QUEUE_STATUSES, ROLES } from "./constants";
 import { formatElapsedTime, formJobForQueue } from "./helpers";
+import packageJson from "../../package.json";
 
 export interface PolygonLocation {
   visible: boolean;
   id: number;
+  name: string;
+  crop?: string;
   acres: number;
   comments: string;
   county: string;
@@ -142,6 +145,8 @@ interface Store {
   setSortAscending: (sortAscending: boolean) => void;
   approveJob: (jobKey: string) => void;
   bulkApproveJobs: (jobKeys: string[]) => void;
+  version: string;
+  loadVersion: () => void;
 }
 
 const useStore = create<Store>()(
@@ -520,6 +525,7 @@ const useStore = create<Store>()(
         loadedFile: null,
         loadedGeoJSON: null,
         multipolygons: [],
+        locations: [],
         jobName: "",
         startYear: 1985,
         endYear: 2023,
@@ -746,6 +752,11 @@ const useStore = create<Store>()(
         .catch((error) => {
           set({ errorMessage: error?.response?.data || error?.message || "Error approving jobs" });
         });
+    },
+    version: "0.0.0",
+    loadVersion: () => {
+      let version = packageJson.version;
+      set({ version });
     },
   }))
 );
