@@ -1,0 +1,44 @@
+name: Bump Package Version on Merge
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  bump_version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.18.0'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Determine Version Bump Type
+        id: version_type
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "::set-output name=version_type::minor"
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            echo "::set-output name=version_type::patch"
+          fi
+
+      - name: Bump Version
+        run: npm version ${{ steps.version_type.outputs.version_type }} -m "Bump version to %s [skip ci]"
+
+      - name: Push Changes
+        run: |
+          git push origin ${{ github.ref_name }}
