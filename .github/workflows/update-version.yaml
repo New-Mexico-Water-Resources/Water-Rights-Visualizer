@@ -20,6 +20,7 @@ jobs:
           node-version: '20.18.0'
 
       - name: Install dependencies
+        working-directory: ./client
         run: npm install
 
       - name: Configure Git
