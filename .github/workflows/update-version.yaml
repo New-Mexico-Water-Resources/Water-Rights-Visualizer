@@ -38,6 +38,7 @@ jobs:
           fi
 
       - name: Bump Version
+        working-directory: ./client
         run: npm version ${{ steps.version_type.outputs.version_type }} -m "Bump version to %s [skip ci]"
 
       - name: Push Changes
