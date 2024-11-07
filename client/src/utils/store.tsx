@@ -517,6 +517,7 @@ const useStore = create<Store>()(
         endYear: 2023,
         showUploadDialog: true,
         previewMode: false,
+        activeJob: null,
       });
     },
     closeNewJob: () => {

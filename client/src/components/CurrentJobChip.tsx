@@ -7,7 +7,6 @@ import "../scss/CurrentJobChip.scss";
 
 const CurrentJobChip = () => {
   const [activeJob, setActiveJob] = useStore((state) => [state.activeJob, state.setActiveJob]);
-  const closeNewJob = useStore((state) => state.closeNewJob);
   const [previewMode, setPreviewMode] = useStore((state) => [state.previewMode, state.setPreviewMode]);
   const setShowUploadDialog = useStore((state) => state.setShowUploadDialog);
 
@@ -42,7 +41,6 @@ const CurrentJobChip = () => {
             className="close-btn"
             onClick={() => {
               setActiveJob(null);
-              closeNewJob();
             }}
           >
             <CloseIcon fontSize="small" />
