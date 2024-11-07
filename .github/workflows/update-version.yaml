@@ -38,6 +38,7 @@ jobs:
           fi
 
       - name: Bump Version
+        id: bump_version
         working-directory: ./client
         run: |
           NEW_VERSION=$(npm version ${{ steps.version_type.outputs.version_type }})
