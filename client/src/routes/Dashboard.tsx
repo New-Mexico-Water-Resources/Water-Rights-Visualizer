@@ -6,7 +6,6 @@ import useStore from "../utils/store";
 import GeoJSONLayer from "../components/GeoJsonLayer";
 import "../scss/Dashboard.scss";
 import NavToolbar from "../components/NavToolbar";
-import UploadDialog from "../components/UploadDialog";
 import CurrentJobChip from "../components/CurrentJobChip";
 import JobQueue from "../components/JobQueue";
 import MultiGeoJSONLayer from "../components/MultiGeoJsonLayer";
