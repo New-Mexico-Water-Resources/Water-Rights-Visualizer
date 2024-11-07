@@ -32,9 +32,9 @@ jobs:
         id: version_type
         run: |
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "::set-output name=version_type::minor"
+            echo "version_type=minor" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
-            echo "::set-output name=version_type::patch"
+            echo "version_type=patch" >> $GITHUB_OUTPUT
           fi
 
       - name: Bump Version
@@ -43,4 +43,6 @@ jobs:
 
       - name: Push Changes
         run: |
+          git add client/package.json
+          git commit -m "Bump version [skip ci]"
           git push origin ${{ github.ref_name }}
