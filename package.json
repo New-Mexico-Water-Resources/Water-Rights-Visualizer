@@ -1,6 +1,6 @@
 {
   "name": "water_rights_webui",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Web UI for the New Mexico water rights tool",
   "main": "server/server.js",
   "scripts": {
