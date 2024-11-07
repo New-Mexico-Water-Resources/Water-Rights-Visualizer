@@ -21,7 +21,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./client
-        run: npm install
+        run: yarn install
 
       - name: Configure Git
         run: |
