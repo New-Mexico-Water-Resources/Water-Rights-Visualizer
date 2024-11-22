@@ -1,5 +1,7 @@
 from datetime import datetime
 
+OPENET_TRANSITION_DATE = 2008
+
 
 class VariableType:
     def __init__(
@@ -65,6 +67,36 @@ VARIABLE_TYPES = [
         monthly=True,
         parent_dir="monthly",
         # start=datetime(2019, 10, 1).date(),
+        start=datetime(2008, 1, 1).date(),
+        end=datetime(2025, 1, 1).date(),
+    ),
+    VariableType(
+        name="OpenET Ensemble ET MIN",
+        variable="ET_MIN",
+        mapped_variable="ET_MIN",
+        file_prefix="OPENET_ENSEMBLE_",
+        monthly=True,
+        parent_dir="uncertainty/combined_tiles_split",
+        start=datetime(2008, 1, 1).date(),
+        end=datetime(2025, 1, 1).date(),
+    ),
+    VariableType(
+        name="OpenET Ensemble ET MAX",
+        variable="ET_MAX",
+        mapped_variable="ET_MAX",
+        file_prefix="OPENET_ENSEMBLE_",
+        monthly=True,
+        parent_dir="uncertainty/combined_tiles_split",
+        start=datetime(2008, 1, 1).date(),
+        end=datetime(2025, 1, 1).date(),
+    ),
+    VariableType(
+        name="OpenET PTJPL Cloud Count",
+        variable="COUNT",
+        mapped_variable="COUNT",
+        file_prefix="OPENET_PTJPL_",
+        monthly=True,
+        parent_dir="uncertainty/combined_tiles_split",
         start=datetime(2008, 1, 1).date(),
         end=datetime(2025, 1, 1).date(),
     ),

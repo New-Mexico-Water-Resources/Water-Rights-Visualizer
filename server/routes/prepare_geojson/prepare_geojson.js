@@ -154,7 +154,7 @@ function prepareGeojson(req, res) {
         console.error(err);
         return;
       }
-      const geojson = JSON.parse(data);
+      let geojson = JSON.parse(data);
 
       if (geojson["type"] === "FeatureCollection" && geojson["features"].length === 0) {
         res.status(400).send("Invalid GeoJSON: empty FeatureCollection");

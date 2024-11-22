@@ -226,12 +226,14 @@ const LayersControl: FC = () => {
             >
               Coordinates: {roundedLat}, {roundedLong}
             </Typography>
-            <Typography
-              variant="body2"
-              style={{ color: row.id === activeRowId ? "var(--st-gray-20)" : "var(--st-gray-40)" }}
-            >
-              Acres: {roundedAcres}
-            </Typography>
+            {row?.acres && (
+              <Typography
+                variant="body2"
+                style={{ color: row.id === activeRowId ? "var(--st-gray-20)" : "var(--st-gray-40)" }}
+              >
+                Acres: {roundedAcres}
+              </Typography>
+            )}
           </div>
         </div>
       );

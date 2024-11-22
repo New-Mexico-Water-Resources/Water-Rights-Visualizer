@@ -93,12 +93,19 @@ def generate_stack(
 
         ET_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ET_subset.tif")
         logger.info(f"ET subset file: {ET_subset_filename}")
-        ET_CCOUNT_subset_filename = join(
-            subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ET_CCOUNT_subset.tif"
-        )
-        logger.info(f"ET CCOUNT subset file: {ET_subset_filename}")
+
+        count_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_COUNT_subset.tif")
+        logger.info(f"COUNT subset file: {count_subset_filename}")
+
+        et_min_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ET_MIN_subset.tif")
+        logger.info(f"ET MIN subset file: {et_min_subset_filename}")
+
+        et_max_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ET_MAX_subset.tif")
+        logger.info(f"ET MAX subset file: {et_max_subset_filename}")
+
         ESI_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_ESI_subset.tif")
         logger.info(f"ESI subset file: {ESI_subset_filename}")
+
         PET_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_PET_subset.tif")
         logger.info(f"PET subset file: {PET_subset_filename}")
 
@@ -117,17 +124,24 @@ def generate_stack(
 
             ccount_source = get_available_variable_source_for_date("CCOUNT", date_step)
             if ccount_source and ccount_source.monthly:
-                # This is just used to get error percentage
-                ET_CCOUNT_subset = generate_subset(
-                    input_datastore=input_datastore,
-                    acquisition_date=date_step,
-                    ROI_name=ROI_name,
-                    ROI_latlon=ROI_latlon,
-                    ROI_acres=ROI_acres,
-                    variable_name="CCOUNT",
-                    subset_filename=ET_CCOUNT_subset_filename,
-                    target_CRS=target_CRS,
-                )
+                # These are just used to get error percentage
+                uncertainty_variables = {
+                    "ET_MIN": et_min_subset_filename,
+                    "ET_MAX": et_max_subset_filename,
+                    "COUNT": count_subset_filename,
+                }
+
+                for variable_name, subset_filename in uncertainty_variables.items():
+                    generate_subset(
+                        input_datastore=input_datastore,
+                        acquisition_date=date_step,
+                        ROI_name=ROI_name,
+                        ROI_latlon=ROI_latlon,
+                        ROI_acres=ROI_acres,
+                        variable_name=variable_name,
+                        subset_filename=subset_filename,
+                        target_CRS=target_CRS,
+                    )
 
             affine = ET_subset.geometry.affine
         except BlankOutput as e:

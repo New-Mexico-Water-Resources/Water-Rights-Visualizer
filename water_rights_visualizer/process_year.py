@@ -145,7 +145,10 @@ def process_year(
     write_status(message == "Generating figure\n", status_filename=status_filename, text_panel=text_panel, root=root)
 
     # nan_means = []
-    nd = pd.read_csv(f"{monthly_nan_directory}/{year}.csv")
+    if exists(f"{monthly_nan_directory}/{year}.csv"):
+        nd = pd.read_csv(f"{monthly_nan_directory}/{year}.csv")
+    else:
+        nd = pd.DataFrame(columns=["year", "month", "percent_nan"])
     # nan_means.append(nd)
     # logger.info(f"application nan means: \n {nan_means}")
 
