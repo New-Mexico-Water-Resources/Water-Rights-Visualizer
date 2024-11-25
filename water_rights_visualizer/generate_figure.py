@@ -130,10 +130,6 @@ def generate_figure(
     bottom_y = grid[1, 0].get_position(fig).y0 + 0.05
     cbar_height = top_y - bottom_y
     cbar_ax = fig.add_axes([0.85, bottom_y, 0.05, cbar_height])
-    # cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-    # cbar_ax = fig.add_axes(
-    #     [0.85, grid[0, 0].get_position(fig).y1, 0.05, grid[1, 0].get_position(fig).y0 - grid[0, 0].get_position(fig).y1]
-    # )
     # fig.colorbar(im, cax=cbar_ax, ticks=[], label=f'Low                                                            High')
     cbar = fig.colorbar(
         im,
@@ -191,9 +187,6 @@ def generate_figure(
     # ci_et = df["percent_nan"] / 100 * y2
     # et_ci_ymin = y - ci_et
     # et_ci_ymax = y + ci_et
-
-    # Create a new column for the confidence interval min max that uses the above approach for data before 2008 and just uses ET_MIN and ET_MAX for data after 2008
-    # OPENET_TRANSITION_DATE = 2008
     df["pet_ci_ymin"] = df.apply(
         lambda row: (
             row["y"] - (row["percent_nan"] / 100 * row["y"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_min"]
@@ -220,13 +213,32 @@ def generate_figure(
         axis=1,
     )
 
+    pet_color = "blue"
+    et_color = "green"
+
+    # pet_color = "#ff7f0e"  # Orange
+    # et_color = "#17becf"  # Teal
+
     # print(f"ci (nan%): {ci}")
-    sns.lineplot(x=x, y=y, ax=ax, color="blue", label="PET")
-    sns.lineplot(x=x, y=y2, ax=ax, color="green", label="ET")
-    ax.fill_between(x, df["pet_ci_ymin"], df["pet_ci_ymax"], color="b", alpha=0.1)
-    ax.fill_between(x, df["et_ci_ymin"], df["et_ci_ymax"], color="g", alpha=0.1)
-    plt.legend(labels=["ET"], loc="upper right")
-    ax.legend(loc="upper left", fontsize=6)
+    sns.lineplot(x=x, y=y, ax=ax, color=pet_color, label="PET")
+    sns.lineplot(x=x, y=y2, ax=ax, color=et_color, label="ET")
+    if int(year) < 2008:
+        ax.fill_between(x, df["pet_ci_ymin"], df["pet_ci_ymax"], color=pet_color, alpha=0.1)
+    ax.fill_between(x, df["et_ci_ymin"], df["et_ci_ymax"], color=et_color, alpha=0.1)
+    # plt.legend(labels=["ET"], loc="upper right")
+
+    legend_items = {
+        "PET": {"color": pet_color, "alpha": 0.8, "lw": 2},
+        "ET": {"color": et_color, "alpha": 0.8, "lw": 2},
+        "Ensemble Min/Max": {"color": et_color, "alpha": 0.1, "lw": 4},
+    }
+    if int(year) < 2008:
+        del legend_items["Ensemble Min/Max"]
+    legend_labels = legend_items.keys()
+    left_legend_lines = [
+        plt.Line2D([0], [0], color=v["color"], lw=v["lw"], alpha=v["alpha"]) for k, v in legend_items.items()
+    ]
+    ax.legend(left_legend_lines, legend_labels, loc="upper left", fontsize=5)
     # ax.set(xlabel="Month", ylabel="ET (mm)")
     ax.set(xlabel="Month", ylabel="")
     ymin = min(min(main_df["ET"]), min(main_df["ET"]), min(df["pet_ci_ymin"]), min(df["et_ci_ymin"]))
@@ -241,28 +253,19 @@ def generate_figure(
     normalized_max = 100
     df["normalized_nan"] = (df["percent_nan"] - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin
 
-    # ax.bar(
-    #     x=df["month"],  # Assuming `x` corresponds to months as integers (1–12)
-    #     height=df["normalized_nan"],
-    #     width=0.8,
-    #     color="gray",
-    #     alpha=0.3,
-    #     label="Cloud Coverage",
-    #     zorder=1,  # Ensure bars are plotted behind lines
-    # )
     ax2 = ax.twinx()
     bars = ax2.bar(
-        x=df["month"],  # Assuming `x` corresponds to months as integers (1–12)
+        x=df["month"],
         height=df["normalized_nan"],
         width=0.8,
         color="gray",
         alpha=0.3,
         label="Cloud Coverage",
-        zorder=1,  # Ensure bars are plotted behind lines
+        zorder=1,
     )
 
     # Adjust the secondary y-axis range to match the normalization
-    # ax2.set_ylim(ymin, ymax)  # Align with the primary y-axis range
+    ax2.set_ylim(ymin, ymax)  # Align with the primary y-axis range
     normalized_ticks = np.linspace(normalized_min, normalized_max, 6)  # Create 6 evenly spaced ticks
     ax2.set_yticks(
         [(tick - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin for tick in normalized_ticks]
@@ -273,7 +276,7 @@ def generate_figure(
     legend_labels = ["Cloud Cov."]
     legend_colors = ["gray"]
     custom_lines = [plt.Line2D([0], [0], color=legend_colors[i], lw=2, alpha=0.8) for i in range(len(legend_labels))]
-    ax2.legend(custom_lines, legend_labels, loc="upper right", fontsize=6)
+    ax2.legend(custom_lines, legend_labels, loc="upper right", fontsize=5)
 
     ax.set(ylim=ylim)
     ax.set_yticks([int(ymin), int(ymax) + 10])
@@ -282,9 +285,8 @@ def generate_figure(
     ax.tick_params(axis="y", labelsize=6)
 
     # Set monthly x-axis ticks
-    # Set x-axis ticks and labels
     ax.set_xticks(range(1, 13))  # Set ticks for each month (1–12)
-    ax.set_xticklabels([calendar.month_abbr[i] for i in range(1, 13)])  # Display month abbreviations (Jan, Feb, ...)
+    ax.set_xticklabels([calendar.month_abbr[i] for i in range(1, 13)])
 
     # Set the title and captions for the figure
     plt.title(f"Area of Interest Average Monthly Water Use", fontsize=10)
