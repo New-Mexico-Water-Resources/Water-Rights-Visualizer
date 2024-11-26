@@ -189,26 +189,26 @@ def generate_figure(
     # et_ci_ymax = y + ci_et
     df["pet_ci_ymin"] = df.apply(
         lambda row: (
-            row["y"] - (row["percent_nan"] / 100 * row["y"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_min"]
+            row["PET"] - (row["percent_nan"] / 100 * row["PET"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_min"]
         ),
         axis=1,
     )
     df["pet_ci_ymax"] = df.apply(
         lambda row: (
-            row["y"] + (row["percent_nan"] / 100 * row["y"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_max"]
+            row["PET"] + (row["percent_nan"] / 100 * row["PET"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_max"]
         ),
         axis=1,
     )
 
     df["et_ci_ymin"] = df.apply(
         lambda row: (
-            row["y2"] - (row["percent_nan"] / 100 * row["y2"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_min"]
+            row["ET"] - (row["percent_nan"] / 100 * row["ET"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_min"]
         ),
         axis=1,
     )
     df["et_ci_ymax"] = df.apply(
         lambda row: (
-            row["y2"] + (row["percent_nan"] / 100 * row["y2"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_max"]
+            row["ET"] + (row["percent_nan"] / 100 * row["ET"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_max"]
         ),
         axis=1,
     )
