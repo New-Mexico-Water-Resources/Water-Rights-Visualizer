@@ -4,9 +4,11 @@ import {
   Badge,
   Box,
   Divider,
+  IconButton,
   ListItemIcon,
   Menu,
   MenuItem,
+  Modal,
   Skeleton,
   Toolbar,
   Tooltip,
@@ -19,11 +21,16 @@ import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import AddIcon from "@mui/icons-material/Add";
 import Logout from "@mui/icons-material/Logout";
 import GroupIcon from "@mui/icons-material/Group";
+import CloseIcon from "@mui/icons-material/Close";
+
+import Markdown from "react-markdown";
 
 import useStore from "../utils/store";
 import { useEffect, useMemo, useState } from "react";
 import LoginButton from "./LoginButton";
 import { ROLES } from "../utils/constants";
+
+import changelog from "../../../CHANGELOG.md?raw";
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth0();
@@ -124,16 +131,19 @@ const Profile = () => {
 const NavToolbar = () => {
   const [isQueueOpen, setIsQueueOpen] = useStore((state) => [state.isQueueOpen, state.setIsQueueOpen]);
   const [isBacklogOpen, setIsBacklogOpen] = useStore((state) => [state.isBacklogOpen, state.setIsBacklogOpen]);
-  const [isUsersPanelOpen, setIsUsersPanelOpen] = useStore((state) => [
-    state.isUsersPanelOpen,
-    state.setIsUsersPanelOpen,
-  ]);
+  const [isUsersPanelOpen, setIsUsersPanelOpen] = useStore((state) => [state.isUsersPanelOpen, state.setIsUsersPanelOpen]);
 
   const startNewJob = useStore((state) => state.startNewJob);
   const queue = useStore((state) => state.queue);
   const { isAuthenticated } = useAuth0();
   const userInfo = useStore((state) => state.userInfo);
   const version = useStore((state) => state.version);
+  const lastSeenVersion = useStore((state) => state.lastSeenVersion);
+
+  const markVersionSeen = useStore((state) => state.markVersionSeen);
+  const hasSeenLatestVersion = useMemo(() => lastSeenVersion === version, [lastSeenVersion, version]);
+
+  const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
 
   const canSubmitJobs = useMemo(
     () => userInfo?.permissions.includes("submit:jobs") || userInfo?.permissions.includes("write:jobs"),
@@ -175,14 +185,75 @@ const NavToolbar = () => {
         >
           New Mexico ET Reporting Tool
         </Typography>
+        <Modal
+          sx={{ ":focus": { outline: "none" } }}
+          open={releaseNotesOpen}
+          onClose={() => setReleaseNotesOpen(false)}
+          aria-labelledby="release-notes-title"
+          aria-describedby="release-notes"
+        >
+          <Box
+            sx={{
+              ":focus": { outline: "none" },
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 600,
+              height: 600,
+              bgcolor: "var(--st-gray-90)",
+              border: "2px solid var(--st-gray-100)",
+              borderRadius: "4px",
+              boxShadow: 24,
+            }}
+          >
+            <IconButton
+              sx={{ position: "absolute", right: 12, top: 12, cursor: "pointer" }}
+              onClick={() => setReleaseNotesOpen(false)}
+            >
+              <CloseIcon />
+            </IconButton>
+            <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "16px" }}>
+              <Typography id="release-notes-title" variant="h6" component="h2">
+                Release Notes
+              </Typography>
+              <Typography
+                id="release-notes"
+                sx={{
+                  mt: 2,
+                  maxHeight: 516,
+                  overflowY: "auto",
+                  border: "1px solid var(--st-gray-80)",
+                  background: "var(--st-gray-100)",
+                  borderRadius: "4px",
+                  padding: "8px",
+                }}
+              >
+                <Markdown>{changelog}</Markdown>
+              </Typography>
+            </Box>
+          </Box>
+        </Modal>
         <Typography
           noWrap
           component="div"
           sx={{
             fontSize: "12px",
             display: "flex",
-            color: "var(--st-gray-30)",
+            color: hasSeenLatestVersion ? "var(--st-gray-30)" : "yellow",
             textDecoration: "none",
+            fontWeight: hasSeenLatestVersion ? "normal" : 800,
+            cursor: "pointer",
+            padding: "0 8px",
+            borderRadius: "4px",
+            backgroundColor: hasSeenLatestVersion ? "var(--st-gray-80)" : "rgba(255, 255, 0, 0.1)",
+            ":hover": { backgroundColor: "var(--st-gray-70)", color: "var(--st-gray-10)" },
+          }}
+          onClick={() => {
+            if (!hasSeenLatestVersion) {
+              markVersionSeen();
+            }
+            setReleaseNotesOpen(true);
           }}
         >
           v{version}
@@ -208,9 +279,7 @@ const NavToolbar = () => {
               height: "100%",
               userSelect: "none",
               ":hover":
-                isAuthenticated && canSubmitJobs
-                  ? { color: "var(--st-gray-10)", backgroundColor: "var(--st-gray-80)" }
-                  : {},
+                isAuthenticated && canSubmitJobs ? { color: "var(--st-gray-10)", backgroundColor: "var(--st-gray-80)" } : {},
             }}
             onClick={() => {
               if (isAuthenticated && canSubmitJobs) {

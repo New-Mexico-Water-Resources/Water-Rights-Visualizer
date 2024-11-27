@@ -253,30 +253,32 @@ def generate_figure(
     normalized_max = 100
     df["normalized_nan"] = (df["percent_nan"] - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin
 
-    ax2 = ax.twinx()
-    bars = ax2.bar(
-        x=df["month"],
-        height=df["normalized_nan"],
-        width=0.8,
-        color="gray",
-        alpha=0.3,
-        label="Cloud Coverage",
-        zorder=1,
-    )
+    # TODO: Verify this works for years before 2008 (no OpenET data)
+    if year >= 2008:
+        ax2 = ax.twinx()
+        bars = ax2.bar(
+            x=df["month"],
+            height=df["normalized_nan"],
+            width=0.8,
+            color="gray",
+            alpha=0.3,
+            label="Cloud Coverage",
+            zorder=1,
+        )
 
-    # Adjust the secondary y-axis range to match the normalization
-    ax2.set_ylim(ymin, ymax)  # Align with the primary y-axis range
-    normalized_ticks = np.linspace(normalized_min, normalized_max, 6)  # Create 6 evenly spaced ticks
-    ax2.set_yticks(
-        [(tick - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin for tick in normalized_ticks]
-    )
-    ax2.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])  # Label them with the original percent values
-    ax2.tick_params(axis="y", labelsize=6)
+        # Adjust the secondary y-axis range to match the normalization
+        ax2.set_ylim(ymin, ymax)  # Align with the primary y-axis range
+        normalized_ticks = np.linspace(normalized_min, normalized_max, 6)  # Create 6 evenly spaced ticks
+        ax2.set_yticks(
+            [(tick - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin for tick in normalized_ticks]
+        )
+        ax2.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])  # Label them with the original percent values
+        ax2.tick_params(axis="y", labelsize=6)
 
-    legend_labels = ["Cloud Cov."]
-    legend_colors = ["gray"]
-    custom_lines = [plt.Line2D([0], [0], color=legend_colors[i], lw=2, alpha=0.8) for i in range(len(legend_labels))]
-    ax2.legend(custom_lines, legend_labels, loc="upper right", fontsize=5)
+        legend_labels = ["Cloud Cov."]
+        legend_colors = ["gray"]
+        custom_lines = [plt.Line2D([0], [0], color=legend_colors[i], lw=2, alpha=0.8) for i in range(len(legend_labels))]
+        ax2.legend(custom_lines, legend_labels, loc="upper right", fontsize=5)
 
     ax.set(ylim=ylim)
     ax.set_yticks([int(ymin), int(ymax) + 10])

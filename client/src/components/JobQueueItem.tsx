@@ -220,8 +220,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
         )}
         {job.started && job.ended && (
           <Typography variant="body2" sx={{ display: "flex", alignItems: "center" }}>
-            Finished:{" "}
-            {job.ended ? <b style={{ display: "flex", marginLeft: "4px" }}>{job.ended}</b> : <MoreHorizIcon />}
+            Finished: {job.ended ? <b style={{ display: "flex", marginLeft: "4px" }}>{job.ended}</b> : <MoreHorizIcon />}
           </Typography>
         )}
         {job.ended && job.started && (
@@ -229,18 +228,24 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             Time Elapsed: <b>{job.timeElapsed}</b>
           </Typography>
         )}
-        <Typography variant="body2">
-          Status: <b style={{ color: jobStatusColor }}>{job.status_msg || job.status}</b>
-        </Typography>
+        <Tooltip title={job.status_msg}>
+          <Typography
+            variant="body2"
+            sx={{
+              whiteSpace: "pre",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              width: "275px",
+            }}
+          >
+            Status: <b style={{ color: jobStatusColor }}>{job.status_msg || job.status}</b>
+          </Typography>
+        </Tooltip>
         {job?.user?.name && (
           <Tooltip title={`Name: ${job.user.name}\nEmail: ${job.user.email}`}>
             <Typography variant="body2" style={{ marginTop: "8px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                <img
-                  src={job?.user?.picture}
-                  alt="user"
-                  style={{ width: "20px", height: "20px", borderRadius: "50%" }}
-                />
+                <img src={job?.user?.picture} alt="user" style={{ width: "20px", height: "20px", borderRadius: "50%" }} />
                 <b style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "pre" }}>{job?.user?.name}</b>
               </div>
             </Typography>
