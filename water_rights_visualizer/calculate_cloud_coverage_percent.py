@@ -44,6 +44,10 @@ def get_nan_tiff_roi_average(tiff_file, ROI_geometry, dir) -> Union[float, None]
     """
     filename = basename(tiff_file)
 
+    if not exists(tiff_file):
+        logger.error(f"File {tiff_file} does not exist")
+        return None
+
     nan_masked_subset_file = None
     with rasterio.open(tiff_file) as subset_tiles:
         # Masking the ET subset file with the ROI_for_nan polygon
