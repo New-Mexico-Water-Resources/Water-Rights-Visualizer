@@ -6,11 +6,16 @@ import { CssBaseline } from "@mui/material";
 import theme from "./theme";
 import Dashboard from "./routes/Dashboard";
 import { ConfirmProvider } from "material-ui-confirm";
+import NotFoundPage from "./routes/404";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Dashboard />,
+  },
+  {
+    path: "*",
+    element: <NotFoundPage />,
   },
 ]);
 

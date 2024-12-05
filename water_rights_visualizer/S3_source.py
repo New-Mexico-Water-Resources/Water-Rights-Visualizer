@@ -162,15 +162,19 @@ class S3Source(DataSource):
             logger.info(
                 f"retrieving {cl.file(filename_base)} from S3 bucket {cl.name(self.bucket_name)} to file: {cl.file(filename)}"
             )
+
+            failed_to_retrieve = False
             start_time = time.perf_counter()
-            self.bucket.download_file(filename_base, filename)
+            try:
+                self.bucket.download_file(filename_base, filename)
+            except Exception as e:
+                logger.error(f"Failed to retrieve file from S3: {filename_base} ({filename}) - {e}")
+                failed_to_retrieve = True
             end_time = time.perf_counter()
             duration_seconds = end_time - start_time
 
-            if not exists(filename):
-                raise IOError(f"unable to retrieve file: {filename}")
-
-            logger.info(f"temporary file retrieved from S3 in {cl.time(duration_seconds)} seconds: {cl.file(filename)}")
+            if not failed_to_retrieve:
+                logger.info(f"temporary file retrieved from S3 in {cl.time(duration_seconds)} seconds: {cl.file(filename)}")
 
         self.filenames[key] = filename
 

@@ -1,4 +1,19 @@
-## 1.2.0 (Current)
+## 1.3.0 (2024-12-05)
+
+### Features
+- Report layout adjustments
+  - Font sizes, spacing, and stroke widths have been adjusted to make the report more readable
+  - The ROI month grid has been adjusted to take more advantage of the space in a 3 x 4 grid (versus 2 x 6)
+  - For pre-OpenET data, the legend title was updated to "Avg Cloud Cov. & Missing Data" to better reflect the data being displayed
+  - The line plot title was also adjusted to reflect the inclusion of missing data visualizations
+- Line plot colors have been adjusted to be more distinct from the color gradient bar
+  - PET is now purple and ET is orange
+
+### Bug Fixes
+- The PDF version of the report now contains less whitespace around the edges so it appears more similar to the PNG per year
+- Typo fix in the report title for "Evapotranspiration"
+
+## 1.2.0 (2024-12-04)
 
 ### Features
 - Updated the format of the generated report to:
@@ -13,9 +28,13 @@
 - Release Notes are now generated automatically from the `CHANGELOG.md` file.
     - Persists yellow "new" state whether release notes for this version have been checked or not
 - Persists the sorting options for the backlog
+- Adds simple 404 page allowing the user to return back to the application
 
 ### Bug Fixes
 - The `status` line on items in the queue would overflow out of the container if the job failed and it was too long
+- Caches the list of users for 1 to 10 minutes (deep and shallow caching time limits) to reduce the number of fetches to the authentication provider (only visible to admins)
+  - In some cases, this was leading to slow user list load times due to rate limiting on the Auth0 side
+- Better handles missing uncertainty data (shows as unavailable in the report if we don't have any data for the month)
 
 
 ---

@@ -202,10 +202,12 @@ def water_rights(
     for year in sorted_years:
         figure_filename = join(figure_directory, f"{year}_{ROI_name}.png")
         figure_image = plt.imread(figure_filename)
-        fig = plt.figure(figsize=(19.2, 14.4))
-        plt.imshow(figure_image)
-        plt.axis("off")
-        report_pdf.savefig(fig)
+
+        fig = plt.figure(figsize=(19.2, 14.4), tight_layout=True)
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.imshow(figure_image)
+        ax.axis("off")
+        report_pdf.savefig(fig, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
     report_pdf.close()

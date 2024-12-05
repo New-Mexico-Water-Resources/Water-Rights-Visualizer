@@ -71,33 +71,40 @@ def generate_figure(
     # Create a new figure
     fig = plt.figure()
 
+    title_fontsize = 14
+    axis_label_fontsize = 10
+
     max_length_short = 15
     max_length_medium = 30
-    title_fontsize = 14
 
     if len(ROI_name) <= max_length_short:
-        title = f"Evaotranspiration For {ROI_name}\nYear: {year}, Area: {ROI_acres} acres"
+        title = f"Evapotranspiration For {ROI_name}"
+        subtitle = f"Year: {year}, Area: {ROI_acres} acres"
     elif len(ROI_name) <= max_length_medium:
         title_fontsize = 12
-        title = f"Evaotranspiration For {ROI_name}\nYear: {year}, Area: {ROI_acres} acres"
+        title = f"Evapotranspiration For {ROI_name}"
+        subtitle = f"Year: {year}, Area: {ROI_acres} acres"
     else:
         title_fontsize = 12
         short_name = ROI_name[:max_length_medium] + "..."
-        title = f"Evaotranspiration For {short_name}\nYear: {year}, Area: {ROI_acres} acres"
+        title = f"Evapotranspiration For {short_name}"
+        subtitle = f"Year: {year}, Area: {ROI_acres} acres"
 
     # Add the title
     fig.suptitle(title, fontsize=title_fontsize)
+    fig.text(0.5, 0.91, subtitle, fontsize=axis_label_fontsize, ha="center")  # Align center below the main title
 
     n_months = end_month - start_month + 1
-    grid_cols = int(n_months / 2)
+    grid_cols = int(n_months / 3)
+    grid_rows = int(n_months / grid_cols)
 
-    grid = plt.GridSpec(3, grid_cols, wspace=0.4, hspace=0.3)
+    grid = plt.GridSpec(grid_rows + 1, grid_cols, wspace=0.4, hspace=0.3)
 
     # Generate sub-figures for each month
     for i, month in enumerate(range(start_month, end_month + 1)):
         logger.info(f"rendering month: {month} sub-figure: {i}")
         # subfigure_title = datetime(year, month, 1).date().strftime("%Y-%m")
-        subfigure_title = calendar.month_abbr[month]
+        subfigure_title = calendar.month_name[month]
         logger.info(f"sub-figure title: {subfigure_title}")
         ET_monthly_filename = join(monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_ET_monthly_sum.tif")
 
@@ -121,72 +128,61 @@ def generate_figure(
         cmap = LinearSegmentedColormap.from_list("ET", ET_COLORS)
         im = ax.imshow(monthly, vmin=vmin, vmax=vmax, cmap=cmap)
         ax.add_patch(generate_patch(ROI_latlon, affine))
-        ax.set_title(subfigure_title)
+        ax.set_title(subfigure_title, loc="left", fontsize=axis_label_fontsize / 2, pad=2)
+
+        # Set the thickness of the border around the subplot
+        for spine in ax.spines.values():
+            spine.set_linewidth(0.5)
 
     # Adjust the layout of the figure
     fig.subplots_adjust(right=0.78)
+    fig.subplots_adjust(top=0.88, bottom=0.075)  # Add more space at the top and bottom
 
-    top_y = grid[0, 0].get_position(fig).y1 - 0.05
-    bottom_y = grid[1, 0].get_position(fig).y0 + 0.05
+    top_y = grid[0, 0].get_position(fig).y1
+    bottom_y = grid[grid_rows - 1, 0].get_position(fig).y0
     cbar_height = top_y - bottom_y
     cbar_ax = fig.add_axes([0.85, bottom_y, 0.05, cbar_height])
-    # fig.colorbar(im, cax=cbar_ax, ticks=[], label=f'Low                                                            High')
     cbar = fig.colorbar(
         im,
         cax=cbar_ax,
         ticks=[],
-        # label=f"{round(vmin)} mm                                                      {round(vmax)} mm",
     )
 
     # Add the min and max labels without rotation
     cbar.ax.text(
         0.5,
-        -0.03,
+        -0.01,
         f"{round(vmin)} mm",  # Bottom label for min value
         transform=cbar.ax.transAxes,
         ha="center",
         va="top",
-        fontsize=10,
+        fontsize=axis_label_fontsize / 2,
     )
     cbar.ax.text(
         0.5,
-        1.03,
+        1.01,
         f"{round(vmax)} mm",  # Top label for max value
         transform=cbar.ax.transAxes,
         ha="center",
         va="bottom",
-        fontsize=10,
+        fontsize=axis_label_fontsize / 2,
     )
 
     # Create a subplot for the main data
-    # ax = plt.subplot(grid[2, :])
     # Get the positions for alignment
     left_x = grid[0, 0].get_position(fig).x0  # Left boundary of the grid
     right_x = cbar_ax.get_position(fig).x1  # Right boundary of the colorbar
-    bottom_y = grid[2, :].get_position(fig).y0  # Bottom boundary of the grid
-    top_y = grid[2, :].get_position(fig).y1  # Top boundary of the grid
+    bottom_y = grid[grid_rows, :].get_position(fig).y0  # Bottom boundary of the grid
+    top_y = grid[grid_rows, :].get_position(fig).y1  # Top boundary of the grid
 
     # Add the bottom chart axis, spanning the full width to align with the colorbar
     ax = fig.add_axes([left_x, bottom_y, right_x - left_x, top_y - bottom_y])
 
     df = main_df[main_df["Year"] == year]
-    # df = main_df[df["month" == month]]
-    # print(df)
     x = df["Month"]
-    # print(f"x (month): {x}")
     y = df["PET"]
-    # print(f"y (PET): {y}")
     y2 = df["ET"]
-    # print(f"y2 (ET): {y2}")
 
-    # Data before 2008 is just Landsat PTJPL and doesnt have OpenET MIN/MAX bands so use percent_nan to calculate CI
-    # ci_pet = df["percent_nan"] / 100 * y
-    # pet_ci_ymin = y - ci_pet
-    # pet_ci_ymax = y + ci_pet
-
-    # ci_et = df["percent_nan"] / 100 * y2
-    # et_ci_ymin = y - ci_et
-    # et_ci_ymax = y + ci_et
     df["pet_ci_ymin"] = df.apply(
         lambda row: (
             row["PET"] - (row["percent_nan"] / 100 * row["PET"]) if row["year"] < OPENET_TRANSITION_DATE else row["avg_min"]
@@ -213,20 +209,22 @@ def generate_figure(
         axis=1,
     )
 
-    pet_color = "blue"
-    et_color = "green"
+    # pet_color = "blue"
+    # et_color = "green"
 
-    # pet_color = "#ff7f0e"  # Orange
-    # et_color = "#17becf"  # Teal
+    pet_color = "#411535"  # Purple
+    et_color = "#D95E2D"  # Orange
 
-    # print(f"ci (nan%): {ci}")
+    # Check if et_ci_ymin or et_ci_ymax are NaN (ie. data missing). If so, don't plot the shaded region
+    is_ensemble_range_data_null = df["et_ci_ymin"].isnull().all() or df["et_ci_ymax"].isnull().all()
+    if not is_ensemble_range_data_null:
+        # Check if it's all 0
+        is_ensemble_range_data_null = df["et_ci_ymin"].eq(0).all() or df["et_ci_ymax"].eq(0).all()
+
     sns.lineplot(x=x, y=y, ax=ax, color=pet_color, label="PET")
     sns.lineplot(x=x, y=y2, ax=ax, color=et_color, label="ET")
-    # if int(year) < 2008:
-    #     ax.fill_between(x, df["pet_ci_ymin"], df["pet_ci_ymax"], color=pet_color, alpha=0.1)
-    if int(year) >= OPENET_TRANSITION_DATE:
+    if int(year) >= OPENET_TRANSITION_DATE and not is_ensemble_range_data_null:
         ax.fill_between(x, df["et_ci_ymin"], df["et_ci_ymax"], color=et_color, alpha=0.1)
-    # plt.legend(labels=["ET"], loc="upper right")
 
     legend_items = {
         "PET": {"color": pet_color, "alpha": 0.8, "lw": 2},
@@ -235,65 +233,71 @@ def generate_figure(
     }
     if int(year) < OPENET_TRANSITION_DATE:
         del legend_items["Ensemble Min/Max"]
+    if is_ensemble_range_data_null:
+        del legend_items["Ensemble Min/Max"]
+        legend_items["Ensemble Min/Max (Unavailable)"] = {"color": et_color, "alpha": 0.1, "lw": 4}
+
     legend_labels = legend_items.keys()
     left_legend_lines = [
         plt.Line2D([0], [0], color=v["color"], lw=v["lw"], alpha=v["alpha"]) for k, v in legend_items.items()
     ]
-    ax.legend(left_legend_lines, legend_labels, loc="upper left", fontsize=5)
-    # ax.set(xlabel="Month", ylabel="ET (mm)")
-    ax.set(xlabel="Month", ylabel="")
+    ax.legend(left_legend_lines, legend_labels, loc="upper left", fontsize=axis_label_fontsize / 2)
+    ax.set(xlabel="", ylabel="")
     ymin = min(min(main_df["ET"]), min(main_df["ET"]), min(df["pet_ci_ymin"]), min(df["et_ci_ymin"]))
     ymax = max(max(main_df["PET"]), max(main_df["PET"]), max(df["pet_ci_ymax"]), max(df["et_ci_ymax"]))
     ylim = (int(ymin), int(ymax + 10))
 
-    # df["normalized_nan"] = (df["percent_nan"] / 100) * (ymax - ymin) + ymin
-    # normalized_min = df["percent_nan"].min()
-    # normalized_max = df["percent_nan"].max()
-    # df["normalized_nan"] = (df["percent_nan"] - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin
     normalized_min = 0
     normalized_max = 100
     df["normalized_nan"] = (df["percent_nan"] - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin
 
-    # TODO: Verify this works for years before 2008 (no OpenET data)
-    # TODO: Switch pre 2008 to uncertainty with bars to match cloud coverage
-    # if year >= OPENET_TRANSITION_DATE:
+    is_confidence_data_null = (
+        df["percent_nan"].isnull().all() or df["percent_nan"].eq(0).all() or df["percent_nan"].eq(100).all()
+    )
+
     ax2 = ax.twinx()
-    bars = ax2.bar(
-        x=df["month"],
-        height=df["normalized_nan"],
-        width=0.8,
-        color="gray",
-        alpha=0.3,
-        label="Cloud Coverage",
-        zorder=1,
-    )
+    if not is_confidence_data_null:
+        bars = ax2.bar(
+            x=df["month"],
+            height=df["normalized_nan"],
+            width=0.8,
+            color="gray",
+            alpha=0.3,
+            label="Cloud Coverage",
+            zorder=1,
+        )
 
-    # Adjust the secondary y-axis range to match the normalization
-    ax2.set_ylim(ymin, ymax)  # Align with the primary y-axis range
-    normalized_ticks = np.linspace(normalized_min, normalized_max, 6)  # Create 6 evenly spaced ticks
-    ax2.set_yticks(
-        [(tick - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin for tick in normalized_ticks]
-    )
-    ax2.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])  # Label them with the original percent values
-    ax2.tick_params(axis="y", labelsize=6)
+        # Adjust the secondary y-axis range to match the normalization
+        ax2.set_ylim(ymin, ymax)  # Align with the primary y-axis range
+        normalized_ticks = np.linspace(normalized_min, normalized_max, 6)  # Create 6 evenly spaced ticks
+        ax2.set_yticks(
+            [(tick - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin for tick in normalized_ticks]
+        )
+        ax2.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])  # Label them with the original percent values
+        ax2.tick_params(axis="y", labelsize=6)
 
-    legend_labels = ["Cloud Cov."]
+    cloud_coverage_label = ["Avg Cloud Cov."] if year >= OPENET_TRANSITION_DATE else ["Avg Cloud Cov. & Missing Data"]
+    legend_labels = cloud_coverage_label if not is_confidence_data_null else ["Avg Cloud Cov. (Unavailable)"]
     legend_colors = ["gray"]
     custom_lines = [plt.Line2D([0], [0], color=legend_colors[i], lw=2, alpha=0.8) for i in range(len(legend_labels))]
-    ax2.legend(custom_lines, legend_labels, loc="upper right", fontsize=5)
+    ax2.legend(custom_lines, legend_labels, loc="upper right", fontsize=axis_label_fontsize / 2)
 
     ax.set(ylim=ylim)
-    ax.set_yticks([int(ymin), int(ymax) + 10])
-    # ax.set_yticklabels(['Low', 'High'])
-    ax.set_yticklabels([f"{int(ymin)} mm", f"{int(ymax) + 10} mm"])
+
+    et_ticks = np.linspace(int(ymin), int(ymax) + 10, 6)
+    # ax.set_yticks([int(ymin), int(ymax) + 10])
+    # ax.set_yticklabels([f"{int(ymin)} mm", f"{int(ymax) + 10} mm"])
+    ax.set_yticks(et_ticks)
+    ax.set_yticklabels([f"{int(tick)} mm" for tick in et_ticks])
+
     ax.tick_params(axis="y", labelsize=6)
 
     # Set monthly x-axis ticks
     ax.set_xticks(range(1, 13))  # Set ticks for each month (1–12)
-    ax.set_xticklabels([calendar.month_abbr[i] for i in range(1, 13)])
+    ax.set_xticklabels([calendar.month_abbr[i] for i in range(1, 13)], fontsize=axis_label_fontsize / 2)
 
     # Set the title and captions for the figure
-    plt.title(f"Area of Interest Average Monthly Water Use", fontsize=10)
+    plt.title(f"Area of Interest Average Monthly Water Use and Missing Data", fontsize=axis_label_fontsize / 2, pad=2)
 
     start_date = datetime(year, start_month, 1).date()
     available_et = get_available_variable_source_for_date("ET", start_date)
@@ -301,9 +305,15 @@ def generate_figure(
         caption = f"ET and PET (ETo) calculated from Landsat with the OpenET Ensemble (Melton et al. 2021) the Idaho EPSCOR GRIDMET (Abatzoglou 2012) models, created {creation_date.date()}"
     else:
         caption = f"ET and PET calculated from Landsat with PT-JPL (Fisher et al. 2008), created {creation_date.date()}"
-    # caption2 = f"Visualization created {creation_date}"
-    plt.figtext(0.48, 0.001, caption, wrap=True, verticalalignment="bottom", horizontalalignment="center", fontsize=5)
-    # plt.figtext(0.93, 0.001, caption2, wrap=True, verticalalignment='bottom', horizontalalignment='right', fontsize=5)
+    plt.figtext(
+        0.48,
+        0.005,
+        caption,
+        wrap=True,
+        verticalalignment="bottom",
+        horizontalalignment="center",
+        fontsize=axis_label_fontsize / 2,
+    )
     plt.tight_layout()
 
     end_time = datetime.now().strftime("%H%M")

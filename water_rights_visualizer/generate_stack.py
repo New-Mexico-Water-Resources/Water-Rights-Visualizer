@@ -125,6 +125,19 @@ def generate_stack(
                 target_CRS=target_CRS,
             )
 
+            affine = ET_subset.geometry.affine
+        except BlankOutput as e:
+            logger.warning(e)
+            continue
+        except FileUnavailable as e:
+            logger.warning(e)
+            continue
+        except Exception as e:
+            logger.exception(e)
+            logger.info(f"problem generating ET subset for date: {date_step.strftime('%Y-%m-%d')}")
+            continue
+
+        try:
             if count_source and count_source.monthly:
                 # These are just used to get error percentage
                 uncertainty_variables = {
@@ -144,18 +157,10 @@ def generate_stack(
                         subset_filename=subset_filename,
                         target_CRS=target_CRS,
                     )
-
-            affine = ET_subset.geometry.affine
-        except BlankOutput as e:
-            logger.warning(e)
-            continue
-        except FileUnavailable as e:
-            logger.warning(e)
-            continue
+        # Just keep processing as this only causes issues with showing uncertainty on the report
         except Exception as e:
             logger.exception(e)
-            logger.info(f"problem generating ET subset for date: {date_step.strftime('%Y-%m-%d')}")
-            continue
+            logger.info(f"problem generating uncertainty subset for date: {date_step.strftime('%Y-%m-%d')}, continuing...")
 
         subset_shape = ET_subset.shape
 
