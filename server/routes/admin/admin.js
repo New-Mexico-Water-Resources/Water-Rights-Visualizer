@@ -8,6 +8,14 @@ const fs = require("fs");
 const constants = require("../../constants");
 const { ManagementClient } = require("auth0");
 
+const cachedUsers = {
+  data: [],
+  lastUpdated: 0,
+};
+
+const DEEP_CACHE_DURATION = 60000; // 1 minute
+const SHALLOW_CACHE_DURATION = 600000; // 10 minutes
+
 const managementClient = new ManagementClient({
   domain: constants.auth0_domain,
   clientId: constants.auth0_management_client_id,
@@ -61,7 +69,25 @@ router.get("/users", async (req, res) => {
   }
 
   try {
+    let lastUpdateTimeString = new Date(cachedUsers?.lastUpdated || 0).toLocaleString();
+    // If users were fetched less than 1 minute ago, return cached users without any additional requests
+    if (cachedUsers.lastUpdated > Date.now() - DEEP_CACHE_DURATION) {
+      res.status(200).send(cachedUsers.data);
+      console.log("Returning cached users, last updated", `\x1b[32m${lastUpdateTimeString}\x1b[0m`);
+      return;
+    }
+
+    // If users were fetched less than 10 minute ago, check user count and return cached users if count is the same
+    let allUsers = await managementClient.users.getAll({ include_totals: true });
+    if (cachedUsers.lastUpdated > Date.now() - SHALLOW_CACHE_DURATION && cachedUsers.data.length === allUsers.data.total) {
+      console.log("Returning cached users, count is the same, last updated", `\x1b[32m${lastUpdateTimeString}\x1b[0m`);
+      res.status(200).send(cachedUsers.data);
+      return;
+    }
+
     const users = await fetchUsers();
+    cachedUsers.data = users;
+    cachedUsers.lastUpdated = Date.now();
     res.status(200).send(users);
   } catch (error) {
     console.error("Failed to fetch users from Auth0:", error);

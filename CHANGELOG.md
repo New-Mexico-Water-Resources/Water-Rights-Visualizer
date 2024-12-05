@@ -13,9 +13,12 @@
 - Release Notes are now generated automatically from the `CHANGELOG.md` file.
     - Persists yellow "new" state whether release notes for this version have been checked or not
 - Persists the sorting options for the backlog
+- Adds simple 404 page allowing the user to return back to the application
 
 ### Bug Fixes
 - The `status` line on items in the queue would overflow out of the container if the job failed and it was too long
+- Caches the list of users for 1 to 10 minutes (deep and shallow caching time limits) to reduce the number of fetches to the authentication provider (only visible to admins)
+  - In some cases, this was leading to slow user list load times due to rate limiting on the Auth0 side
 
 
 ---

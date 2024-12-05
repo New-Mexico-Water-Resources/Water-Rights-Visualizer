@@ -26,11 +26,12 @@ import CloseIcon from "@mui/icons-material/Close";
 import Markdown from "react-markdown";
 
 import useStore from "../utils/store";
-import { useEffect, useMemo, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import LoginButton from "./LoginButton";
 import { ROLES } from "../utils/constants";
 
 import changelog from "../../CHANGELOG.md?raw";
+import { useNavigate } from "react-router";
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth0();
@@ -128,7 +129,7 @@ const Profile = () => {
   );
 };
 
-const NavToolbar = () => {
+const NavToolbar: FC<{ publicMode?: boolean }> = ({ publicMode }) => {
   const [isQueueOpen, setIsQueueOpen] = useStore((state) => [state.isQueueOpen, state.setIsQueueOpen]);
   const [isBacklogOpen, setIsBacklogOpen] = useStore((state) => [state.isBacklogOpen, state.setIsBacklogOpen]);
   const [isUsersPanelOpen, setIsUsersPanelOpen] = useStore((state) => [state.isUsersPanelOpen, state.setIsUsersPanelOpen]);
@@ -158,6 +159,8 @@ const NavToolbar = () => {
     [users]
   );
 
+  const navigate = useNavigate();
+
   return (
     <AppBar className="nav-area" position="static">
       <Toolbar
@@ -181,6 +184,12 @@ const NavToolbar = () => {
             display: { xs: "none", md: "flex" },
             color: "var(--st-gray-20)",
             textDecoration: "none",
+            cursor: publicMode ? "pointer" : "default",
+          }}
+          onClick={() => {
+            if (publicMode) {
+              navigate("/");
+            }
           }}
         >
           New Mexico ET Reporting Tool
@@ -258,117 +267,49 @@ const NavToolbar = () => {
         >
           v{version}
         </Typography>
-        <Tooltip
-          title={
-            isAuthenticated
-              ? canSubmitJobs
-                ? "Configure a new job"
-                : "You don't have permission to create jobs"
-              : "You must be logged in to start a job"
-          }
-        >
-          <Typography
-            color="inherit"
-            component="div"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              color: "var(--st-gray-30)",
-              cursor: "pointer",
-              padding: "0 8px",
-              height: "100%",
-              userSelect: "none",
-              ":hover":
-                isAuthenticated && canSubmitJobs ? { color: "var(--st-gray-10)", backgroundColor: "var(--st-gray-80)" } : {},
-            }}
-            onClick={() => {
-              if (isAuthenticated && canSubmitJobs) {
-                startNewJob();
-              }
-            }}
+        {!publicMode && (
+          <Tooltip
+            title={
+              isAuthenticated
+                ? canSubmitJobs
+                  ? "Configure a new job"
+                  : "You don't have permission to create jobs"
+                : "You must be logged in to start a job"
+            }
           >
-            <AddIcon />
-            New
-          </Typography>
-        </Tooltip>
-
-        <Box sx={{ ml: "auto", display: "flex", height: "100%", alignItems: "center" }}>
-          <Tooltip title={canReadJobs ? "View in progress jobs" : "You don't have permission to view the job queue"}>
-            <Box
-              className={`nav-item ${isQueueOpen ? "active" : ""}`}
+            <Typography
+              color="inherit"
+              component="div"
               sx={{
                 display: "flex",
                 alignItems: "center",
-                height: "100%",
+                color: "var(--st-gray-30)",
                 cursor: "pointer",
-                ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
+                padding: "0 8px",
+                height: "100%",
+                userSelect: "none",
+                ":hover":
+                  isAuthenticated && canSubmitJobs
+                    ? { color: "var(--st-gray-10)", backgroundColor: "var(--st-gray-80)" }
+                    : {},
               }}
               onClick={() => {
-                if (isBacklogOpen && !isQueueOpen) {
-                  setIsBacklogOpen(false);
+                if (isAuthenticated && canSubmitJobs) {
+                  startNewJob();
                 }
-
-                setIsQueueOpen(!isQueueOpen);
-                setIsUsersPanelOpen(false);
               }}
             >
-              <Badge badgeContent={queue.length} color="primary">
-                <Typography
-                  color="inherit"
-                  component="div"
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "0 8px",
-                    height: "fit-content",
-                    gap: "4px",
-                  }}
-                >
-                  <PendingActionsIcon />
-                  Queue
-                </Typography>
-              </Badge>
-            </Box>
+              <AddIcon />
+              New
+            </Typography>
           </Tooltip>
-          <Tooltip title={canReadJobs ? "View completed jobs" : "You don't have permission to view completed jobs"}>
-            <Box
-              className={`nav-item ${isBacklogOpen ? "active" : ""}`}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                height: "100%",
-                cursor: "pointer",
-                ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
-              }}
-              onClick={() => {
-                if (isQueueOpen && !isBacklogOpen) {
-                  setIsQueueOpen(false);
-                }
+        )}
 
-                setIsBacklogOpen(!isBacklogOpen);
-                setIsUsersPanelOpen(false);
-              }}
-            >
-              <Typography
-                color="inherit"
-                component="div"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "0 8px",
-                  height: "fit-content",
-                  gap: "4px",
-                }}
-              >
-                <ViewStreamIcon />
-                Backlog
-              </Typography>
-            </Box>
-          </Tooltip>
-          {isAdmin && (
-            <Tooltip title="View Users">
+        {!publicMode && (
+          <Box sx={{ ml: "auto", display: "flex", height: "100%", alignItems: "center" }}>
+            <Tooltip title={canReadJobs ? "View in progress jobs" : "You don't have permission to view the job queue"}>
               <Box
-                className={`nav-item ${isUsersPanelOpen ? "active" : ""}`}
+                className={`nav-item ${isQueueOpen ? "active" : ""}`}
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -377,12 +318,15 @@ const NavToolbar = () => {
                   ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
                 }}
                 onClick={() => {
-                  setIsUsersPanelOpen(!isUsersPanelOpen);
-                  setIsBacklogOpen(false);
-                  setIsQueueOpen(false);
+                  if (isBacklogOpen && !isQueueOpen) {
+                    setIsBacklogOpen(false);
+                  }
+
+                  setIsQueueOpen(!isQueueOpen);
+                  setIsUsersPanelOpen(false);
                 }}
               >
-                <Badge badgeContent={newUsers.length} color="primary">
+                <Badge badgeContent={queue.length} color="primary">
                   <Typography
                     color="inherit"
                     component="div"
@@ -394,15 +338,86 @@ const NavToolbar = () => {
                       gap: "4px",
                     }}
                   >
-                    <GroupIcon />
-                    Users
+                    <PendingActionsIcon />
+                    Queue
                   </Typography>
                 </Badge>
               </Box>
             </Tooltip>
-          )}
-        </Box>
-        <Profile />
+            <Tooltip title={canReadJobs ? "View completed jobs" : "You don't have permission to view completed jobs"}>
+              <Box
+                className={`nav-item ${isBacklogOpen ? "active" : ""}`}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  height: "100%",
+                  cursor: "pointer",
+                  ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
+                }}
+                onClick={() => {
+                  if (isQueueOpen && !isBacklogOpen) {
+                    setIsQueueOpen(false);
+                  }
+
+                  setIsBacklogOpen(!isBacklogOpen);
+                  setIsUsersPanelOpen(false);
+                }}
+              >
+                <Typography
+                  color="inherit"
+                  component="div"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0 8px",
+                    height: "fit-content",
+                    gap: "4px",
+                  }}
+                >
+                  <ViewStreamIcon />
+                  Backlog
+                </Typography>
+              </Box>
+            </Tooltip>
+            {isAdmin && (
+              <Tooltip title="View Users">
+                <Box
+                  className={`nav-item ${isUsersPanelOpen ? "active" : ""}`}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    height: "100%",
+                    cursor: "pointer",
+                    ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
+                  }}
+                  onClick={() => {
+                    setIsUsersPanelOpen(!isUsersPanelOpen);
+                    setIsBacklogOpen(false);
+                    setIsQueueOpen(false);
+                  }}
+                >
+                  <Badge badgeContent={newUsers.length} color="primary">
+                    <Typography
+                      color="inherit"
+                      component="div"
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "0 8px",
+                        height: "fit-content",
+                        gap: "4px",
+                      }}
+                    >
+                      <GroupIcon />
+                      Users
+                    </Typography>
+                  </Badge>
+                </Box>
+              </Tooltip>
+            )}
+          </Box>
+        )}
+        {!publicMode && <Profile />}
       </Toolbar>
     </AppBar>
   );
