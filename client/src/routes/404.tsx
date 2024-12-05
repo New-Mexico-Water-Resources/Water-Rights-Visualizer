@@ -3,6 +3,7 @@ import NavToolbar from "../components/NavToolbar";
 import { Button } from "@mui/material";
 import { MapContainer, TileLayer } from "react-leaflet";
 import useStore from "../utils/store";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 const NotFoundPage: FC = () => {
   const loadVersion = useStore((state) => state.loadVersion);
@@ -36,10 +37,15 @@ const NotFoundPage: FC = () => {
             width: "600px",
             height: "300px",
             backgroundColor: "rgba(0, 0, 0, 0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
           }}
         >
-          <h1 style={{ fontSize: "64px", marginBottom: 0 }}>404</h1>
-          <p>You seem to have gone off the map!</p>
+          <HelpOutlineIcon style={{ fontSize: 64 }} />
+          <h1 style={{ fontSize: "30px", marginBottom: 0, padding: 0 }}>You seem to have gone off the map!</h1>
+          <p style={{ fontSize: "16px" }}>404</p>
           <Button
             variant="contained"
             color="secondary"
