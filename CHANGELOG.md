@@ -1,4 +1,4 @@
-## 1.14.0 (Current)
+## 1.2.0 (Current)
 
 ### Features
 - Updated the format of the generated report to:
