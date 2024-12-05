@@ -30,7 +30,7 @@ import { useEffect, useMemo, useState } from "react";
 import LoginButton from "./LoginButton";
 import { ROLES } from "../utils/constants";
 
-import changelog from "../../../CHANGELOG.md?raw";
+import changelog from "../../CHANGELOG.md?raw";
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth0();

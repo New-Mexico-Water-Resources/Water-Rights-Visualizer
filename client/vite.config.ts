@@ -15,7 +15,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         app: "./index.html",
-        changelog: "../CHANGELOG.md",
+        changelog: "./CHANGELOG.md",
       },
     },
   },

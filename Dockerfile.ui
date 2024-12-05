@@ -6,6 +6,7 @@ COPY client/package.json client/yarn.lock ./
 RUN yarn install
 
 COPY client/ ./
+COPY CHANGELOG.md ./
 RUN yarn build
 
 FROM nginx:alpine
