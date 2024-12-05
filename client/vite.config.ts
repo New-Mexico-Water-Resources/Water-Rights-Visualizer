@@ -1,10 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import markdown from "vite-plugin-md";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), markdown()],
+  plugins: [react()],
   root: "./",
   server: {
     fs: {
@@ -19,5 +18,5 @@ export default defineConfig({
       },
     },
   },
-  assetsInclude: ["*.md"],
+  assetsInclude: ["**/*.md"],
 });
