@@ -1,4 +1,19 @@
-## 1.2.0 (Current)
+## 1.3.0 (2024-12-05)
+
+### Features
+- Report layout adjustments
+  - Font sizes, spacing, and stroke widths have been adjusted to make the report more readable
+  - The ROI month grid has been adjusted to take more advantage of the space in a 3 x 4 grid (versus 2 x 6)
+  - For pre-OpenET data, the legend title was updated to "Avg Cloud Cov. & Missing Data" to better reflect the data being displayed
+  - The line plot title was also adjusted to reflect the inclusion of missing data visualizations
+- Line plot colors have been adjusted to be more distinct from the color gradient bar
+  - PET is now purple and ET is orange
+
+### Bug Fixes
+- The PDF version of the report now contains less whitespace around the edges so it appears more similar to the PNG per year
+- Typo fix in the report title for "Evapotranspiration"
+
+## 1.2.0 (2024-12-04)
 
 ### Features
 - Updated the format of the generated report to:
