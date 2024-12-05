@@ -222,9 +222,10 @@ def generate_figure(
     # print(f"ci (nan%): {ci}")
     sns.lineplot(x=x, y=y, ax=ax, color=pet_color, label="PET")
     sns.lineplot(x=x, y=y2, ax=ax, color=et_color, label="ET")
-    if int(year) < 2008:
-        ax.fill_between(x, df["pet_ci_ymin"], df["pet_ci_ymax"], color=pet_color, alpha=0.1)
-    ax.fill_between(x, df["et_ci_ymin"], df["et_ci_ymax"], color=et_color, alpha=0.1)
+    # if int(year) < 2008:
+    #     ax.fill_between(x, df["pet_ci_ymin"], df["pet_ci_ymax"], color=pet_color, alpha=0.1)
+    if int(year) >= OPENET_TRANSITION_DATE:
+        ax.fill_between(x, df["et_ci_ymin"], df["et_ci_ymax"], color=et_color, alpha=0.1)
     # plt.legend(labels=["ET"], loc="upper right")
 
     legend_items = {
@@ -232,7 +233,7 @@ def generate_figure(
         "ET": {"color": et_color, "alpha": 0.8, "lw": 2},
         "Ensemble Min/Max": {"color": et_color, "alpha": 0.1, "lw": 4},
     }
-    if int(year) < 2008:
+    if int(year) < OPENET_TRANSITION_DATE:
         del legend_items["Ensemble Min/Max"]
     legend_labels = legend_items.keys()
     left_legend_lines = [
@@ -254,31 +255,32 @@ def generate_figure(
     df["normalized_nan"] = (df["percent_nan"] - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin
 
     # TODO: Verify this works for years before 2008 (no OpenET data)
-    if year >= 2008:
-        ax2 = ax.twinx()
-        bars = ax2.bar(
-            x=df["month"],
-            height=df["normalized_nan"],
-            width=0.8,
-            color="gray",
-            alpha=0.3,
-            label="Cloud Coverage",
-            zorder=1,
-        )
+    # TODO: Switch pre 2008 to uncertainty with bars to match cloud coverage
+    # if year >= OPENET_TRANSITION_DATE:
+    ax2 = ax.twinx()
+    bars = ax2.bar(
+        x=df["month"],
+        height=df["normalized_nan"],
+        width=0.8,
+        color="gray",
+        alpha=0.3,
+        label="Cloud Coverage",
+        zorder=1,
+    )
 
-        # Adjust the secondary y-axis range to match the normalization
-        ax2.set_ylim(ymin, ymax)  # Align with the primary y-axis range
-        normalized_ticks = np.linspace(normalized_min, normalized_max, 6)  # Create 6 evenly spaced ticks
-        ax2.set_yticks(
-            [(tick - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin for tick in normalized_ticks]
-        )
-        ax2.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])  # Label them with the original percent values
-        ax2.tick_params(axis="y", labelsize=6)
+    # Adjust the secondary y-axis range to match the normalization
+    ax2.set_ylim(ymin, ymax)  # Align with the primary y-axis range
+    normalized_ticks = np.linspace(normalized_min, normalized_max, 6)  # Create 6 evenly spaced ticks
+    ax2.set_yticks(
+        [(tick - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin for tick in normalized_ticks]
+    )
+    ax2.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])  # Label them with the original percent values
+    ax2.tick_params(axis="y", labelsize=6)
 
-        legend_labels = ["Cloud Cov."]
-        legend_colors = ["gray"]
-        custom_lines = [plt.Line2D([0], [0], color=legend_colors[i], lw=2, alpha=0.8) for i in range(len(legend_labels))]
-        ax2.legend(custom_lines, legend_labels, loc="upper right", fontsize=5)
+    legend_labels = ["Cloud Cov."]
+    legend_colors = ["gray"]
+    custom_lines = [plt.Line2D([0], [0], color=legend_colors[i], lw=2, alpha=0.8) for i in range(len(legend_labels))]
+    ax2.legend(custom_lines, legend_labels, loc="upper right", fontsize=5)
 
     ax.set(ylim=ylim)
     ax.set_yticks([int(ymin), int(ymax) + 10])
