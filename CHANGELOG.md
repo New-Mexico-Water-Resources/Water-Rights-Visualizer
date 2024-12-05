@@ -19,6 +19,7 @@
 - The `status` line on items in the queue would overflow out of the container if the job failed and it was too long
 - Caches the list of users for 1 to 10 minutes (deep and shallow caching time limits) to reduce the number of fetches to the authentication provider (only visible to admins)
   - In some cases, this was leading to slow user list load times due to rate limiting on the Auth0 side
+- Better handles missing uncertainty data (shows as unavailable in the report if we don't have any data for the month)
 
 
 ---
