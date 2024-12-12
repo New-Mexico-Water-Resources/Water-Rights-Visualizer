@@ -3,6 +3,7 @@
 ### Features
 - Shows an error messsage and prevents the user from submitting a job if the target area is too small (less than 900 m^2)
 - Adds a toggle to show "valid bounds" on the map for the area we have data for
+- Shows all available properties in job status
 
 ### Bug Fixes
 - Adds error handling for jobs involving areas that are too small being run

@@ -32,7 +32,7 @@ const CurrentJobChip = () => {
 
     let properties = {};
     let features = activeJob.loaded_geo_json?.features;
-    if (features.length > 0) {
+    if (features && features.length > 0) {
       properties = activeJob.loaded_geo_json.features[0].properties;
     } else if (!features && activeJob.loaded_geo_json?.properties) {
       properties = activeJob.loaded_geo_json.properties;
