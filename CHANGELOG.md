@@ -1,4 +1,4 @@
-## 1.3.0 (2024-12-11)
+## 1.4.0 (2024-12-11)
 
 ### Features
 - Shows an error messsage and prevents the user from submitting a job if the target area is too small (less than 900 m^2)
