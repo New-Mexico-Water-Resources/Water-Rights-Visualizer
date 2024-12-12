@@ -27,6 +27,7 @@ import { useDropzone } from "react-dropzone";
 import useStore, { PolygonLocation } from "../utils/store";
 import { useConfirm } from "material-ui-confirm";
 import { formatElapsedTime, formJobForQueue } from "../utils/helpers";
+import { area as turfArea } from "@turf/turf";
 
 const UploadDialog = () => {
   const [jobName, setJobName] = useStore((state) => [state.jobName, state.setJobName]);
@@ -123,8 +124,8 @@ const UploadDialog = () => {
     { width: 200, label: "Long", dataKey: "long" },
     { width: 200, label: "County", dataKey: "county" },
     { width: 200, label: "Polygon Source", dataKey: "polygon_So" },
-    { width: 200, label: "Shape Area", dataKey: "shape_Area" },
-    { width: 200, label: "Shape Length", dataKey: "shape_Leng" },
+    { width: 200, label: "Shape Area", dataKey: "shapeArea" },
+    { width: 200, label: "Shape Length", dataKey: "shapeLeng" },
     { width: 200, label: "Source", dataKey: "source" },
     { width: 200, label: "WUR Basin", dataKey: "wUR_Basin" },
     { width: 200, label: "Comments", dataKey: "comments" },
@@ -147,6 +148,11 @@ const UploadDialog = () => {
         long = geojson?.features[0]?.geometry?.coordinates[0][0][1];
       }
 
+      let area = geojson?.features[0]?.properties?.Shape_Area;
+      if (!area) {
+        area = turfArea(geojson);
+      }
+
       return {
         visible: true,
         name: name,
@@ -154,13 +160,14 @@ const UploadDialog = () => {
         comments: geojson?.properties?.Comments,
         county: geojson?.properties?.County,
         polygon_So: geojson?.properties?.Polygon_So,
-        shape_Area: geojson?.properties?.Shape_Area,
-        shape_Leng: geojson?.properties?.Shape_Leng,
+        shapeArea: area,
+        shapeLeng: geojson?.properties?.Shape_Leng,
         source: geojson?.properties?.Source,
         wUR_Basin: geojson?.properties?.WUR_Basin,
         id: index,
         lat: lat,
         long: long,
+        isValidArea: area > 900,
       };
     });
 
@@ -169,9 +176,7 @@ const UploadDialog = () => {
 
   const VirtuosoTableComponents: TableComponents<PolygonLocation> = useMemo(
     () => ({
-      Scroller: React.forwardRef<HTMLDivElement>((props, ref) => (
-        <TableContainer component={Paper} {...props} ref={ref} />
-      )),
+      Scroller: React.forwardRef<HTMLDivElement>((props, ref) => <TableContainer component={Paper} {...props} ref={ref} />),
       Table: (props) => <Table {...props} sx={{ borderCollapse: "separate", tableLayout: "fixed" }} />,
       TableHead: TableHead as any,
       TableRow: ({ item: _item, ...props }) => <TableRow {...props} />,

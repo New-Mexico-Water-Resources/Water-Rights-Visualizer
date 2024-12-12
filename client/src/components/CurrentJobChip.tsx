@@ -27,6 +27,26 @@ const CurrentJobChip = () => {
     return jobStatus;
   }, [activeJob?.key, jobStatuses]);
 
+  const activeJobProperties: { property: string; value: any }[] = useMemo(() => {
+    if (!activeJob?.loaded_geo_json) return [];
+
+    let properties = {};
+    let features = activeJob.loaded_geo_json?.features;
+    if (features.length > 0) {
+      properties = activeJob.loaded_geo_json.features[0].properties;
+    } else if (!features && activeJob.loaded_geo_json?.properties) {
+      properties = activeJob.loaded_geo_json.properties;
+    }
+
+    return Object.entries(properties).map(([key, value]) => {
+      let propertyName = key
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+      return { property: propertyName, value };
+    });
+  }, [activeJob?.loaded_geo_json]);
+
   return (
     <div className="current-job">
       <Typography
@@ -61,6 +81,34 @@ const CurrentJobChip = () => {
           Status: <b>{jobStatus?.status || "N/A"}</b>
         </Typography>
       )}
+
+      {activeJob && activeJobProperties.length > 0 && (
+        <Typography variant="body1" style={{ color: "var(--st-gray-40)", marginTop: "8px" }}>
+          Properties:
+        </Typography>
+      )}
+      {activeJob && activeJobProperties.length > 0 && (
+        <div
+          style={{
+            maxHeight: "300px",
+            maxWidth: "400px",
+            overflow: "auto",
+            border: "2px solid #404243",
+            borderRadius: "8px",
+            padding: "4px",
+            textOverflow: "ellipsis",
+            whiteSpace: "pre",
+            marginBottom: "4px",
+          }}
+        >
+          {activeJobProperties.map((property, index) => (
+            <Typography key={index} variant="body2" style={{ color: "var(--st-gray-40)" }}>
+              {property.property}: <b>{property.value}</b>
+            </Typography>
+          ))}
+        </div>
+      )}
+
       {previewMode && (
         <Button
           sx={{ margin: "8px 0" }}

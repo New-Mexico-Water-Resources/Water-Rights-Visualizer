@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from "react";
 import { useMap } from "react-leaflet";
 import Leaflet from "leaflet";
 import useStore from "../utils/store";
+import { area as turfArea } from "@turf/turf";
 
 const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locations }) => {
   const map = useMap();
@@ -9,6 +10,7 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
 
   const loadedGeoJSON = useStore((state) => state.loadedGeoJSON);
   const setLocations = useStore((state) => state.setLocations);
+  const minimumValidArea = useStore((state) => state.minimumValidArea);
 
   const [selectedMapLayer, setSelectedMapLayer] = useState<number | null>(null);
 
@@ -60,12 +62,22 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
           fitToBounds = false;
         }
 
+        let area = turfArea(layer);
+        let isValidArea = area >= minimumValidArea;
+
         let style: Record<string, any> = {};
         if (!location.visible) {
           style.fillOpacity = 0.5;
           style.color = "black";
           style.fillColor = "black";
         }
+
+        if (!isValidArea && location.visible) {
+          style.color = "red";
+          style.fillColor = "red";
+          style.fillOpacity = 0.5;
+        }
+
         const geoJsonLayer = new Leaflet.GeoJSON(layer, { style });
         geoJsonLayer.on({
           dblclick: () => {
