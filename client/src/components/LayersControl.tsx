@@ -29,6 +29,7 @@ import { useConfirm } from "material-ui-confirm";
 import { area as turfArea } from "@turf/turf";
 
 import ErrorIcon from "@mui/icons-material/Error";
+import EditIcon from "@mui/icons-material/Edit";
 
 const LayersControl: FC = () => {
   const minimumValidArea = useStore((state) => state.minimumValidArea);
@@ -206,6 +207,9 @@ const LayersControl: FC = () => {
 
       let roundedAcres = row?.acres ? Math.round(row.acres * 100) / 100 : "NaN";
 
+      let [editRowName, setEditRowName] = useState(false);
+      let [rowName, setRowName] = useState(row.name);
+
       return (
         <div key={row.id} className={`layer-row ${row.id === activeRowId ? "active" : ""}`} style={style}>
           <div className="left-btns">
@@ -235,7 +239,21 @@ const LayersControl: FC = () => {
           </div>
           <div
             className="details"
-            onClick={() => {
+            onClick={(evt) => {
+              // If has class ignore-select, don't do anything
+              if (evt.target instanceof HTMLElement && evt.target.classList.contains("ignore-select")) {
+                return;
+              }
+
+              // Also check if parent has ignore-select
+              if ((evt.target as any)?.parentElement?.classList.contains("ignore-select")) {
+                return;
+              }
+
+              if (evt.target instanceof HTMLInputElement) {
+                return;
+              }
+
               if (row.id === activeRowId) {
                 setActiveRowId(null);
                 setLoadedGeoJSON(null);
@@ -253,18 +271,54 @@ const LayersControl: FC = () => {
               }
             }}
           >
-            <Typography
-              variant="body1"
-              sx={{
-                color: row.id === activeRowId ? "var(--st-gray-10)" : "var(--st-gray-30)",
-                fontWeight: "bold",
-                display: "flex",
-                alignItems: "center",
-                cursor: "pointer",
-              }}
-            >
-              {row.name}
-            </Typography>
+            {!editRowName && (
+              <Typography
+                variant="body1"
+                className="ignore-select"
+                sx={{
+                  color: row.id === activeRowId ? "var(--st-gray-10)" : "var(--st-gray-30)",
+                  fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+                onDoubleClick={() => {
+                  setEditRowName(true);
+                }}
+              >
+                {row.name}
+                <EditIcon
+                  onClick={(evt) => {
+                    evt.stopPropagation();
+                    setEditRowName(true);
+                  }}
+                  className="ignore-select"
+                  sx={{ color: "var(--st-gray-30)", cursor: "pointer", ml: "8px", fontSize: "14px" }}
+                />
+              </Typography>
+            )}
+            {editRowName && (
+              <>
+                <input
+                  placeholder={row.name}
+                  value={rowName}
+                  style={{
+                    backgroundColor: "var(--st-gray-90)",
+                    border: "1px solid var(--st-gray-40)",
+                    borderRadius: "4px",
+                    padding: "4px",
+                  }}
+                  onChange={(evt) => {
+                    setRowName(evt.target.value);
+                  }}
+                  onBlur={() => {
+                    row.name = rowName;
+                    setRows([...rows]);
+                    setEditRowName(false);
+                  }}
+                />
+              </>
+            )}
             <Typography
               variant="body2"
               style={{ color: row.id === activeRowId ? "var(--st-gray-20)" : "var(--st-gray-40)" }}

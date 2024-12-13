@@ -111,6 +111,17 @@ VARIABLE_TYPES = [
         start=datetime(2008, 1, 1).date(),
         end=datetime(2025, 1, 1).date(),
     ),
+    VariableType(
+        name="Oregon State PRISM PPT",
+        variable="PPT",
+        mapped_variable="PPT",
+        file_prefix="OREGON_STATE_PRISM_",
+        monthly=True,
+        parent_dir="precipitation",
+        # start=datetime(2019, 10, 1).date(),
+        start=datetime(2008, 1, 1).date(),
+        end=datetime(2025, 1, 1).date(),
+    ),
 ]
 
 

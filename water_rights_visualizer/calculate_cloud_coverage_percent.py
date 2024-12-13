@@ -100,7 +100,7 @@ def calculate_cloud_coverage_percent(
     yearly_ccount_percentages = {}
 
     year_month = {}
-    uncertainty_variables = ["ET_MIN", "ET_MAX", "COUNT"]
+    uncertainty_variables = ["ET_MIN", "ET_MAX", "COUNT", "PPT"]
     for variable in uncertainty_variables:
         subset_files = glob(f"{subset_directory}/*_{variable}_subset.tif")
         for subset_file in subset_files:
@@ -120,6 +120,7 @@ def calculate_cloud_coverage_percent(
         ccount_subset_file = variable_files["COUNT"]
         et_min_subset_file = variable_files["ET_MIN"]
         et_max_subset_file = variable_files["ET_MAX"]
+        ppt_subset_file = variable_files["PPT"]
 
         if not yearly_ccount_percentages.get(year):
             yearly_ccount_percentages[year] = {}
@@ -129,12 +130,14 @@ def calculate_cloud_coverage_percent(
         ccount_average = get_nan_tiff_roi_average(ccount_subset_file, ROI_geometry, nan_subset_directory)
         et_min_average = get_nan_tiff_roi_average(et_min_subset_file, ROI_geometry, nan_subset_directory)
         et_max_average = get_nan_tiff_roi_average(et_max_subset_file, ROI_geometry, nan_subset_directory)
+        ppt_average = get_nan_tiff_roi_average(ppt_subset_file, ROI_geometry, nan_subset_directory)
 
         yearly_ccount_percentages[year][month] = {
             "avg_cloud_count": ccount_average,
             "days_in_month": days_in_month,
             "avg_min": et_min_average,
             "avg_max": et_max_average,
+            "ppt_avg": ppt_average,
         }
 
     for year, month_percentages in yearly_ccount_percentages.items():
@@ -144,7 +147,7 @@ def calculate_cloud_coverage_percent(
         if exists(monthly_ccount_percent_csv):
             existing_nan_percent_csv = pd.read_csv(monthly_ccount_percent_csv)
 
-        monthly_ccount = pd.DataFrame(columns=["year", "month", "percent_nan", "avg_min", "avg_max"])
+        monthly_ccount = pd.DataFrame(columns=["year", "month", "percent_nan", "avg_min", "avg_max", "ppt_avg"])
         for month in range(1, 13):
             # Pad month with 0 if less than 10
             month_key = f"{month:02d}"
@@ -162,12 +165,14 @@ def calculate_cloud_coverage_percent(
             rounded_percentage = round(percentage * 100, 2)
             rounded_avg_min = round(percentages["avg_min"], 2)
             rounded_avg_max = round(percentages["avg_max"], 2)
+            rounded_ppt_avg = round(percentages["ppt_avg"], 2)
             monthly_ccount.loc[len(monthly_ccount)] = [
                 str(year),
                 month,
                 rounded_percentage,
                 rounded_avg_min,
                 rounded_avg_max,
+                rounded_ppt_avg,
             ]
 
         monthly_ccount.to_csv(monthly_ccount_percent_csv, index=False)
