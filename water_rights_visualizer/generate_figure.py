@@ -230,7 +230,8 @@ def generate_figure(
     ppt_color = "#2C77BF"  # Blue
 
     # Check if et_ci_ymin or et_ci_ymax are NaN (ie. data missing). If so, don't plot the shaded region
-    is_ensemble_range_data_null = df["et_ci_ymin"].isnull().all() or df["et_ci_ymax"].isnull().all()
+    ci_fields_exist = "et_ci_ymin" in df.columns and "et_ci_ymax" in df.columns
+    is_ensemble_range_data_null = not ci_fields_exist or df["et_ci_ymin"].isnull().all() or df["et_ci_ymax"].isnull().all()
     if not is_ensemble_range_data_null:
         # Check if it's all 0
         is_ensemble_range_data_null = df["et_ci_ymin"].eq(0).all() or df["et_ci_ymax"].eq(0).all()
@@ -246,8 +247,10 @@ def generate_figure(
         "Ensemble Min/Max": {"color": et_color, "alpha": 0.1, "lw": 4},
     }
 
-    sns.lineplot(x=x, y=df["ppt_avg"], ax=ax_precip, color=ppt_color, label="Precipitation")
-    ax_precip.stackplot(x, df["ppt_avg"], colors=[ppt_color + "80"], labels=["Precipitation"])
+    # Ensure ppt_avg is in df
+    if "ppt_avg" in df.columns:
+        sns.lineplot(x=x, y=df["ppt_avg"], ax=ax_precip, color=ppt_color, label="Precipitation")
+        ax_precip.stackplot(x, df["ppt_avg"], colors=[ppt_color + "80"], labels=["Precipitation"])
 
     precipitation_legend_items = {
         "Precipitation": {"color": ppt_color, "alpha": 0.8, "lw": 2},
