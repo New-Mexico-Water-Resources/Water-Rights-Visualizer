@@ -133,7 +133,7 @@ def generate_figure(
         cmap = LinearSegmentedColormap.from_list("ET", ET_COLORS)
         im = ax.imshow(monthly, vmin=vmin, vmax=vmax, cmap=cmap)
         ax.add_patch(generate_patch(ROI_latlon, affine))
-        ax.set_title(subfigure_title, loc="left", fontsize=axis_label_fontsize / 2, pad=2)
+        ax.set_title(subfigure_title, loc="left", fontsize=axis_label_fontsize / 2, pad=4)
 
         # Set the thickness of the border around the subplot
         for spine in ax.spines.values():

@@ -1,3 +1,19 @@
+## 1.5.0 (2024-12-18)
+
+### Features
+- Full page report layout
+  - The report is now the size of a standard 8.5 x 11 inch page
+  - Avg. Cloud Coverage & Missing Data is now displayed as a separated line chart below the ET and PET chart
+  - ROI tiles are now bigger
+  - Updated wording for data sources at the bottom of the page
+- Precipitation data is now displayed in the report
+  - Precipitation data is displayed as a line chart below the ET and PET chart
+  - Data comes from the Oregon State PRISM dataset and is credited at the bottom of the generated report
+
+### Bug Fixes
+- Increased error handling for missing data in the report
+- Fixed an issue with certain variable tiles after 2018 not being correctly mapped to their relative S3 location
+
 ## 1.4.0 (2024-12-11)
 
 ### Features
