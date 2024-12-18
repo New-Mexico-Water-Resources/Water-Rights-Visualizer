@@ -62,6 +62,7 @@ class S3Source(DataSource):
         temporary_directory: str = None,
         S3_table_filename: str = None,
         remove_temporary_files: bool = None,
+        aws_profile: str = None,
     ):
         if remove_temporary_files is None:
             remove_temporary_files = REMOVE_TEMPORARY_FILES
@@ -80,7 +81,12 @@ class S3Source(DataSource):
 
         S3_table = pd.read_csv(S3_table_filename)
 
-        bucket = boto3.resource("s3", region_name=region_name).Bucket(bucket_name)
+        if aws_profile is not None:
+            session = boto3.Session(profile_name=aws_profile)
+        else:
+            session = boto3.Session()
+
+        bucket = session.resource("s3", region_name=region_name).Bucket(bucket_name)
 
         self.bucket_name = bucket_name
         self.bucket = bucket

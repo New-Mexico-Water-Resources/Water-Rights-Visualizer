@@ -44,8 +44,8 @@ def get_nan_tiff_roi_average(tiff_file, ROI_geometry, dir) -> Union[float, None]
     """
     filename = basename(tiff_file)
 
-    if not exists(tiff_file):
-        logger.error(f"File {tiff_file} does not exist")
+    if not tiff_file or not exists(tiff_file):
+        logger.error(f"File '{tiff_file}' does not exist")
         return None
 
     nan_masked_subset_file = None
@@ -117,10 +117,10 @@ def calculate_cloud_coverage_percent(
         year = variable_files["year"]
         month = variable_files["month"]
 
-        ccount_subset_file = variable_files["COUNT"]
-        et_min_subset_file = variable_files["ET_MIN"]
-        et_max_subset_file = variable_files["ET_MAX"]
-        ppt_subset_file = variable_files["PPT"]
+        ccount_subset_file = variable_files.get("COUNT", "")
+        et_min_subset_file = variable_files.get("ET_MIN", "")
+        et_max_subset_file = variable_files.get("ET_MAX", "")
+        ppt_subset_file = variable_files.get("PPT", "")
 
         if not yearly_ccount_percentages.get(year):
             yearly_ccount_percentages[year] = {}
@@ -153,7 +153,9 @@ def calculate_cloud_coverage_percent(
             month_key = f"{month:02d}"
             percentages = month_percentages.get(month_key, {})
 
-            percentage = percentages["avg_cloud_count"] / percentages["days_in_month"]
+            percentage = None
+            if percentages and percentages.get("avg_cloud_count") is not None and percentages.get("days_in_month"):
+                percentage = percentages["avg_cloud_count"] / percentages["days_in_month"]
             if percentage is None and existing_nan_percent_csv is not None:
                 existing_row = existing_nan_percent_csv.loc[existing_nan_percent_csv["month"] == month_key]
                 if not existing_row.empty:
@@ -163,9 +165,12 @@ def calculate_cloud_coverage_percent(
                 percentage = 1
 
             rounded_percentage = round(percentage * 100, 2)
-            rounded_avg_min = round(percentages["avg_min"], 2)
-            rounded_avg_max = round(percentages["avg_max"], 2)
-            rounded_ppt_avg = round(percentages["ppt_avg"], 2)
+            avg_min = percentages.get("avg_min") or 0
+            avg_max = percentages.get("avg_max") or 0
+            ppt_avg = percentages.get("ppt_avg") or 0
+            rounded_avg_min = round(avg_min, 2)
+            rounded_avg_max = round(avg_max, 2)
+            rounded_ppt_avg = round(ppt_avg, 2)
             monthly_ccount.loc[len(monthly_ccount)] = [
                 str(year),
                 month,
