@@ -105,7 +105,7 @@ const LayersControl: FC = () => {
 
   const generateRows = useCallback((multipolygons: any[]) => {
     const rows: PolygonLocation[] = multipolygons.map((geojson, index) => {
-      let defaultName = `${geojson?.properties?.County || ""} ${index + 1}`;
+      let defaultName = `${geojson?.properties?.County || ""} Part ${index + 1}`;
       let name = geojson?.features?.[0]?.properties?.name || defaultName;
 
       let lat = geojson?.geometry?.coordinates[0][0][0];

@@ -9,6 +9,8 @@
 - Precipitation data is now displayed in the report
   - Precipitation data is displayed as a line chart below the ET and PET chart
   - Data comes from the Oregon State PRISM dataset and is credited at the bottom of the generated report
+- Adds ability to rename parts of a multipolygon job
+  - Users can now rename the parts of a multipolygon job to better identify them in the queue
 
 ### Bug Fixes
 - Increased error handling for missing data in the report

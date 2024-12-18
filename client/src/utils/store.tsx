@@ -378,7 +378,8 @@ const useStore = create<Store>()(
         return polygonLocations
           .filter((location) => location.visible)
           .map((location) => {
-            let jobName = `${baseName} Part ${location.id + 1}`;
+            let defaultName = `${baseName} Part ${location.id + 1}`;
+            let jobName = location?.name || defaultName;
             let geojson = multipolygons[location.id];
 
             return formJobForQueue(jobName, get().startYear, get().endYear, geojson);
