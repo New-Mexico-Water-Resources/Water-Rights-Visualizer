@@ -79,9 +79,7 @@ def process_monthly(
             ET_monthly_raster = rt.Raster(array=ET_monthly, geometry=subset_geometry)
             ET_monthly_raster.to_geotiff(ET_monthly_filename)
 
-            PET_monthly_filename = join(
-                monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_PET_monthly_sum.tif"
-            )
+            PET_monthly_filename = join(monthly_sums_directory, f"{year:04d}_{month:02d}_{ROI_name}_PET_monthly_sum.tif")
 
             logger.info(f"end index: {end_index}")
             PET_month_stack = PET_stack[start_index:end_index, :, :]
@@ -95,8 +93,8 @@ def process_monthly(
             ET_values = np.array(ET_monthly[mask]).flatten()
             PET_values = np.array(PET_monthly[mask]).flatten()
 
-            ET_monthly_mean = np.nanmean(ET_values)
-            PET_monthly_mean = np.nanmean(PET_values)
+            ET_monthly_mean = np.nanmean(ET_values) if len(ET_values) > 0 else 0
+            PET_monthly_mean = np.nanmean(PET_values) if len(PET_values) > 0 else 0
 
             monthly_means.append([year, month, ET_monthly_mean, PET_monthly_mean])
 

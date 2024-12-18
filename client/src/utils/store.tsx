@@ -15,12 +15,13 @@ export interface PolygonLocation {
   comments: string;
   county: string;
   polygon_So: string;
-  shape_Area: number;
-  shape_Leng: number;
+  shapeArea: number;
+  shapeLeng: number;
   source: string;
   wUR_Basin: string;
   lat: number;
   long: number;
+  isValidArea: boolean;
 }
 
 export interface JobStatus {
@@ -72,6 +73,7 @@ export interface UserListingDetails {
 }
 
 interface Store {
+  minimumValidArea: number;
   isQueueOpen: boolean;
   setIsQueueOpen: (isQueueOpen: boolean) => void;
   isUsersPanelOpen: boolean;
@@ -151,11 +153,16 @@ interface Store {
   loadVersion: () => void;
   lastSeenVersion: string;
   markVersionSeen: () => void;
+  showARDTiles: boolean;
+  toggleARDTiles: () => void;
+  ardTiles: Record<string, any>;
+  fetchARDTiles: () => void;
 }
 
 const useStore = create<Store>()(
   persist(
     devtools((set, get) => ({
+      minimumValidArea: 900,
       isQueueOpen: false,
       setIsQueueOpen: (isQueueOpen) => set({ isQueueOpen }),
       isBacklogOpen: false,
@@ -769,6 +776,27 @@ const useStore = create<Store>()(
       markVersionSeen: () => {
         set({ lastSeenVersion: get().version });
       },
+      showARDTiles: false,
+      toggleARDTiles: () => {
+        set({ showARDTiles: !get().showARDTiles });
+      },
+      ardTiles: {},
+      fetchARDTiles: () => {
+        let axiosInstance = get().authAxios();
+        if (!axiosInstance) {
+          return;
+        }
+
+        axiosInstance
+          .get(`${API_URL}/ard_tiles`)
+          .then((response) => {
+            set({ ardTiles: response.data });
+          })
+          .catch((error) => {
+            console.error("Error fetching ARD tiles", error);
+            set({ errorMessage: error?.response?.data || error?.message || "Error fetching ARD tiles" });
+          });
+      },
     })),
     {
       name: "et-visualizer-state",
@@ -776,6 +804,7 @@ const useStore = create<Store>()(
         lastSeenVersion: state.lastSeenVersion,
         sortAscending: state.sortAscending,
         changelog: state.changelog,
+        ardTiles: state.ardTiles,
       }),
     }
   )

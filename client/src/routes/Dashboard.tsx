@@ -35,6 +35,15 @@ const Dashboard = () => {
   const userInfo = useStore((state) => state.userInfo);
   const canReadJobs = useMemo(() => userInfo?.permissions.includes("read:jobs"), [userInfo?.permissions]);
   const isAdmin = useMemo(() => userInfo?.permissions.includes("write:admin"), [userInfo?.permissions]);
+  const fetchARDTiles = useStore((state) => state.fetchARDTiles);
+  const showARDTiles = useStore((state) => state.showARDTiles);
+  const ardTiles = useStore((state) => state.ardTiles);
+
+  useEffect(() => {
+    if (showARDTiles && !Object.keys(ardTiles).length) {
+      fetchARDTiles();
+    }
+  }, [showARDTiles, ardTiles]);
 
   const loadVersion = useStore((state) => state.loadVersion);
 
@@ -146,8 +155,7 @@ const Dashboard = () => {
             >
               {!isAuthenticated
                 ? "Please login or sign up for an account to continue"
-                : // : "You do not have permission to access this tool. Please contact your administrator."
-                user?.email_verified
+                : user?.email_verified
                 ? "Thanks for creating an account. Your email address has been verified. NM OSE staff will review your request for access shortly."
                 : "Please verify your email address and then log out and back in to continue."}
             </Typography>
@@ -184,6 +192,7 @@ const Dashboard = () => {
         />
         <ZoomControl position="topright" />
         <ScaleControl position="bottomleft" />
+        {ardTiles && showARDTiles && <GeoJSONLayer data={ardTiles} fitToBounds={false} />}
         <GeoJSONLayer data={loadedGeoJSON} />
         <MultiGeoJSONLayer data={multipolygons} locations={locations} />
       </MapContainer>

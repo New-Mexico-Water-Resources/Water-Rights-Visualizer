@@ -112,6 +112,9 @@ def generate_stack(
         PET_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_PET_subset.tif")
         logger.info(f"PET subset file: {PET_subset_filename}")
 
+        PPT_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_PPT_subset.tif")
+        logger.info(f"PPT subset file: {PPT_subset_filename}")
+
         try:
             # ET_subset, affine = generate_subset(
             ET_subset = generate_subset(
@@ -157,6 +160,23 @@ def generate_stack(
                         subset_filename=subset_filename,
                         target_CRS=target_CRS,
                     )
+        # Just keep processing as this only causes issues with showing uncertainty on the report
+        except Exception as e:
+            logger.exception(e)
+            logger.info(f"problem generating uncertainty subset for date: {date_step.strftime('%Y-%m-%d')}, continuing...")
+
+        try:
+            if count_source and count_source.monthly:
+                generate_subset(
+                    input_datastore=input_datastore,
+                    acquisition_date=date_step,
+                    ROI_name=ROI_name,
+                    ROI_latlon=ROI_latlon,
+                    ROI_acres=ROI_acres,
+                    variable_name="PPT",
+                    subset_filename=PPT_subset_filename,
+                    target_CRS=target_CRS,
+                )
         # Just keep processing as this only causes issues with showing uncertainty on the report
         except Exception as e:
             logger.exception(e)

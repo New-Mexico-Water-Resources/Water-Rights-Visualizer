@@ -11,9 +11,11 @@ import pandas as pd
 import rasterio
 import seaborn as sns
 from affine import Affine
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, to_rgba
 from shapely.geometry import Polygon
 import numpy as np
+from matplotlib.collections import PolyCollection
+
 
 from .constants import START_MONTH, END_MONTH
 from .display_image_tk import display_image_tk
@@ -69,36 +71,39 @@ def generate_figure(
     """
 
     # Create a new figure
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8.5, 11))
 
-    title_fontsize = 14
-    axis_label_fontsize = 10
+    # title_fontsize = 14
+    # axis_label_fontsize = 10
+    title_fontsize = 16
+    axis_label_fontsize = 12
 
     max_length_short = 15
     max_length_medium = 30
 
     if len(ROI_name) <= max_length_short:
         title = f"Evapotranspiration For {ROI_name}"
-        subtitle = f"Year: {year}, Area: {ROI_acres} acres"
+        subtitle = f"Year: {year}\nArea: {ROI_acres} acres\nCreated: {creation_date.date()}"
     elif len(ROI_name) <= max_length_medium:
         title_fontsize = 12
         title = f"Evapotranspiration For {ROI_name}"
-        subtitle = f"Year: {year}, Area: {ROI_acres} acres"
+        subtitle = f"Year: {year}\nArea: {ROI_acres} acres\nCreated: {creation_date.date()}"
     else:
         title_fontsize = 12
         short_name = ROI_name[:max_length_medium] + "..."
         title = f"Evapotranspiration For {short_name}"
-        subtitle = f"Year: {year}, Area: {ROI_acres} acres"
+        subtitle = f"Year: {year}\nArea: {ROI_acres} acres\nCreated: {creation_date.date()}"
 
     # Add the title
-    fig.suptitle(title, fontsize=title_fontsize)
-    fig.text(0.5, 0.91, subtitle, fontsize=axis_label_fontsize, ha="center")  # Align center below the main title
+    # align left
+    fig.suptitle(title, fontsize=title_fontsize, ha="left", x=0.125, fontweight="bold")
+    fig.text(0.125, 0.91, subtitle, fontsize=axis_label_fontsize, ha="left", fontweight="normal")
 
     n_months = end_month - start_month + 1
     grid_cols = int(n_months / 3)
     grid_rows = int(n_months / grid_cols)
 
-    grid = plt.GridSpec(grid_rows + 1, grid_cols, wspace=0.4, hspace=0.3)
+    grid = plt.GridSpec(grid_rows + 3, grid_cols, wspace=0.4, hspace=0.3)
 
     # Generate sub-figures for each month
     for i, month in enumerate(range(start_month, end_month + 1)):
@@ -128,7 +133,7 @@ def generate_figure(
         cmap = LinearSegmentedColormap.from_list("ET", ET_COLORS)
         im = ax.imshow(monthly, vmin=vmin, vmax=vmax, cmap=cmap)
         ax.add_patch(generate_patch(ROI_latlon, affine))
-        ax.set_title(subfigure_title, loc="left", fontsize=axis_label_fontsize / 2, pad=2)
+        ax.set_title(subfigure_title, loc="left", fontsize=axis_label_fontsize / 2, pad=4)
 
         # Set the thickness of the border around the subplot
         for spine in ax.spines.values():
@@ -140,8 +145,8 @@ def generate_figure(
 
     top_y = grid[0, 0].get_position(fig).y1
     bottom_y = grid[grid_rows - 1, 0].get_position(fig).y0
-    cbar_height = top_y - bottom_y
-    cbar_ax = fig.add_axes([0.85, bottom_y, 0.05, cbar_height])
+    cbar_height = top_y - bottom_y - 0.0085
+    cbar_ax = fig.add_axes([0.85, bottom_y + 0.005, 0.05, cbar_height])
     cbar = fig.colorbar(
         im,
         cax=cbar_ax,
@@ -175,8 +180,16 @@ def generate_figure(
     bottom_y = grid[grid_rows, :].get_position(fig).y0  # Bottom boundary of the grid
     top_y = grid[grid_rows, :].get_position(fig).y1  # Top boundary of the grid
 
-    # Add the bottom chart axis, spanning the full width to align with the colorbar
-    ax = fig.add_axes([left_x, bottom_y, right_x - left_x, top_y - bottom_y])
+    chart_start_y = bottom_y - 0.1
+    gap = 0.02
+    small_chart_height = 0.075
+    big_chart_height = top_y - bottom_y + 0.1
+    # Add the main bottom chart axis, spanning the full width to align with the colorbar
+    ax = fig.add_axes([left_x, chart_start_y, right_x - left_x, big_chart_height])
+    # Add a small chart below for precipitation
+    ax_precip = fig.add_axes([left_x, chart_start_y - small_chart_height - gap, right_x - left_x, small_chart_height])
+    # Add a small chart below for cloud coverage
+    ax_cloud = fig.add_axes([left_x, chart_start_y - small_chart_height * 2 - gap * 2, right_x - left_x, small_chart_height])
 
     df = main_df[main_df["Year"] == year]
     x = df["Month"]
@@ -212,17 +225,22 @@ def generate_figure(
     # pet_color = "blue"
     # et_color = "green"
 
-    pet_color = "#411535"  # Purple
-    et_color = "#D95E2D"  # Orange
+    pet_color = "#9e3fff"  # Purple
+    et_color = "#fc8d59"  # Orange
+    ppt_color = "#2C77BF"  # Blue
+
+    marker = "o"
+    marker_size = 4
 
     # Check if et_ci_ymin or et_ci_ymax are NaN (ie. data missing). If so, don't plot the shaded region
-    is_ensemble_range_data_null = df["et_ci_ymin"].isnull().all() or df["et_ci_ymax"].isnull().all()
+    ci_fields_exist = "et_ci_ymin" in df.columns and "et_ci_ymax" in df.columns
+    is_ensemble_range_data_null = not ci_fields_exist or df["et_ci_ymin"].isnull().all() or df["et_ci_ymax"].isnull().all()
     if not is_ensemble_range_data_null:
         # Check if it's all 0
         is_ensemble_range_data_null = df["et_ci_ymin"].eq(0).all() or df["et_ci_ymax"].eq(0).all()
 
-    sns.lineplot(x=x, y=y, ax=ax, color=pet_color, label="PET")
-    sns.lineplot(x=x, y=y2, ax=ax, color=et_color, label="ET")
+    sns.lineplot(x=x, y=y, ax=ax, color=pet_color, label="PET", marker=marker, markersize=marker_size)
+    sns.lineplot(x=x, y=y2, ax=ax, color=et_color, label="ET", marker=marker, markersize=marker_size)
     if int(year) >= OPENET_TRANSITION_DATE and not is_ensemble_range_data_null:
         ax.fill_between(x, df["et_ci_ymin"], df["et_ci_ymax"], color=et_color, alpha=0.1)
 
@@ -231,6 +249,18 @@ def generate_figure(
         "ET": {"color": et_color, "alpha": 0.8, "lw": 2},
         "Ensemble Min/Max": {"color": et_color, "alpha": 0.1, "lw": 4},
     }
+
+    # Ensure ppt_avg is in df
+    if "ppt_avg" in df.columns:
+        sns.lineplot(
+            x=x, y=df["ppt_avg"], ax=ax_precip, color=ppt_color, label="Precipitation", marker=marker, markersize=marker_size
+        )
+        ax_precip.stackplot(x, df["ppt_avg"], colors=[ppt_color + "80"], labels=["Precipitation"])
+
+    precipitation_legend_items = {
+        "Precipitation": {"color": ppt_color, "alpha": 0.8, "lw": 2},
+    }
+
     if int(year) < OPENET_TRANSITION_DATE:
         del legend_items["Ensemble Min/Max"]
     if is_ensemble_range_data_null:
@@ -241,11 +271,23 @@ def generate_figure(
     left_legend_lines = [
         plt.Line2D([0], [0], color=v["color"], lw=v["lw"], alpha=v["alpha"]) for k, v in legend_items.items()
     ]
-    ax.legend(left_legend_lines, legend_labels, loc="upper left", fontsize=axis_label_fontsize / 2)
+
+    precip_legend_labels = precipitation_legend_items.keys()
+    precip_legend_lines = [
+        plt.Line2D([0], [0], color=v["color"], lw=v["lw"], alpha=v["alpha"]) for k, v in precipitation_legend_items.items()
+    ]
+
+    ax.legend(left_legend_lines, legend_labels, loc="upper left", fontsize=axis_label_fontsize / 2, frameon=False)
+    ax_precip.legend(
+        precip_legend_lines, precip_legend_labels, loc="upper left", fontsize=axis_label_fontsize / 2, frameon=False
+    )
     ax.set(xlabel="", ylabel="")
+    ax_precip.set(xlabel="", ylabel="")
     ymin = min(min(main_df["ET"]), min(main_df["ET"]), min(df["pet_ci_ymin"]), min(df["et_ci_ymin"]))
     ymax = max(max(main_df["PET"]), max(main_df["PET"]), max(df["pet_ci_ymax"]), max(df["et_ci_ymax"]))
-    ylim = (int(ymin), int(ymax + 10))
+
+    main_line_min = min(min(main_df["ET"]), min(main_df["ET"]))
+    main_line_max = max(max(main_df["PET"]), max(main_df["PET"]))
 
     normalized_min = 0
     normalized_max = 100
@@ -255,61 +297,91 @@ def generate_figure(
         df["percent_nan"].isnull().all() or df["percent_nan"].eq(0).all() or df["percent_nan"].eq(100).all()
     )
 
-    ax2 = ax.twinx()
     if not is_confidence_data_null:
-        bars = ax2.bar(
-            x=df["month"],
-            height=df["normalized_nan"],
-            width=0.8,
-            color="gray",
-            alpha=0.3,
-            label="Cloud Coverage",
-            zorder=1,
+        ci_color = "#7F7F7F"
+        sns.lineplot(
+            x=x, y=df["percent_nan"], ax=ax_cloud, color=ci_color, alpha=0.8, lw=2, marker=marker, markersize=marker_size
         )
+        ax_cloud.stackplot(x, df["percent_nan"], colors=[ci_color + "80"])
 
-        # Adjust the secondary y-axis range to match the normalization
-        ax2.set_ylim(ymin, ymax)  # Align with the primary y-axis range
-        normalized_ticks = np.linspace(normalized_min, normalized_max, 6)  # Create 6 evenly spaced ticks
-        ax2.set_yticks(
-            [(tick - normalized_min) / (normalized_max - normalized_min) * (ymax - ymin) + ymin for tick in normalized_ticks]
-        )
-        ax2.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])  # Label them with the original percent values
-        ax2.tick_params(axis="y", labelsize=6)
+        ax_cloud.set(xlabel="", ylabel="")
+        max_cloud_coverage = max(df["percent_nan"])
+        print(f"max_cloud_coverage: {max_cloud_coverage}")
+        top_gap = min(max_cloud_coverage / 2, 10)
+        ax_cloud.set_ylim(0, min(max_cloud_coverage + top_gap, 100))
+        normalized_ticks = np.linspace(0, max_cloud_coverage, 3)
+        ax_cloud.set_yticks(normalized_ticks)
+        ax_cloud.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])
+        ax_cloud.tick_params(axis="y", labelsize=6)
 
     cloud_coverage_label = ["Avg Cloud Cov."] if year >= OPENET_TRANSITION_DATE else ["Avg Cloud Cov. & Missing Data"]
     legend_labels = cloud_coverage_label if not is_confidence_data_null else ["Avg Cloud Cov. (Unavailable)"]
     legend_colors = ["gray"]
     custom_lines = [plt.Line2D([0], [0], color=legend_colors[i], lw=2, alpha=0.8) for i in range(len(legend_labels))]
-    ax2.legend(custom_lines, legend_labels, loc="upper right", fontsize=axis_label_fontsize / 2)
+    ax_cloud.legend(custom_lines, legend_labels, loc="upper left", fontsize=axis_label_fontsize / 2, frameon=False)
 
-    ax.set(ylim=ylim)
+    ax.set_ylim(0, ymax + 10)
 
-    et_ticks = np.linspace(int(ymin), int(ymax) + 10, 6)
-    # ax.set_yticks([int(ymin), int(ymax) + 10])
-    # ax.set_yticklabels([f"{int(ymin)} mm", f"{int(ymax) + 10} mm"])
+    et_ticks = np.linspace(int(main_line_min), int(main_line_max), 6)
     ax.set_yticks(et_ticks)
     ax.set_yticklabels([f"{int(tick)} mm" for tick in et_ticks])
 
-    ax.tick_params(axis="y", labelsize=6)
+    ax_precip.set_ylim(0, max(df["ppt_avg"]) + 15)
+    precip_ticks = np.linspace(0, max(df["ppt_avg"]), 3)
+    ax_precip.set_yticks(precip_ticks)
+    ax_precip.set_yticklabels([f"{int(tick)} mm" for tick in precip_ticks])
 
-    # Set monthly x-axis ticks
-    ax.set_xticks(range(1, 13))  # Set ticks for each month (1–12)
-    ax.set_xticklabels([calendar.month_abbr[i] for i in range(1, 13)], fontsize=axis_label_fontsize / 2)
+    ax.tick_params(axis="y", labelsize=6)
+    ax_precip.tick_params(axis="y", labelsize=6)
+
+    ax.set_xticks([])
+    ax.set_xticklabels([])
+
+    ax_precip.set_xticks([])
+    ax_precip.set_xticklabels([])
+
+    ax_cloud.set_xticks(range(1, 13))  # Set ticks for each month (1–12)
+    ax_cloud.set_xticklabels([calendar.month_abbr[i] for i in range(1, 13)], fontsize=axis_label_fontsize / 2)
+
+    # Remove top and right spines
+    ax.spines["top"].set_visible(False)
+    # ax.spines["bottom"].set_visible(False)
+    ax_precip.spines["top"].set_visible(False)
+    # ax_precip.spines["bottom"].set_visible(False)
+    ax_cloud.spines["top"].set_visible(False)
+
+    # All right off
+    ax.spines["right"].set_visible(False)
+    ax_precip.spines["right"].set_visible(False)
+    ax_cloud.spines["right"].set_visible(False)
+
+    x_start, x_end = 1, 12  # January - December
+    padding = 0.1
+
+    # Standardize the x-axis limits for both subplots
+    ax.set_xlim(x_start - padding, x_end + padding)
+    ax_precip.set_xlim(x_start - padding, x_end + padding)
+    ax_cloud.set_xlim(x_start - padding, x_end + padding)
 
     # Set the title and captions for the figure
-    plt.title(f"Area of Interest Average Monthly Water Use and Missing Data", fontsize=axis_label_fontsize / 2, pad=2)
+    ax.set_title("Area of Interest Average Monthly Water Use", fontsize=axis_label_fontsize, pad=4, loc="left")
 
     start_date = datetime(year, start_month, 1).date()
     available_et = get_available_variable_source_for_date("ET", start_date)
     if available_et and available_et.file_prefix == "OPENET_ENSEMBLE_":
-        caption = f"ET and PET (ETo) calculated from Landsat with the OpenET Ensemble (Melton et al. 2021) the Idaho EPSCOR GRIDMET (Abatzoglou 2012) models, created {creation_date.date()}"
+        caption = f"ET and PET (ETo) calculated from Landsat with the OpenET Ensemble (Melton et al. 2021) and the Idaho EPSCOR GRIDMET (Abatzoglou 2012) models"
     else:
-        caption = f"ET and PET calculated from Landsat with PT-JPL (Fisher et al. 2008), created {creation_date.date()}"
+        caption = f"ET and PET calculated from Landsat with PT-JPL (Fisher et al. 2008)"
+    # caption += (
+    #     f"\nCloud coverage and missing data shown as a percentage of the total number of pixels in the area of interest"
+    # )
+    caption += f"\nPrecipitation data from PRISM Climate Group, Oregon State University, https://prism.oregonstate.edu"
     plt.figtext(
         0.48,
         0.005,
         caption,
         wrap=True,
+        linespacing=1.5,
         verticalalignment="bottom",
         horizontalalignment="center",
         fontsize=axis_label_fontsize / 2,
