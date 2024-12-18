@@ -229,6 +229,9 @@ def generate_figure(
     et_color = "#fc8d59"  # Orange
     ppt_color = "#2C77BF"  # Blue
 
+    marker = "o"
+    marker_size = 4
+
     # Check if et_ci_ymin or et_ci_ymax are NaN (ie. data missing). If so, don't plot the shaded region
     ci_fields_exist = "et_ci_ymin" in df.columns and "et_ci_ymax" in df.columns
     is_ensemble_range_data_null = not ci_fields_exist or df["et_ci_ymin"].isnull().all() or df["et_ci_ymax"].isnull().all()
@@ -236,8 +239,8 @@ def generate_figure(
         # Check if it's all 0
         is_ensemble_range_data_null = df["et_ci_ymin"].eq(0).all() or df["et_ci_ymax"].eq(0).all()
 
-    sns.lineplot(x=x, y=y, ax=ax, color=pet_color, label="PET")
-    sns.lineplot(x=x, y=y2, ax=ax, color=et_color, label="ET")
+    sns.lineplot(x=x, y=y, ax=ax, color=pet_color, label="PET", marker=marker, markersize=marker_size)
+    sns.lineplot(x=x, y=y2, ax=ax, color=et_color, label="ET", marker=marker, markersize=marker_size)
     if int(year) >= OPENET_TRANSITION_DATE and not is_ensemble_range_data_null:
         ax.fill_between(x, df["et_ci_ymin"], df["et_ci_ymax"], color=et_color, alpha=0.1)
 
@@ -249,7 +252,9 @@ def generate_figure(
 
     # Ensure ppt_avg is in df
     if "ppt_avg" in df.columns:
-        sns.lineplot(x=x, y=df["ppt_avg"], ax=ax_precip, color=ppt_color, label="Precipitation")
+        sns.lineplot(
+            x=x, y=df["ppt_avg"], ax=ax_precip, color=ppt_color, label="Precipitation", marker=marker, markersize=marker_size
+        )
         ax_precip.stackplot(x, df["ppt_avg"], colors=[ppt_color + "80"], labels=["Precipitation"])
 
     precipitation_legend_items = {
@@ -294,7 +299,9 @@ def generate_figure(
 
     if not is_confidence_data_null:
         ci_color = "#7F7F7F"
-        sns.lineplot(x=x, y=df["percent_nan"], ax=ax_cloud, color=ci_color, alpha=0.8, lw=2)
+        sns.lineplot(
+            x=x, y=df["percent_nan"], ax=ax_cloud, color=ci_color, alpha=0.8, lw=2, marker=marker, markersize=marker_size
+        )
         ax_cloud.stackplot(x, df["percent_nan"], colors=[ci_color + "80"])
 
         ax_cloud.set(xlabel="", ylabel="")
