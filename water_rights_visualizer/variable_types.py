@@ -119,7 +119,7 @@ VARIABLE_TYPES = [
         monthly=True,
         parent_dir="precipitation",
         # start=datetime(2019, 10, 1).date(),
-        start=datetime(2008, 1, 1).date(),
+        start=datetime(1985, 1, 1).date(),
         end=datetime(2025, 1, 1).date(),
     ),
 ]

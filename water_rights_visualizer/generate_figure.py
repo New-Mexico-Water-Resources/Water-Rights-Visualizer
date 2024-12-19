@@ -328,7 +328,7 @@ def generate_figure(
     ax.set_yticks(et_ticks)
     ax.set_yticklabels([f"{int(tick)} mm" for tick in et_ticks])
 
-    if "ppt_avg" in df.columns:
+    if "ppt_avg" in df.columns and not df["ppt_avg"].empty and not df["ppt_avg"].isnull().all():
         ax_precip.set_ylim(0, max(df["ppt_avg"]) + 15)
         precip_ticks = np.linspace(0, max(df["ppt_avg"]), 3)
     else:
