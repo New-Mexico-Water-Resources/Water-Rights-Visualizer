@@ -1,3 +1,9 @@
+## 1.5.1 (2024-12-19)
+
+### Bug Fixes
+- Fixed an issue where PPT wasn't showing up for older 1985 - 2008 data
+- Changes Cloud Cov. to Cloud Coverage in the report
+
 ## 1.5.0 (2024-12-18)
 
 ### Features
