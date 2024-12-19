@@ -314,8 +314,10 @@ def generate_figure(
         ax_cloud.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])
         ax_cloud.tick_params(axis="y", labelsize=6)
 
-    cloud_coverage_label = ["Avg Cloud Cov."] if year >= OPENET_TRANSITION_DATE else ["Avg Cloud Cov. & Missing Data"]
-    legend_labels = cloud_coverage_label if not is_confidence_data_null else ["Avg Cloud Cov. (Unavailable)"]
+    cloud_coverage_label = (
+        ["Avg Cloud Coverage"] if year >= OPENET_TRANSITION_DATE else ["Avg Cloud Coverage & Missing Data"]
+    )
+    legend_labels = cloud_coverage_label if not is_confidence_data_null else ["Avg Cloud Coverage (Unavailable)"]
     legend_colors = ["gray"]
     custom_lines = [plt.Line2D([0], [0], color=legend_colors[i], lw=2, alpha=0.8) for i in range(len(legend_labels))]
     ax_cloud.legend(custom_lines, legend_labels, loc="upper left", fontsize=axis_label_fontsize / 2, frameon=False)
@@ -326,8 +328,12 @@ def generate_figure(
     ax.set_yticks(et_ticks)
     ax.set_yticklabels([f"{int(tick)} mm" for tick in et_ticks])
 
-    ax_precip.set_ylim(0, max(df["ppt_avg"]) + 15)
-    precip_ticks = np.linspace(0, max(df["ppt_avg"]), 3)
+    if "ppt_avg" in df.columns:
+        ax_precip.set_ylim(0, max(df["ppt_avg"]) + 15)
+        precip_ticks = np.linspace(0, max(df["ppt_avg"]), 3)
+    else:
+        ax_precip.set_ylim(0, 0)
+        precip_ticks = [0]
     ax_precip.set_yticks(precip_ticks)
     ax_precip.set_yticklabels([f"{int(tick)} mm" for tick in precip_ticks])
 
