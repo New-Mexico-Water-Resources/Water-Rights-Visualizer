@@ -164,6 +164,9 @@ def process_year(
     main_dfa = pd.merge(left=df1, right=mm, how="left", left_on="Months", right_on="Month")
     main_df = pd.merge(left=main_dfa, right=nd, how="left", left_on="Months", right_on="month")
 
+    if "Year" not in main_df.columns and "Year_x" in main_df.columns:
+        main_df = main_df.rename(columns={"Year_x": "Year"})
+
     main_df = main_df.replace(np.nan, 100)
     # logger.info(f'main_df: {main_df}')
     monthly_means_df = pd.concat(month_means, axis=0)

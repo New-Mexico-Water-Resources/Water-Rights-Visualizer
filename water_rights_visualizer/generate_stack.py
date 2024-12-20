@@ -81,6 +81,35 @@ def generate_stack(
 
     dates_in_year = sorted(set(dates_in_year))
 
+    # Process monthly PPT data first
+    for month in range(1, 13):
+        if not exists(subset_directory):
+            logger.info(f"creating subset directory: {subset_directory}")
+            makedirs(subset_directory)
+
+        date_step = datetime(year, month, 1).date()
+        ppt_source = get_available_variable_source_for_date("PPT", date_step)
+
+        PPT_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_PPT_subset.tif")
+        logger.info(f"PPT subset file: {PPT_subset_filename}")
+
+        try:
+            if ppt_source and ppt_source.monthly:
+                generate_subset(
+                    input_datastore=input_datastore,
+                    acquisition_date=date_step,
+                    ROI_name=ROI_name,
+                    ROI_latlon=ROI_latlon,
+                    ROI_acres=ROI_acres,
+                    variable_name="PPT",
+                    subset_filename=PPT_subset_filename,
+                    target_CRS=target_CRS,
+                )
+        # Just keep processing as this only causes issues with showing uncertainty on the report
+        except Exception as e:
+            logger.exception(e)
+            logger.info(f"problem generating uncertainty subset for date: {date_step.strftime('%Y-%m-%d')}, continuing...")
+
     if len(dates_in_year) == 0:
         raise ValueError(f"no dates for year: {year}")
 
@@ -112,11 +141,7 @@ def generate_stack(
         PET_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_PET_subset.tif")
         logger.info(f"PET subset file: {PET_subset_filename}")
 
-        PPT_subset_filename = join(subset_directory, f"{date_step.strftime('%Y.%m.%d')}_{ROI_name}_PPT_subset.tif")
-        logger.info(f"PPT subset file: {PPT_subset_filename}")
-
         try:
-            # ET_subset, affine = generate_subset(
             ET_subset = generate_subset(
                 input_datastore=input_datastore,
                 acquisition_date=date_step,
@@ -165,23 +190,6 @@ def generate_stack(
             logger.exception(e)
             logger.info(f"problem generating uncertainty subset for date: {date_step.strftime('%Y-%m-%d')}, continuing...")
 
-        try:
-            if count_source and count_source.monthly:
-                generate_subset(
-                    input_datastore=input_datastore,
-                    acquisition_date=date_step,
-                    ROI_name=ROI_name,
-                    ROI_latlon=ROI_latlon,
-                    ROI_acres=ROI_acres,
-                    variable_name="PPT",
-                    subset_filename=PPT_subset_filename,
-                    target_CRS=target_CRS,
-                )
-        # Just keep processing as this only causes issues with showing uncertainty on the report
-        except Exception as e:
-            logger.exception(e)
-            logger.info(f"problem generating uncertainty subset for date: {date_step.strftime('%Y-%m-%d')}, continuing...")
-
         subset_shape = ET_subset.shape
 
         PET_subset = None
@@ -192,7 +200,6 @@ def generate_stack(
             if not pet_source:
                 raise FileUnavailable(f"no PET source available for date {date_step.strftime('%Y-%m-%d')}")
 
-            # ESI_subset, affine = generate_subset(
             PET_subset = generate_subset(
                 input_datastore=input_datastore,
                 acquisition_date=date_step,
@@ -230,7 +237,6 @@ def generate_stack(
 
         except Exception as e:
             try:
-                # ESI_subset, affine = generate_subset(
                 ESI_subset = generate_subset(
                     input_datastore=input_datastore,
                     acquisition_date=date_step,
@@ -246,14 +252,11 @@ def generate_stack(
                 subset_shape = ESI_subset.shape
             except BlankOutput as e:
                 logger.warning(e)
-                # continue
             except FileUnavailable as e:
                 logger.warning(e)
-                # continue
             except Exception as e:
                 logger.exception(e)
                 logger.info(f"problem generating ESI subset for date: {date_step.strftime('%Y-%m-%d')}")
-                # continue
 
         rows, cols = subset_shape
         month = date_step.month

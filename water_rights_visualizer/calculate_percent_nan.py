@@ -8,6 +8,7 @@ from shapely.geometry import Polygon
 import rasterio
 from rasterio.mask import mask, raster_geometry_mask
 from logging import getLogger
+from .calculate_cloud_coverage_percent import get_nan_tiff_roi_average
 
 logger = getLogger(__name__)
 
@@ -52,9 +53,7 @@ def calculate_percent_nan(
                     }
                 )
                 # Saving the masked subset as a new file in the nan_subset_directory
-                with rasterio.open(
-                    splitext(nan_subsets + "/" + basename(p.name))[0] + "_nan.tif", "w", **out_meta
-                ) as dest:
+                with rasterio.open(splitext(nan_subsets + "/" + basename(p.name))[0] + "_nan.tif", "w", **out_meta) as dest:
                     dest.write(out_image)
 
     # Opening the first ET subset file in the subset_directory
@@ -164,13 +163,26 @@ def calculate_percent_nan(
     sort_order = pd.read_csv(nan_monthly_folder)
     sort_ascend = sort_order.sort_values("year", ascending=False)
     nan_monthly_avg = pd.read_csv(nan_monthly_folder)
-    cols_nan = nan_monthly_avg.columns
     nan_monthly_avg["Year"] = nan_monthly_avg["year"]
 
+    ppt_values = []
+    ppt_subset_files = sorted(glob(join(subset_directory, "*_PPT_subset.tif")))
+
+    for ppt_subset_file in ppt_subset_files:
+        filename = basename(ppt_subset_file)
+        year, month = map(int, filename.split("_")[0].split(".")[:2])
+        ppt_average = get_nan_tiff_roi_average(ppt_subset_file, ROI_for_nan, nan_subset_directory) or 0
+        ppt_values.append({"ppt_avg": ppt_average, "month": month, "year": year})
+
+    # Convert PPT values to DataFrame and merge with monthly averages
+    month_ppt_df = pd.DataFrame(ppt_values)
+    nan_monthly_avg = pd.merge(nan_monthly_avg, month_ppt_df, on=["year", "month"], how="left")
+
+    cols_nan = nan_monthly_avg.columns
     # Splitting the data into separate CSV files for each year
-    for years in set(nan_monthly_avg.Year):
-        new_csv_by_year = monthly_nan_directory + "/" + str(years) + ".csv"
-        nan_monthly_avg.loc[nan_monthly_avg.Year == years].to_csv(new_csv_by_year, index=False, columns=cols_nan)
+    for year in set(nan_monthly_avg["Year"]):
+        new_csv_by_year = monthly_nan_directory + "/" + str(year) + ".csv"
+        nan_monthly_avg.loc[nan_monthly_avg["Year"] == year].to_csv(new_csv_by_year, index=False, columns=cols_nan)
 
     # # Removing the temporary CSV files
     remove(nan_monthly_folder)
