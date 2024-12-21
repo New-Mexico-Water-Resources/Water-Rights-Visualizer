@@ -68,10 +68,7 @@ const JobQueue = () => {
   const canDeleteJobs = useStore((state) => state.userInfo?.permissions.includes("write:jobs"));
 
   const pendingJobCount = useMemo(() => {
-    return queue.reduce(
-      (acc, job) => (["Pending", "WaitingApproval", "Paused"].includes(job.status) ? acc + 1 : acc),
-      0
-    );
+    return queue.reduce((acc, job) => (["Pending", "WaitingApproval", "Paused"].includes(job.status) ? acc + 1 : acc), 0);
   }, [queue]);
 
   const viewingJob = useMemo(() => {

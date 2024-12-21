@@ -186,8 +186,11 @@ def water_rights(
             root=root,
         )
 
-    report_filename = join(figure_directory, f"{ROI_name}_Report.pdf")
-    report_pdf = PdfPages(report_filename)
+    metric_report_filename = join(figure_directory, f"{ROI_name}_Report.pdf")
+    metric_report_pdf = PdfPages(metric_report_filename)
+
+    imperial_report_filename = join(figure_directory, f"{ROI_name}_Imperial_Report.pdf")
+    imperial_report_pdf = PdfPages(imperial_report_filename)
 
     png_glob = glob(join(figure_directory, "*.png"))
     sorted_years = []
@@ -200,20 +203,39 @@ def water_rights(
 
     sorted_years = sorted(set(sorted_years))
     for year in sorted_years:
-        figure_filename = join(figure_directory, f"{year}_{ROI_name}.png")
-        figure_image = plt.imread(figure_filename)
+        metric_figure_filename = join(figure_directory, f"{year}_{ROI_name}.png")
+        metric_figure_image = plt.imread(metric_figure_filename)
+
+        imperial_figure_filename = join(figure_directory, f"{year}_{ROI_name}_in.png")
+        imperial_figure_image = plt.imread(imperial_figure_filename)
 
         fig = plt.figure(figsize=(19.2, 14.4), tight_layout=True)
         ax = fig.add_axes([0, 0, 1, 1])
-        ax.imshow(figure_image)
+        ax.imshow(metric_figure_image)
         ax.axis("off")
-        report_pdf.savefig(fig, bbox_inches="tight", pad_inches=0)
+        metric_report_pdf.savefig(fig, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
-    report_pdf.close()
+        fig = plt.figure(figsize=(19.2, 14.4), tight_layout=True)
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.imshow(imperial_figure_image)
+        ax.axis("off")
+        imperial_report_pdf.savefig(fig, bbox_inches="tight", pad_inches=0)
+        plt.close(fig)
+
+    metric_report_pdf.close()
 
     write_status(
-        message=f"Report saved to {report_filename}\n",
+        message=f"Report saved to {metric_report_pdf}\n",
+        status_filename=status_filename,
+        text_panel=text_panel,
+        root=root,
+    )
+
+    imperial_report_pdf.close()
+
+    write_status(
+        message=f"Report saved to {imperial_report_pdf}\n",
         status_filename=status_filename,
         text_panel=text_panel,
         root=root,

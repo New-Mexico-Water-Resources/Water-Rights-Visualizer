@@ -7,7 +7,13 @@ import StatusIcon from "./StatusIcon";
 
 import { useConfirm } from "material-ui-confirm";
 import useStore, { JobStatus } from "../utils/store";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Menu, { MenuProps } from "@mui/material/Menu";
+import Divider from "@mui/material/Divider";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+
+import MenuItem from "@mui/material/MenuItem";
+
 import { formatElapsedTime } from "../utils/helpers";
 
 const JobProgressBar = ({ status }: { status: JobStatus }) => {
@@ -56,6 +62,9 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const canPauseJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
 
   const approveJob = useStore((state) => state.approveJob);
+
+  const [downloadAnchorEl, setDownloadAnchorEl] = useState<null | HTMLElement>(null);
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
 
   const jobStatus = useMemo(() => {
     let jobStatus: JobStatus = jobStatuses[job.key];
@@ -281,21 +290,93 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
         >
           Logs
         </Button>
-        <Tooltip title={job.status === "Complete" ? "Download Completed Job" : "Download partial job"}>
-          <span>
-            <Button
-              disabled={["Pending", "In Progress", "WaitingApproval"].includes(job.status)}
-              variant="contained"
-              color="secondary"
-              size="small"
-              onClick={() => {
-                downloadJob(job.key);
+        <span>
+          <div style={{ display: "flex", alignItems: "center", padding: 0 }}>
+            <Tooltip title={job.status === "Complete" ? "Download Completed Job" : "Download partial job"}>
+              <Button
+                disabled={["Pending", "In Progress", "WaitingApproval"].includes(job.status)}
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={() => {
+                  // Default to metric
+                  downloadJob(job.key, false);
+                }}
+                sx={{
+                  paddingRight: "4px",
+                  marginRight: 0,
+                  borderTopRightRadius: 0,
+                  borderBottomRightRadius: 0,
+                  padding: "4px 8px",
+                }}
+              >
+                Download
+              </Button>
+            </Tooltip>
+            <Box
+              onClick={(evt) => {
+                setDownloadAnchorEl(evt.currentTarget);
+                setDownloadMenuOpen(true);
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                backgroundColor: "#334155",
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: "var(--st-gray-80)",
+                },
+                borderLeft: "1px solid var(--st-gray-60)",
+                borderRadius: "4px",
+                borderTopLeftRadius: 0,
+                borderBottomLeftRadius: 0,
+                padding: "4px",
+                height: "31px",
               }}
             >
-              Download
-            </Button>
-          </span>
-        </Tooltip>
+              <KeyboardArrowDownIcon fontSize="small" sx={{ padding: 0, margin: 0 }} />
+            </Box>
+          </div>
+          <Menu
+            anchorEl={downloadAnchorEl}
+            open={downloadMenuOpen}
+            onClose={() => setDownloadMenuOpen(false)}
+            sx={{
+              "& .MuiList-root": {
+                backgroundColor: "var(--st-gray-80)",
+              },
+            }}
+          >
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ marginLeft: "8px", marginBottom: "4px", backgroundColor: "var(--st-gray-80)" }}
+            >
+              Units
+            </Typography>
+            <Divider />
+            <MenuItem
+              sx={{ backgroundColor: "var(--st-gray-80)" }}
+              onClick={() => {
+                downloadJob(job.key, false);
+                setDownloadMenuOpen(false);
+              }}
+              disableRipple
+            >
+              Download (mm/month)
+            </MenuItem>
+            <MenuItem
+              sx={{ backgroundColor: "var(--st-gray-80)" }}
+              onClick={() => {
+                downloadJob(job.key, true);
+                setDownloadMenuOpen(false);
+              }}
+              disableRipple
+            >
+              Download (in/month)
+            </MenuItem>
+          </Menu>
+        </span>
       </div>
     </div>
   );

@@ -123,7 +123,7 @@ interface Store {
   prepareMultipolygonJob: () => any[];
   submitMultipolygonJob: (jobs: any[]) => void;
   loadJob: (job: any) => void;
-  downloadJob: (jobKey: string) => void;
+  downloadJob: (jobKey: string, imperial?: boolean) => void;
   restartJob: (jobKey: string) => void;
   pauseJob: (jobKey: string) => void;
   resumeJob: (jobKey: string) => void;
@@ -255,10 +255,42 @@ const useStore = create<Store>()(
             return job;
           });
 
+          let existingQueue = get().queue;
+          let existingBacklog = get().backlog;
+
           let queue = formattedQueue.filter((job: any) => QUEUE_STATUSES.includes(job.status));
           let backlog = formattedQueue.filter((job: any) => !QUEUE_STATUSES.includes(job.status));
 
-          set({ queue, backlog });
+          let jobsChanged = existingQueue.length !== queue.length || existingBacklog.length !== backlog.length;
+
+          if (!jobsChanged) {
+            queue.some((job) => {
+              let existingJob = existingQueue.find((existingJob) => existingJob.key === job.key);
+
+              return (
+                !existingJob ||
+                existingJob.started !== job.started ||
+                existingJob.status !== job.status ||
+                existingJob.ended !== job.ended
+              );
+            });
+          }
+
+          if (!jobsChanged) {
+            jobsChanged = backlog.some((job) => {
+              let existingJob = existingBacklog.find((existingJob) => existingJob.key === job.key);
+              return (
+                !existingJob ||
+                existingJob.started !== job.started ||
+                existingJob.status !== job.status ||
+                existingJob.ended !== job.ended
+              );
+            });
+          }
+
+          if (jobsChanged) {
+            set({ queue, backlog });
+          }
         });
       },
       deleteJob: async (jobKey, deleteFiles: boolean = true) => {
@@ -447,7 +479,7 @@ const useStore = create<Store>()(
           });
         set({ activeJob: job });
       },
-      downloadJob: (jobKey) => {
+      downloadJob: (jobKey, imperial = false) => {
         let job = get().queue.find((item) => item.key === jobKey);
         if (!job) {
           job = get().backlog.find((item) => item.key === jobKey);
@@ -463,9 +495,9 @@ const useStore = create<Store>()(
 
         // Check if it's a 404 first
         axios
-          .get(`${API_URL}/download?name=${escapedName}&key=${job.key}`)
+          .get(`${API_URL}/download?name=${escapedName}&key=${job.key}&units=${imperial ? "in" : "mm"}`)
           .then(() => {
-            window.open(`${API_URL}/download?name=${escapedName}&key=${job.key}`);
+            window.open(`${API_URL}/download?name=${escapedName}&key=${job.key}&units=${imperial ? "in" : "mm"}`);
           })
           .catch((error) => {
             set({ errorMessage: error?.message || "Error downloading job" });

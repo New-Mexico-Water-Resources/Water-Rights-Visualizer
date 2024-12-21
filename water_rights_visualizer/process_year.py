@@ -216,6 +216,28 @@ def process_year(
                 text_panel=text_panel,
                 image_panel=image_panel,
                 status_filename=status_filename,
+                metric_units=True,
+            )
+
+            generate_figure(
+                ROI_name=ROI_name,
+                ROI_latlon=ROI_latlon,
+                ROI_acres=ROI_acres,
+                creation_date=today,
+                year=year,
+                vmin=vmin,
+                vmax=vmax,
+                affine=affine,
+                main_df=main_df,
+                monthly_sums_directory=monthly_sums_directory,
+                figure_filename=figure_filename,
+                start_month=start_month,
+                end_month=end_month,
+                root=root,
+                text_panel=text_panel,
+                image_panel=image_panel,
+                status_filename=status_filename,
+                metric_units=False,
             )
         except Exception as e:
             logger.exception(e)

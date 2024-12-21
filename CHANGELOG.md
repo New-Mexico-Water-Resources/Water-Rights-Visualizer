@@ -1,4 +1,10 @@
-## 1.5.1 (2024-12-19)
+## 1.6.0 (2024-12-20)
+
+### Features
+- Adds a dropdown menu option to "Download" where users can specify the units for the report
+  - Users can choose between mm/month and inches/month for the ET, PET, and PPT data
+- Includes PPT and Cloud Coverage values in the CSV export
+- Updates report bottom graphs title to "Average Monthly Water Use, Precipitation, and Cloud Coverage"
 
 ### Bug Fixes
 - Fixed an issue where PPT wasn't showing up for older 1985 - 2008 data

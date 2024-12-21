@@ -29,6 +29,10 @@ from .variable_types import get_available_variable_source_for_date, OPENET_TRANS
 logger = getLogger(__name__)
 
 
+def mm_to_in(mm: float | pd.DataFrame) -> float:
+    return mm / 25.4
+
+
 def generate_figure(
     ROI_name: str,
     ROI_latlon: Polygon,
@@ -47,6 +51,7 @@ def generate_figure(
     text_panel: ScrolledText = None,
     image_panel: Text = None,
     status_filename: str = None,
+    metric_units: bool = True,
 ):
     """
     Generate a figure displaying evapotranspiration data for a specific region of interest (ROI).
@@ -68,10 +73,14 @@ def generate_figure(
         root (Tk, optional): Root Tkinter window. Defaults to None.
         text_panel (ScrolledText, optional): Text panel for displaying messages. Defaults to None.
         image_panel (Text, optional): Image panel for displaying the generated figure. Defaults to None.
+        status_filename (str, optional): Filename for saving status messages. Defaults to None.
+        metric_units (bool, optional): Whether to use metric units for the report. Defaults to True.
     """
 
     # Create a new figure
     fig = plt.figure(figsize=(8.5, 11))
+    et_unit = "mm" if metric_units else "in"
+    figure_filename = figure_filename if metric_units else figure_filename.replace(".png", "_in.png")
 
     # title_fontsize = 14
     # axis_label_fontsize = 10
@@ -153,11 +162,18 @@ def generate_figure(
         ticks=[],
     )
 
+    # Convert the min and max values to inches if necessary afte
+    vmin = vmin if metric_units else mm_to_in(vmin)
+    vmax = vmax if metric_units else mm_to_in(vmax)
+
+    bottom_label = f"{round(vmin)} {et_unit}"
+    top_label = f"{round(vmax)} {et_unit}"
+
     # Add the min and max labels without rotation
     cbar.ax.text(
         0.5,
         -0.01,
-        f"{round(vmin)} mm",  # Bottom label for min value
+        bottom_label,  # Bottom label for min value
         transform=cbar.ax.transAxes,
         ha="center",
         va="top",
@@ -166,7 +182,7 @@ def generate_figure(
     cbar.ax.text(
         0.5,
         1.01,
-        f"{round(vmax)} mm",  # Top label for max value
+        top_label,  # Top label for max value
         transform=cbar.ax.transAxes,
         ha="center",
         va="bottom",
@@ -193,8 +209,15 @@ def generate_figure(
 
     df = main_df[main_df["Year"] == year]
     x = df["Month"]
-    y = df["PET"]
-    y2 = df["ET"]
+    y = df["PET"] if metric_units else mm_to_in(df["PET"])
+    y2 = df["ET"] if metric_units else mm_to_in(df["ET"])
+
+    if "ppt_avg" in df.columns:
+        df["ppt_avg"] = df["ppt_avg"] if metric_units else mm_to_in(df["ppt_avg"])
+
+    if "avg_min" in df.columns:
+        df["avg_min"] = df["avg_min"] if metric_units else mm_to_in(df["avg_min"])
+        df["avg_max"] = df["avg_max"] if metric_units else mm_to_in(df["avg_max"])
 
     df["pet_ci_ymin"] = df.apply(
         lambda row: (
@@ -283,11 +306,15 @@ def generate_figure(
     )
     ax.set(xlabel="", ylabel="")
     ax_precip.set(xlabel="", ylabel="")
-    ymin = min(min(main_df["ET"]), min(main_df["ET"]), min(df["pet_ci_ymin"]), min(df["et_ci_ymin"]))
-    ymax = max(max(main_df["PET"]), max(main_df["PET"]), max(df["pet_ci_ymax"]), max(df["et_ci_ymax"]))
 
-    main_line_min = min(min(main_df["ET"]), min(main_df["ET"]))
-    main_line_max = max(max(main_df["PET"]), max(main_df["PET"]))
+    et_df = main_df["ET"] if metric_units else mm_to_in(main_df["ET"])
+    pet_df = main_df["PET"] if metric_units else mm_to_in(main_df["PET"])
+
+    ymin = min(min(et_df), min(et_df), min(df["pet_ci_ymin"]), min(df["et_ci_ymin"]))
+    ymax = max(max(pet_df), max(pet_df), max(df["pet_ci_ymax"]), max(df["et_ci_ymax"]))
+
+    main_line_min = min(min(et_df), min(et_df))
+    main_line_max = max(max(pet_df), max(pet_df))
 
     normalized_min = 0
     normalized_max = 100
@@ -306,7 +333,6 @@ def generate_figure(
 
         ax_cloud.set(xlabel="", ylabel="")
         max_cloud_coverage = max(df["percent_nan"])
-        print(f"max_cloud_coverage: {max_cloud_coverage}")
         top_gap = min(max_cloud_coverage / 2, 10)
         ax_cloud.set_ylim(0, min(max_cloud_coverage + top_gap, 100))
         normalized_ticks = np.linspace(0, max_cloud_coverage, 3)
@@ -322,20 +348,22 @@ def generate_figure(
     custom_lines = [plt.Line2D([0], [0], color=legend_colors[i], lw=2, alpha=0.8) for i in range(len(legend_labels))]
     ax_cloud.legend(custom_lines, legend_labels, loc="upper left", fontsize=axis_label_fontsize / 2, frameon=False)
 
-    ax.set_ylim(0, ymax + 10)
+    et_padding = 10 if metric_units else mm_to_in(10)
+    ax.set_ylim(0, ymax + et_padding)
 
     et_ticks = np.linspace(int(main_line_min), int(main_line_max), 6)
     ax.set_yticks(et_ticks)
-    ax.set_yticklabels([f"{int(tick)} mm" for tick in et_ticks])
+    ax.set_yticklabels([f"{int(tick)} {et_unit}" for tick in et_ticks])
 
     if "ppt_avg" in df.columns and not df["ppt_avg"].empty and not df["ppt_avg"].isnull().all():
-        ax_precip.set_ylim(0, max(df["ppt_avg"]) + 15)
+        ppt_padding = 15 if metric_units else mm_to_in(15)
+        ax_precip.set_ylim(0, max(df["ppt_avg"]) + ppt_padding)
         precip_ticks = np.linspace(0, max(df["ppt_avg"]), 3)
     else:
         ax_precip.set_ylim(0, 0)
         precip_ticks = [0]
     ax_precip.set_yticks(precip_ticks)
-    ax_precip.set_yticklabels([f"{int(tick)} mm" for tick in precip_ticks])
+    ax_precip.set_yticklabels([f"{int(tick)} {et_unit}" for tick in precip_ticks])
 
     ax.tick_params(axis="y", labelsize=6)
     ax_precip.tick_params(axis="y", labelsize=6)
@@ -370,7 +398,9 @@ def generate_figure(
     ax_cloud.set_xlim(x_start - padding, x_end + padding)
 
     # Set the title and captions for the figure
-    ax.set_title("Area of Interest Average Monthly Water Use", fontsize=axis_label_fontsize, pad=4, loc="left")
+    ax.set_title(
+        "Average Monthly Water Use, Precipitation, and Cloud Coverage", fontsize=axis_label_fontsize, pad=4, loc="left"
+    )
 
     start_date = datetime(year, start_month, 1).date()
     available_et = get_available_variable_source_for_date("ET", start_date)
