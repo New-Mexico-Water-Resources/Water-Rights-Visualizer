@@ -8,7 +8,7 @@ import StatusIcon from "./StatusIcon";
 import { useConfirm } from "material-ui-confirm";
 import useStore, { JobStatus } from "../utils/store";
 import { useEffect, useMemo, useState } from "react";
-import Menu, { MenuProps } from "@mui/material/Menu";
+import Menu from "@mui/material/Menu";
 import Divider from "@mui/material/Divider";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
