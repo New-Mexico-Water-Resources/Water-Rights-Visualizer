@@ -1,3 +1,11 @@
+## 1.7.0 (2025-01-03)
+
+### Bug Fixes
+- Disables download dropdown menu if download is not available
+- Fixes an edge case issue with job cleanup where if a tool update occured while a job was running, it could cause the runner to hang
+  - This was due to the PID stored in the DB occassionally being incorrect in this case, so the cleanup script would kill the runner process. This has been fixed by verifying the PID doesn't match the runner before killing it and updating the DB before killing as a fail safe.
+
+
 ## 1.6.0 (2024-12-20)
 
 ### Features
