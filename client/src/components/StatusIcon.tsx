@@ -4,6 +4,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import NotStartedIcon from "@mui/icons-material/NotStarted";
 import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
+import DangerousIcon from "@mui/icons-material/Dangerous";
 
 const StatusIcon = ({ status }: { status: string }) => {
   switch (status) {
@@ -17,6 +18,8 @@ const StatusIcon = ({ status }: { status: string }) => {
       return <PendingIcon sx={{ color: "#50AC34" }} />;
     case "Complete":
       return <CheckCircleIcon sx={{ color: "var(--st-success-green)" }} />;
+    case "Killed":
+      return <DangerousIcon sx={{ color: "var(--st-error-red)" }} />;
     case "Failed":
       return <ErrorIcon sx={{ color: "var(--st-error-red)" }} />;
     default:
