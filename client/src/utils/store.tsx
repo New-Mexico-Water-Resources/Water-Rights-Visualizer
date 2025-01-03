@@ -267,24 +267,23 @@ const useStore = create<Store>()(
             queue.some((job) => {
               let existingJob = existingQueue.find((existingJob) => existingJob.key === job.key);
 
-              return (
+              jobsChanged =
                 !existingJob ||
                 existingJob.started !== job.started ||
                 existingJob.status !== job.status ||
-                existingJob.ended !== job.ended
-              );
+                existingJob.ended !== job.ended;
             });
           }
 
           if (!jobsChanged) {
             jobsChanged = backlog.some((job) => {
               let existingJob = existingBacklog.find((existingJob) => existingJob.key === job.key);
-              return (
+
+              jobsChanged =
                 !existingJob ||
                 existingJob.started !== job.started ||
                 existingJob.status !== job.status ||
-                existingJob.ended !== job.ended
-              );
+                existingJob.ended !== job.ended;
             });
           }
 
