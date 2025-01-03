@@ -198,11 +198,13 @@ def clean_up_killed_records():
     report_queue = build_mongo_client_and_collection()
     records = report_queue.find({"status": "Killed"})
     for record in records:
-        if "pid" in record:
+        # We need to check if the record has a PID and ensure it's the correct PID
+        current_pid = os.getpid()
+        if "pid" in record and record["pid"] != current_pid:
             dlog("Killing process {} for record: {}".format(record["pid"], record["key"]))
-            os.kill(record["pid"], 9)
             # Now remove the record
             report_queue.delete_one({"key": record["key"]})
+            os.kill(record["pid"], 9)
         else:
             # No PID found for record, attempt to search for it by grepping ps aux with the command
             cmd = record["cmd"]
@@ -215,9 +217,9 @@ def clean_up_killed_records():
                 if cmd in line:
                     pid = line.split()[1]
                     dlog("Killing process {} for record: {}".format(pid, record["key"]))
-                    os.kill(int(pid), 9)
                     # Now remove the record
                     report_queue.delete_one({"key": record["key"]})
+                    os.kill(int(pid), 9)
                     killed = True
                     break
             if not killed:

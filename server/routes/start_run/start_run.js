@@ -9,6 +9,7 @@ const constants = require("../../constants");
 
 const project_directory = constants.project_directory;
 const run_directory_base = constants.run_directory_base;
+const dev_mode = constants.dev_mode;
 
 const argv = process.argv.slice(2);
 const data_source = argv[0];
@@ -110,23 +111,20 @@ router.post("/start_run", async (req, res) => {
     }
   });
 
-  var pipeline_script;
+  let sources = {
+    demo: "water-rights-visualizer-backend-demo.py",
+    S3: "water-rights-visualizer-backend-S3.py",
+    google: "water-rights-visualizer-backend-google.py",
+  };
 
-  if (data_source == "demo") {
-    pipeline_script = path.join(project_directory, "water-rights-visualizer-backend-demo.py");
-  } else if (data_source == "S3") {
-    pipeline_script = path.join(project_directory, "water-rights-visualizer-backend-S3.py");
-  } else if (data_source == "google") {
-    pipeline_script = path.join(project_directory, "water-rights-visualizer-backend-google.py");
-  }
+  let pipeline_script = sources[data_source] || sources["S3"];
 
-  console.log(`pipeline script: ${pipeline_script}`);
-  var command = `/opt/conda/bin/python ${pipeline_script} ${config_filename}`;
-  console.log(command);
+  let pythonExecutable = dev_mode ? "/opt/homebrew/anaconda3/envs/nmw-test/bin/python" : "/opt/conda/bin/python";
+  let command = `${pythonExecutable} ${pipeline_script} ${config_filename}`;
 
   let canWriteJob = req.auth?.payload?.permissions?.includes("write:jobs") || false;
 
-  var entry = {
+  let entry = {
     key: key,
     name: name,
     cmd: command,

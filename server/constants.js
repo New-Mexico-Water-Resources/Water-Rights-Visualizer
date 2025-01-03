@@ -26,11 +26,11 @@ const auth0_audience = process.env.AUTH0_AUDIENCE;
 const auth0_management_client_id = process.env.AUTHO_MGMT_CLIENT_ID;
 const auth0_management_client_secret = process.env.AUTHO_MGMT_CLIENT_SECRET;
 const auth0_new_user_role = process.env.AUTH0_NEW_USER_ROLE;
+const dev_mode = process.env.DEV_MODE === "true";
 
 const connectToDatabase = async () => {
   let user = process.env.MONGO_INITDB_ROOT_USERNAME !== undefined ? process.env.MONGO_INITDB_ROOT_USERNAME : "admin";
-  let cred =
-    process.env.MONGO_INITDB_ROOT_PASSWORD !== undefined ? process.env.MONGO_INITDB_ROOT_PASSWORD : "mypassword";
+  let cred = process.env.MONGO_INITDB_ROOT_PASSWORD !== undefined ? process.env.MONGO_INITDB_ROOT_PASSWORD : "mypassword";
   let host = process.env.MONGO_HOST !== undefined ? process.env.MONGO_HOST : "water-rights-visualizer-mongo";
   let port = process.env.MONGO_PORT !== undefined ? process.env.MONGO_PORT : 27017;
   let database = process.env.MONGO_DATABASE !== undefined ? process.env.MONGO_DATABASE : "water";
@@ -70,4 +70,5 @@ module.exports = {
   auth0_management_client_id,
   auth0_management_client_secret,
   auth0_new_user_role,
+  dev_mode,
 };

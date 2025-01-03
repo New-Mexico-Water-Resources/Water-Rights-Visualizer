@@ -61,6 +61,10 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const canRestartJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
   const canPauseJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
 
+  const isDownloadDisabled = useMemo(() => {
+    return ["Pending", "In Progress", "WaitingApproval"].includes(job.status);
+  }, [job.status]);
+
   const approveJob = useStore((state) => state.approveJob);
 
   const [downloadAnchorEl, setDownloadAnchorEl] = useState<null | HTMLElement>(null);
@@ -294,7 +298,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           <div style={{ display: "flex", alignItems: "center", padding: 0 }}>
             <Tooltip title={job.status === "Complete" ? "Download Completed Job" : "Download partial job"}>
               <Button
-                disabled={["Pending", "In Progress", "WaitingApproval"].includes(job.status)}
+                disabled={isDownloadDisabled}
                 variant="contained"
                 color="secondary"
                 size="small"
@@ -315,17 +319,23 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             </Tooltip>
             <Box
               onClick={(evt) => {
+                if (isDownloadDisabled) {
+                  return;
+                }
+
                 setDownloadAnchorEl(evt.currentTarget);
                 setDownloadMenuOpen(true);
               }}
               sx={{
                 display: "flex",
                 alignItems: "center",
-                backgroundColor: "#334155",
-                cursor: "pointer",
-                "&:hover": {
-                  backgroundColor: "var(--st-gray-80)",
-                },
+                backgroundColor: isDownloadDisabled ? "rgba(255, 255, 255, 0.12)" : "#334155",
+                cursor: isDownloadDisabled ? "default" : "pointer",
+                "&:hover": !isDownloadDisabled
+                  ? {
+                      backgroundColor: "var(--st-gray-80)",
+                    }
+                  : {},
                 borderLeft: "1px solid var(--st-gray-60)",
                 borderRadius: "4px",
                 borderTopLeftRadius: 0,
@@ -334,7 +344,10 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
                 height: "31px",
               }}
             >
-              <KeyboardArrowDownIcon fontSize="small" sx={{ padding: 0, margin: 0 }} />
+              <KeyboardArrowDownIcon
+                fontSize="small"
+                sx={{ padding: 0, margin: 0, color: isDownloadDisabled ? "rgba(255, 255, 255, 0.2)" : "white" }}
+              />
             </Box>
           </div>
           <Menu
