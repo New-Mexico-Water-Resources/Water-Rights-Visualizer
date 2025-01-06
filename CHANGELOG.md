@@ -1,3 +1,11 @@
+## 1.8.0 (2025-01-06)
+
+### Features
+- Tags releases with the version number in the GitHub repository for easier rollback and tracking
+
+### Bug Fixes
+- Allows jobs to be deleted when they're in a "Paused" state
+
 ## 1.7.0 (2025-01-03)
 
 ### Bug Fixes

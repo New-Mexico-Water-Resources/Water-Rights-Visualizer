@@ -42,6 +42,7 @@ jobs:
         working-directory: ./client
         run: |
           NEW_VERSION=$(npm version ${{ steps.version_type.outputs.version_type }})
+          git tag -a $NEW_VERSION -m "Bump version to $NEW_VERSION"
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Push Changes

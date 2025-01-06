@@ -45,7 +45,7 @@ router.delete("/delete_job", async (req, res) => {
   if (!["Complete", "Failed"].includes(job.status) && job?.pid) {
     // Update status to "Killed" and let the cron handle it
     result = await collection.updateOne({ key }, { $set: { status: "Killed" } });
-  } else if (["Complete", "Failed", "Pending", "WaitingApproval"].includes(job.status)) {
+  } else if (["Complete", "Failed", "Pending", "WaitingApproval", "Paused"].includes(job.status)) {
     result = await collection.deleteOne({ key });
   }
 
