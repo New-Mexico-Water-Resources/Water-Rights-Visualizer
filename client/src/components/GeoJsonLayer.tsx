@@ -9,6 +9,7 @@ const GeoJSONLayer = ({ data, fitToBounds = true }: { data: any; fitToBounds?: b
   const layerRef = useRef<any>(null);
 
   const minimumValidArea = useStore((state) => state.minimumValidArea);
+  const maximumValidArea = useStore((state) => state.maximumValidArea);
 
   useEffect(() => {
     if (layerRef.current) {
@@ -17,7 +18,7 @@ const GeoJSONLayer = ({ data, fitToBounds = true }: { data: any; fitToBounds?: b
 
     if (data && Object.keys(data).length > 0) {
       let area = turfArea(data);
-      let isValidArea = area >= minimumValidArea;
+      let isValidArea = area >= minimumValidArea && area <= maximumValidArea;
       const geoJsonLayer = new Leaflet.GeoJSON(data);
 
       if (!isValidArea) {

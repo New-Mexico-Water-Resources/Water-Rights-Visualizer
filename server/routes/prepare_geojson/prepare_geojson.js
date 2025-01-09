@@ -106,21 +106,28 @@ const convertToGeoJSON = async (extractPath, baseName) => {
             return;
           }
 
-          const reprojected = {
-            ...result.value,
-            geometry: {
-              ...result.value.geometry,
-              coordinates: result.value.geometry.coordinates.map((coord) => {
-                if (coord.length === 2 && !Array.isArray(coord[0])) {
-                  return proj4(projection).inverse(coord);
-                } else {
-                  return coord.map((subCoord) => {
-                    return proj4(projection).inverse(subCoord);
-                  });
-                }
-              }),
-            },
-          };
+          let reprojected = {};
+          try {
+            reprojected = {
+              ...result.value,
+              geometry: {
+                ...result.value.geometry,
+                coordinates: result.value.geometry.coordinates.map((coord) => {
+                  if (coord.length === 2 && !Array.isArray(coord[0])) {
+                    return proj4(projection).inverse(coord);
+                  } else {
+                    return coord.map((subCoord) => {
+                      return proj4(projection).inverse(subCoord);
+                    });
+                  }
+                }),
+              },
+            };
+          } catch (err) {
+            console.error("Error reprojecting geojson", err);
+            reject(err);
+            return;
+          }
 
           geoJSONStream.write(JSON.stringify(reprojected) + "\n");
           return source.read().then(log);
@@ -164,16 +171,52 @@ function prepareGeojson(req, res) {
         let polygonMeta = JSON.parse(JSON.stringify(geojson));
         polygonMeta["features"] = [];
         let multipolygon = [];
-        geojson["features"].forEach((feature) => {
-          let polygon = JSON.parse(JSON.stringify(polygonMeta));
-          polygon["features"] = [feature];
-          let reprojectedGeojson = reprojectGeojson(polygon);
-          multipolygon.push(reprojectedGeojson);
-        });
+        try {
+          geojson["features"].forEach((feature) => {
+            let polygon = JSON.parse(JSON.stringify(polygonMeta));
+            polygon["features"] = [feature];
 
-        res.send({ multipolygon: true, geojsons: multipolygon });
-        removeFile();
-        return;
+            if (!feature?.["geometry"]?.["coordinates"] || !feature["geometry"]["coordinates"].length) {
+              // Invalid, skip this feature
+              console.error("Invalid GeoJSON Feature: missing geometry.coordinates");
+              return;
+            }
+
+            if (feature["geometry"]["type"] !== "Polygon") {
+              console.error("Invalid GeoJSON Feature: not a Polygon");
+              return;
+            }
+
+            let reprojectedGeojson = reprojectGeojson(polygon);
+            multipolygon.push(reprojectedGeojson);
+          });
+        } catch (err) {
+          console.error("Error reprojecting GeoJSON Feature", err);
+          res.status(500).send(`Error reprojecting GeoJSON Feature (${err})`);
+          removeFile();
+          return;
+        }
+
+        if (multipolygon.length === 0) {
+          res.status(400).send("Invalid GeoJSON: no valid features");
+          removeFile();
+          return;
+        } else if (multipolygon.length === 1) {
+          let feature = multipolygon[0];
+          if (feature["type"] === "Feature") {
+            feature = {
+              type: "FeatureCollection",
+              name: baseName || "output",
+              features: [feature],
+            };
+          }
+
+          res.send(feature);
+          removeFile();
+        } else {
+          res.send({ multipolygon: true, geojsons: multipolygon });
+          removeFile();
+        }
       } else {
         // If this is an individual feature, put in FeatureCollection
         if (geojson["type"] === "Feature") {

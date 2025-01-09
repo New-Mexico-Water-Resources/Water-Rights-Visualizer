@@ -33,6 +33,7 @@ import EditIcon from "@mui/icons-material/Edit";
 
 const LayersControl: FC = () => {
   const minimumValidArea = useStore((state) => state.minimumValidArea);
+  const maximumValidArea = useStore((state) => state.maximumValidArea);
   const [activeJob, setActiveJob] = useStore((state) => [state.activeJob, state.setActiveJob]);
 
   const [multipolygons, setMultipolygons] = useStore((state) => [state.multipolygons, state.setMultipolygons]);
@@ -45,6 +46,10 @@ const LayersControl: FC = () => {
 
     return turfArea(loadedGeoJSON);
   }, [loadedGeoJSON]);
+
+  const roundedLoadedGeoJSONArea = useMemo(() => {
+    return Math.round(loadedGeoJSONArea * 100) / 100;
+  }, [loadedGeoJSONArea]);
 
   const [rows, setRows] = useStore((state) => [state.locations, state.setLocations]);
   const visibleLayerCount = useMemo(() => {
@@ -95,9 +100,9 @@ const LayersControl: FC = () => {
 
       return allRowsValid && visibleLayerCount > 0;
     } else {
-      return loadedGeoJSONArea >= minimumValidArea;
+      return loadedGeoJSONArea >= minimumValidArea && loadedGeoJSONArea <= maximumValidArea;
     }
-  }, [isBulkJob, loadedGeoJSONArea, multipolygons, rows, minimumValidArea, visibleLayerCount]);
+  }, [isBulkJob, loadedGeoJSONArea, multipolygons, rows, minimumValidArea, maximumValidArea, visibleLayerCount]);
 
   const validYears = useMemo(() => {
     return Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
@@ -122,7 +127,7 @@ const LayersControl: FC = () => {
         area = turfArea(geojson);
       }
 
-      let isValidArea = area > minimumValidArea;
+      let isValidArea = area > minimumValidArea && area < maximumValidArea;
 
       return {
         visible: isValidArea,
@@ -156,12 +161,14 @@ const LayersControl: FC = () => {
       reader.onerror = () => console.log("file reading has failed");
       reader.onload = () => {
         setLoadedFile(file);
+        console.log("Loaded file", file);
         if (!jobName) {
           let fileName = file.name.replace(/\.[^/.]+$/, "");
           setJobName(fileName);
         }
 
         let prepareRequest = prepareGeoJSON(file);
+        console.log("Prepare request", prepareRequest);
         if (!prepareRequest) {
           // User not authenticated
           console.error("User not authenticated, cannot prepare GeoJSON.");
@@ -169,12 +176,15 @@ const LayersControl: FC = () => {
         }
 
         prepareRequest.then((geojson) => {
+          console.log("GeoJSON prepared", geojson);
           if (geojson.data && !geojson?.data?.multipolygon) {
+            console.log("Setting loaded geojson", geojson.data);
             setLoadedGeoJSON(geojson.data);
             setMultipolygons([]);
             setRows([]);
             setActiveJob(null);
           } else if (geojson?.data?.multipolygon && geojson?.data?.geojsons?.length > 0) {
+            console.log("Setting multipolygons", geojson.data.geojsons);
             setMultipolygons(geojson.data.geojsons);
             generateRows(geojson.data.geojsons);
             setActiveJob(null);
@@ -336,7 +346,8 @@ const LayersControl: FC = () => {
                     : "var(--st-red)",
                 }}
               >
-                Acres: {roundedAcres} {row.isValidArea ? "" : "(Area too small)"}
+                Acres: {roundedAcres}{" "}
+                {row.isValidArea ? "" : row.shapeArea < maximumValidArea ? "(Area too small)" : "(Area too large)"}
               </Typography>
             )}
           </div>
@@ -520,6 +531,9 @@ const LayersControl: FC = () => {
             <div className="loaded-file" style={{ margin: "8px" }}>
               <MapIcon style={{ color: "var(--st-gray-20)" }} />
               <p style={{ color: "var(--st-gray-20)", marginBottom: 0 }}>{loadedFile.name}</p>
+              <p style={{ color: "var(--st-gray-50)", margin: 0, fontSize: "12px" }}>
+                Area: {roundedLoadedGeoJSONArea} m<sup>2</sup>
+              </p>
             </div>
           ) : (
             <p style={{ color: "var(--st-gray-40)", textAlign: "center" }}>
@@ -599,10 +613,17 @@ const LayersControl: FC = () => {
         {loadedGeoJSONArea > 0 && !isValidArea && (
           <div style={{ display: "flex", alignItems: "flex-end", gap: "4px" }}>
             <ErrorIcon style={{ color: "var(--st-red)", fontSize: "32px" }} />
-            <Typography variant="body2" className="note" style={{ fontSize: "12px", color: "var(--st-gray-40)" }}>
-              Area is too small (min {minimumValidArea} m<sup>2</sup>)<br />
-              Please upload a larger area.
-            </Typography>
+            {loadedGeoJSON < maximumValidArea ? (
+              <Typography variant="body2" className="note" style={{ fontSize: "12px", color: "var(--st-gray-40)" }}>
+                Area is too small (min {minimumValidArea} m<sup>2</sup>)<br />
+                Please upload a larger area.
+              </Typography>
+            ) : (
+              <Typography variant="body2" className="note" style={{ fontSize: "12px", color: "var(--st-gray-40)" }}>
+                Area is too large (max {maximumValidArea} m<sup>2</sup>)<br />
+                Please upload a smaller area.
+              </Typography>
+            )}
           </div>
         )}
       </div>

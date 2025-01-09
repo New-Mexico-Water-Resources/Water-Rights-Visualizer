@@ -74,6 +74,7 @@ export interface UserListingDetails {
 
 interface Store {
   minimumValidArea: number;
+  maximumValidArea: number;
   isQueueOpen: boolean;
   setIsQueueOpen: (isQueueOpen: boolean) => void;
   isUsersPanelOpen: boolean;
@@ -163,6 +164,7 @@ const useStore = create<Store>()(
   persist(
     devtools((set, get) => ({
       minimumValidArea: 900,
+      maximumValidArea: 100000000,
       isQueueOpen: false,
       setIsQueueOpen: (isQueueOpen) => set({ isQueueOpen }),
       isBacklogOpen: false,
@@ -361,7 +363,7 @@ const useStore = create<Store>()(
         set({ showUploadDialog: false, previewMode: true, activeJob: null });
       },
       submitJob: async () => {
-        let jobName = get().jobName;
+        let jobName = get().jobName.trim() || "Untitled Job";
         let newJob = formJobForQueue(jobName, get().startYear, get().endYear, get().loadedGeoJSON);
 
         let axiosInstance = get().authAxios();
@@ -397,7 +399,7 @@ const useStore = create<Store>()(
         set({ locations: validLocations });
       },
       prepareMultipolygonJob: () => {
-        let baseName = get().jobName;
+        let baseName = get().jobName.trim() || "Untitled Job";
         let multipolygons = get().multipolygons;
         let polygonLocations = get().locations;
 
