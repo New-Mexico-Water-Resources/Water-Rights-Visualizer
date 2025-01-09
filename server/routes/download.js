@@ -118,11 +118,14 @@ router.get("/download", function (req, res) {
 
   let CSV_directory = path.join(run_directory_base, key, "output", "monthly_means", name);
   let CSV_files = glob.sync(path.join(CSV_directory, "*.csv"));
+  CSV_files = CSV_files.filter((file) => path.basename(file).endsWith("_monthly_means.csv"));
 
-  let header = `Year,Month,ET (${units}/month),PET (${units}/month), Precipitation (${units}/month), Cloud Coverage + Missing Data (%)`;
+  let combinedDataRows = [];
+
+  let header = `Year,Month,ET (${units}/month),PET (${units}/month),Precipitation (${units}/month),Cloud Coverage + Missing Data (%)`;
 
   CSV_files.forEach((file) => {
-    if (file.endsWith("_combined.csv") || path.basename(file).includes("_temp_")) {
+    if (path.basename(file).includes("_temp_")) {
       return;
     }
 
@@ -162,6 +165,7 @@ router.get("/download", function (req, res) {
     });
 
     let new_data = [header].concat(lines).join("\n");
+    combinedDataRows = combinedDataRows.concat(lines);
 
     let temp_path = file.replace(".csv", `_temp_${metric_units ? "mm" : "in"}.csv`);
     fs.writeFileSync(temp_path, new_data);
@@ -171,25 +175,32 @@ router.get("/download", function (req, res) {
     archive.file(temp_path, { name: new_filename });
   });
 
-  // Combine all CSV files into one
   let combined_csv = path.join(CSV_directory, `${name}_combined.csv`);
   let combined_csv_stream = fs.createWriteStream(combined_csv);
   combined_csv_stream.write(`${header}\n`);
-  CSV_files.forEach((file) => {
-    if (file.endsWith("_combined.csv") || path.basename(file).includes("_temp_")) {
-      return;
-    }
 
-    let data = fs.readFileSync(file, "utf8");
-    let lines = data.trim().split("\n");
-    lines.shift(); // remove header
-    lines.forEach((line) => {
-      let columns = line.split(",").map((x) => x.trim());
-      if (columns.length === 5) {
-        columns.shift(); // remove the first index column
-      }
-      combined_csv_stream.write(columns.join(",") + "\n");
-    });
+  combinedDataRows = Array.from(new Set(combinedDataRows)).sort((a, b) => {
+    let rowA = a.split(",").map((x) => x.trim());
+    rowA = header.split(",").reduce((acc, curr, i) => {
+      acc[curr] = rowA[i];
+      return acc;
+    }, {});
+
+    let rowB = b.split(",").map((x) => x.trim());
+    rowB = header.split(",").reduce((acc, curr, i) => {
+      acc[curr] = rowB[i];
+      return acc;
+    }, {});
+
+    if (rowA["Year"] === rowB["Year"]) {
+      return Number(rowA["Month"] || 0) - Number(rowB["Month"] || 0);
+    } else {
+      return Number(rowA["Year"] || 0) - Number(rowB["Year"] || 0);
+    }
+  });
+
+  combinedDataRows.forEach((line) => {
+    combined_csv_stream.write(line + "\n");
   });
 
   combined_csv_stream.end();
