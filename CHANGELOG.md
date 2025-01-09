@@ -1,10 +1,12 @@
-## 1.8.0 (2025-01-06)
+## 1.8.0 (2025-01-08)
 
 ### Features
 - Tags releases with the version number in the GitHub repository for easier rollback and tracking
+- Forces unit selection on download
 
 ### Bug Fixes
 - Allows jobs to be deleted when they're in a "Paused" state
+- Fixes y scaling issue in the imperial unit report caused by the OpenET model min/max interval not being converted to inches
 
 ## 1.7.0 (2025-01-03)
 
