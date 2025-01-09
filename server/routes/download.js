@@ -122,7 +122,7 @@ router.get("/download", function (req, res) {
   let header = `Year,Month,ET (${units}/month),PET (${units}/month), Precipitation (${units}/month), Cloud Coverage + Missing Data (%)`;
 
   CSV_files.forEach((file) => {
-    if (path.basename(file).includes("_temp_")) {
+    if (file.endsWith("_combined.csv") || path.basename(file).includes("_temp_")) {
       return;
     }
 
