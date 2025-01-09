@@ -310,8 +310,13 @@ def generate_figure(
     et_df = main_df["ET"] if metric_units else mm_to_in(main_df["ET"])
     pet_df = main_df["PET"] if metric_units else mm_to_in(main_df["PET"])
 
-    ymin = min(min(et_df), min(et_df), min(df["pet_ci_ymin"]), min(df["et_ci_ymin"]))
-    ymax = max(max(pet_df), max(pet_df), max(df["pet_ci_ymax"]), max(df["et_ci_ymax"]))
+    et_ci_ymin = df["et_ci_ymin"] if metric_units else mm_to_in(df["et_ci_ymin"])
+    et_ci_ymax = df["et_ci_ymax"] if metric_units else mm_to_in(df["et_ci_ymax"])
+    pet_ci_ymin = df["pet_ci_ymin"] if metric_units else mm_to_in(df["pet_ci_ymin"])
+    pet_ci_ymax = df["pet_ci_ymax"] if metric_units else mm_to_in(df["pet_ci_ymax"])
+
+    ymin = min(min(et_df), min(et_df), min(pet_ci_ymin), min(et_ci_ymin))
+    ymax = max(max(pet_df), max(pet_df), max(pet_ci_ymax), max(et_ci_ymax))
 
     main_line_min = min(min(et_df), min(et_df))
     main_line_max = max(max(pet_df), max(pet_df))
@@ -349,6 +354,7 @@ def generate_figure(
     ax_cloud.legend(custom_lines, legend_labels, loc="upper left", fontsize=axis_label_fontsize / 2, frameon=False)
 
     et_padding = 10 if metric_units else mm_to_in(10)
+    print(f"ymin: {ymin}, ymax: {ymax}", "PADDING", et_padding)
     ax.set_ylim(0, ymax + et_padding)
 
     et_ticks = np.linspace(int(main_line_min), int(main_line_max), 6)

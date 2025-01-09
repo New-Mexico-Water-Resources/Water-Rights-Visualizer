@@ -302,53 +302,21 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
                 variant="contained"
                 color="secondary"
                 size="small"
-                onClick={() => {
-                  // Default to metric
-                  downloadJob(job.key, false);
+                onClick={(evt) => {
+                  if (isDownloadDisabled) {
+                    return;
+                  }
+
+                  setDownloadAnchorEl(evt.currentTarget);
+                  setDownloadMenuOpen(true);
                 }}
                 sx={{
-                  paddingRight: "4px",
-                  marginRight: 0,
-                  borderTopRightRadius: 0,
-                  borderBottomRightRadius: 0,
                   padding: "4px 8px",
                 }}
               >
                 Download
               </Button>
             </Tooltip>
-            <Box
-              onClick={(evt) => {
-                if (isDownloadDisabled) {
-                  return;
-                }
-
-                setDownloadAnchorEl(evt.currentTarget);
-                setDownloadMenuOpen(true);
-              }}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                backgroundColor: isDownloadDisabled ? "rgba(255, 255, 255, 0.12)" : "#334155",
-                cursor: isDownloadDisabled ? "default" : "pointer",
-                "&:hover": !isDownloadDisabled
-                  ? {
-                      backgroundColor: "var(--st-gray-80)",
-                    }
-                  : {},
-                borderLeft: "1px solid var(--st-gray-60)",
-                borderRadius: "4px",
-                borderTopLeftRadius: 0,
-                borderBottomLeftRadius: 0,
-                padding: "4px",
-                height: "31px",
-              }}
-            >
-              <KeyboardArrowDownIcon
-                fontSize="small"
-                sx={{ padding: 0, margin: 0, color: isDownloadDisabled ? "rgba(255, 255, 255, 0.2)" : "white" }}
-              />
-            </Box>
           </div>
           <Menu
             anchorEl={downloadAnchorEl}
