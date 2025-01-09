@@ -10,7 +10,6 @@ import useStore, { JobStatus } from "../utils/store";
 import { useEffect, useMemo, useState } from "react";
 import Menu from "@mui/material/Menu";
 import Divider from "@mui/material/Divider";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 import MenuItem from "@mui/material/MenuItem";
 

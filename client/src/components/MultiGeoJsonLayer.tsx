@@ -11,6 +11,7 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
   const loadedGeoJSON = useStore((state) => state.loadedGeoJSON);
   const setLocations = useStore((state) => state.setLocations);
   const minimumValidArea = useStore((state) => state.minimumValidArea);
+  const maximumValidArea = useStore((state) => state.maximumValidArea);
 
   const [selectedMapLayer, setSelectedMapLayer] = useState<number | null>(null);
 
@@ -63,7 +64,7 @@ const MultiGeoJSONLayer: FC<{ data: any[]; locations: any[] }> = ({ data, locati
         }
 
         let area = turfArea(layer);
-        let isValidArea = area >= minimumValidArea;
+        let isValidArea = area >= minimumValidArea && area <= maximumValidArea;
 
         let style: Record<string, any> = {};
         if (!location.visible) {
