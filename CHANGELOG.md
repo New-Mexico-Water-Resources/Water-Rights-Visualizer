@@ -1,3 +1,8 @@
+## 1.9.0 (2025-01-09)
+
+### Bug Fixes
+- Fixes bug where multiple combined CSVs were showing up in zip for Windows users 
+
 ## 1.8.0 (2025-01-08)
 
 ### Features
