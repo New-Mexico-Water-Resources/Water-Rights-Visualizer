@@ -1,5 +1,9 @@
 ## 1.9.0 (2025-01-09)
 
+### Features
+- Adds a max area size (100000000 m^2 or ~24710 acres) for jobs to prevent users from submitting jobs that are too large
+- Adds more support and error handling for geojson and shapefile variations with malformed artifacts included
+
 ### Bug Fixes
 - Fixes bug where multiple combined CSVs were showing up in zip for Windows users 
 
