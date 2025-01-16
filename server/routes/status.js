@@ -103,9 +103,45 @@ router.get("/job/status", async (req, res) => {
     job.status === "Complete"
   );
 
+  let latestDate = new Date(job.start_year, 0, 1);
+  latestDate.setFullYear(job.start_year + processedYears.years.length);
+
+  let log_file = path.join(run_directory, "exec_report_log.txt");
+  if (fs.existsSync(log_file)) {
+    let logs = fs.readFileSync(log_file, "utf8");
+
+    let dateRegex = /date: (?<date>\d{4}-\d{2}-\d{2})/g;
+    const matches = [...logs.matchAll(dateRegex)];
+    if (matches && matches.length > 0) {
+      let dates = matches.map((match) => new Date(match.groups.date));
+
+      // Use the latest date in the logs
+      latestDate = dates[dates.length - 1];
+
+      const startDay = new Date(job.start_year, 0, 1);
+      const lastDay = new Date(job.end_year + 1, 0, 1);
+
+      const daysSinceStart = Math.floor((latestDate - startDay) / (1000 * 60 * 60 * 24));
+
+      const totalDays = Math.floor((lastDay - startDay) / (1000 * 60 * 60 * 24));
+
+      processedYears.estimatedPercentComplete = daysSinceStart / totalDays;
+
+      let timeToProcess = Date.now() - job.started;
+      let avgMsPerDay = timeToProcess / daysSinceStart;
+
+      let remainingDays = totalDays - daysSinceStart;
+      processedYears.timeRemaining = remainingDays * avgMsPerDay;
+    }
+  }
+
+  let latestDateStr = `${latestDate.getFullYear()}-${(latestDate.getMonth() + 1).toString().padStart(2, "0")}`;
+
   res.status(200).send({
     status: jobStatus,
+    paused: job.status === "Paused",
     currentYear: processedYears.years.length,
+    latestDate: latestDateStr,
     totalYears,
     fileCount: processedYears.count,
     estimatedPercentComplete: job.status === "Complete" ? 1 : processedYears.estimatedPercentComplete,

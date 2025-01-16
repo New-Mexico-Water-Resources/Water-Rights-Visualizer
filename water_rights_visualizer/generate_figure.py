@@ -354,7 +354,6 @@ def generate_figure(
     ax_cloud.legend(custom_lines, legend_labels, loc="upper left", fontsize=axis_label_fontsize / 2, frameon=False)
 
     et_padding = 10 if metric_units else mm_to_in(10)
-    print(f"ymin: {ymin}, ymax: {ymax}", "PADDING", et_padding)
     ax.set_ylim(0, ymax + et_padding)
 
     et_ticks = np.linspace(int(main_line_min), int(main_line_max), 6)

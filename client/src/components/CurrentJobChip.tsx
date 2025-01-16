@@ -7,6 +7,7 @@ import "../scss/CurrentJobChip.scss";
 
 const CurrentJobChip = () => {
   const [activeJob, setActiveJob] = useStore((state) => [state.activeJob, state.setActiveJob]);
+  const closeNewJob = useStore((state) => state.closeNewJob);
   const [previewMode, setPreviewMode] = useStore((state) => [state.previewMode, state.setPreviewMode]);
   const setShowUploadDialog = useStore((state) => state.setShowUploadDialog);
   const loadJob = useStore((state) => state.loadJob);
@@ -33,9 +34,13 @@ const CurrentJobChip = () => {
         }
 
         jobStatusRequest
-          .then(() => {
+          .then((res) => {
             if (liveJob?.status && activeJob.status !== liveJob?.status) {
               setActiveJob(liveJob);
+            }
+
+            if (!res.found) {
+              setActiveJob(null);
             }
           })
           .catch((error) => {
@@ -59,7 +64,10 @@ const CurrentJobChip = () => {
     if (!jobStatus) {
       jobStatus = {
         status: "",
+        found: true,
+        paused: false,
         currentYear: 0,
+        latestDate: "",
         totalYears: 0,
         fileCount: 0,
         estimatedPercentComplete: 0,
@@ -100,7 +108,7 @@ const CurrentJobChip = () => {
           display: "flex",
           alignItems: "center",
           gap: "4px",
-          minWidth: "225px",
+          minWidth: activeJob ? "225px" : "auto",
         }}
       >
         {activeJob ? activeJob.name : "No active job"}
@@ -111,6 +119,7 @@ const CurrentJobChip = () => {
             className="close-btn"
             onClick={() => {
               setActiveJob(null);
+              closeNewJob();
             }}
           >
             <CloseIcon fontSize="small" />
@@ -188,42 +197,44 @@ const CurrentJobChip = () => {
           Continue Editing
         </Button>
       )}
-      <div style={{ display: "flex", gap: "8px", margin: "8px 0" }}>
-        <Button
-          sx={{ fontSize: "12px" }}
-          size="small"
-          variant="contained"
-          color="secondary"
-          onClick={() => {
-            loadJob(activeJob);
-          }}
-        >
-          Locate
-        </Button>
-        <Button
-          sx={{ fontSize: "12px" }}
-          size="small"
-          variant="contained"
-          color="secondary"
-          onClick={() => {
-            if (!activeJob?.loaded_geo_json) {
-              return;
-            }
+      {activeJob && (
+        <div style={{ display: "flex", gap: "8px", margin: "8px 0" }}>
+          <Button
+            sx={{ fontSize: "12px" }}
+            size="small"
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              loadJob(activeJob);
+            }}
+          >
+            Locate
+          </Button>
+          <Button
+            sx={{ fontSize: "12px" }}
+            size="small"
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              if (!activeJob?.loaded_geo_json) {
+                return;
+              }
 
-            let blob = new Blob([JSON.stringify(activeJob.loaded_geo_json)], { type: "application/json" });
-            let url = window.URL.createObjectURL(blob);
-            let a = document.createElement("a");
-            a.href = url;
+              let blob = new Blob([JSON.stringify(activeJob.loaded_geo_json)], { type: "application/json" });
+              let url = window.URL.createObjectURL(blob);
+              let a = document.createElement("a");
+              a.href = url;
 
-            let shortName = activeJob.name.replace(/[(),]/g, "");
-            let escapedName = encodeURIComponent(shortName);
-            a.download = `${escapedName}.geojson`;
-            a.click();
-          }}
-        >
-          Download GeoJSON
-        </Button>
-      </div>
+              let shortName = activeJob.name.replace(/[(),]/g, "");
+              let escapedName = encodeURIComponent(shortName);
+              a.download = `${escapedName}.geojson`;
+              a.click();
+            }}
+          >
+            Download GeoJSON
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

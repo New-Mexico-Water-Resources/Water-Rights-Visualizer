@@ -16,21 +16,6 @@ export const ROLES = {
   JOB_SUBMITTER: import.meta.env.VITE_JOB_SUBMITTER,
 };
 
-// var USGS_USImageryTopo = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', {
-// 	maxZoom: 20,
-// 	attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'
-// });
-// var NASAGIBS_ModisTerraChlorophyll = L.tileLayer('https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_L2_Chlorophyll_A/default/{time}/{tilematrixset}{maxZoom}/{z}/{y}/{x}.{format}', {
-// 	attribution: 'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
-// 	bounds: [[-85.0511287776, -179.999999975], [85.0511287776, 179.999999975]],
-// 	minZoom: 1,
-// 	maxZoom: 7,
-// 	format: 'png',
-// 	time: '',
-// 	tilematrixset: 'GoogleMapsCompatible_Level',
-// 	opacity: 0.75
-// });
-
 export const MAP_LAYER_OPTIONS = {
   "Google Satellite": {
     name: "Google Satellite",

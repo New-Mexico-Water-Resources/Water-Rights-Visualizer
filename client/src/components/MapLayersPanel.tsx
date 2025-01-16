@@ -134,7 +134,7 @@ const MapLayersPanel: FC = () => {
                             className="date-picker"
                             defaultValue={dayjs(today)}
                             value={dayjs(tileDate)}
-                            onAccept={(selectedDate) => {
+                            onChange={(selectedDate) => {
                               setTileDate(selectedDate?.format("YYYY-MM-DD") || today);
                             }}
                           />

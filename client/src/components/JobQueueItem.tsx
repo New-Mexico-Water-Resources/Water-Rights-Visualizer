@@ -74,7 +74,10 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
     if (!jobStatus) {
       jobStatus = {
         status: "",
+        found: true,
+        paused: false,
         currentYear: 0,
+        latestDate: "",
         totalYears: 0,
         fileCount: 0,
         estimatedPercentComplete: 0,
@@ -172,10 +175,11 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           </Tooltip>
         )}
         {["In Progress", "Pending"].includes(job.status) && (
-          <Tooltip title="Pause the job after the current year finishes">
+          <Tooltip title="Pause the job at the current month">
             <Button
               disabled={job.status !== "In Progress" || !canPauseJobs}
               variant="contained"
+              color="secondary"
               size="small"
               style={{ marginBottom: "8px" }}
               onClick={() => {
@@ -192,12 +196,15 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
         {job.status === "Paused" && canPauseJobs && (
           <Tooltip
             title={
-              job.paused_year ? "Resume from " + job?.paused_year : "Job will pause after the current year is processed"
+              jobStatus.paused || job.paused_year
+                ? "Resume" + (job?.paused_year ? ` from ${job.paused_year}` : "")
+                : "Job will pause after the current year is processed"
             }
           >
             <Button
               variant="contained"
               size="small"
+              color={jobStatus.paused ? "primary" : "secondary"}
               style={{ marginBottom: "8px" }}
               onClick={() => {
                 resumeJob(job.key);
@@ -206,7 +213,9 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
               <IconButton sx={{ padding: 0 }}>
                 <PlayIcon />
               </IconButton>
-              {job.paused_year ? "Resume from " + job?.paused_year : "Resume (Pausing...)"}
+              {jobStatus.paused || job.paused_year
+                ? "Resume" + (job?.paused_year ? ` from ${job.paused_year}` : "")
+                : "Resume (Pausing...)"}
             </Button>
           </Tooltip>
         )}
@@ -226,8 +235,10 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
         </Typography>
         {["In Progress", "Paused", "Pending", "WaitingApproval"].includes(job.status) && (
           <Typography variant="body2" sx={{ display: "flex", alignItems: "center" }}>
-            Processing Year:{" "}
-            <b style={{ display: "flex", marginLeft: "4px" }}>{job?.last_generated_year || <MoreHorizIcon />}</b>
+            Processing Date:{" "}
+            <b style={{ display: "flex", marginLeft: "4px" }}>
+              {jobStatus?.latestDate || job?.last_generated_year || <MoreHorizIcon />}
+            </b>
           </Typography>
         )}
         {job.started && job.ended && (

@@ -42,6 +42,12 @@ DEFAULT_QUEUE = "/root/data/water_rights_runs/report_queue.json"
 
 
 class WaterReportException(Exception):
+    manually_killed = False
+
+    def __init__(self, message, manually_killed=False):
+        super().__init__(message)
+        self.manually_killed = manually_killed
+
     pass
 
 
@@ -93,15 +99,12 @@ def build_mongo_client_and_collection():
     user = os.environ.get("MONGO_INITDB_ROOT_USERNAME", "")
     cred = os.environ.get("MONGO_INITDB_ROOT_PASSWORD", "")
     host = os.environ.get("MONGO_HOST", "water-rights-visualizer-mongo")
-    # host = os.environ.get("MONGO_HOST", "localhost")
     port = os.environ.get("MONGO_PORT", 27017)
     if isinstance(port, str) and port.isdigit():
         port = int(port)
 
     database = os.environ.get("MONGO_DATABASE", "water")
     collection = os.environ.get("MONGO_COLLECTION", "report_queue")
-
-    mongo_str = "mongodb://{}:{}@{}:{}".format(user, cred, host, port)
 
     client = pymongo.MongoClient(host=host, username=user, password=cred, port=port, directConnection=True)
 
@@ -146,6 +149,7 @@ def exec_report(record):
 
     log_path = "{}/exec_report_log.txt".format(record["base_dir"])
     dlog(f"Writing exec output to logfile: {log_path}", notification=True)
+    last_checked_status = None
     with open(log_path, "w") as log_file:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
@@ -162,6 +166,25 @@ def exec_report(record):
             if PRINT_LOG:
                 sys.stdout.write(line)
                 sys.stdout.flush()
+            if not last_checked_status or time.time() - last_checked_status > 5:
+                last_checked_status = time.time()
+
+                # Check if this record has been killed
+                db = build_mongo_client_and_collection()
+                stored_record = db.find_one({"key": record["key"]})
+                if stored_record and stored_record.get("status") == "Killed":
+                    dlog(f"Killing record {record['key']} requested...", fail=True)
+                    process.kill()
+                    process.wait()
+
+                    # Delete the record
+                    db.delete_one({"key": record["key"]})
+                    raise WaterReportException(f"Error: Record {record['key']} has been killed.", manually_killed=True)
+                elif stored_record and stored_record.get("status") == "Paused":
+                    dlog(f"Pausing record {record['key']}...", warning=True)
+                    process.kill()
+                    process.wait()
+                    return "Paused"
 
         retcode = process.wait()
 
@@ -257,11 +280,27 @@ def find_stalled_record():
     return record
 
 
-def clean_up_killed_records():
+def clean_up_killed_records(change=None):
     report_queue = build_mongo_client_and_collection()
     current_pid = os.getpid()
     records = report_queue.find({"status": "Killed"})
+    killed_records = [record for record in records]
+
+    if change and change.get("fullDocument", {}).get("status") and change["fullDocument"]["status"] == "Killed":
+        found_changed_record = False
+        for i, record in enumerate(killed_records):
+            if record["key"] == change["fullDocument"]["key"]:
+                found_changed_record = True
+                killed_records[i] = change["fullDocument"]
+                break
+
+        if not found_changed_record:
+            killed_records.append(change["fullDocument"])
+
+    if records:
+        dlog("Cleaning up any killed records...", notification=True)
     for record in records:
+        dlog(f"Checking killed record: {record['key']}", notification=True)
         record_pid = record.get("pid", None)
         cmd = record.get("cmd", None)
         record_key = record.get("key", None)
@@ -297,6 +336,9 @@ def clean_up_killed_records():
                 dlog(f"No PID found for record: {record_key}. Deleting entry...", warning=True)
 
             report_queue.delete_one({"key": record["key"]})
+        else:
+            dlog(f"Record {record_key} has no PID or CMD. Removing record...", warning=True)
+            report_queue.delete_one({"key": record["key"]})
 
     return records
 
@@ -331,6 +373,9 @@ def process_report(record):
         update_status(record, status)
         write_record(record)
     except Exception as e:
+        if isinstance(e, WaterReportException) and e.manually_killed:
+            dlog(f"Record {record['key']} has been killed. Skipping update...", fail=True)
+            return
         status_msg = str(e)
         dlog(f"Failed to process {record}\n\nCaused by: {status_msg}", fail=True)
         record["status_msg"] = status_msg
@@ -339,8 +384,8 @@ def process_report(record):
 
 
 # scan the report queue for any files that are "Pending"
-def check_report_queue():
-    clean_up_killed_records()
+def check_report_queue(change=None):
+    clean_up_killed_records(change)
 
     record = find_pending_record()
     if not record:
@@ -360,15 +405,14 @@ def check_report_queue():
 def monitor_queue():
     check_report_queue()
 
-    report_queue = build_mongo_client_and_collection()
-
     # Set up a change stream to monitor the collection
+    report_queue = build_mongo_client_and_collection()
     with report_queue.watch() as change_stream:
         dlog("Listening for changes...", notification=True)
         for change in change_stream:
             if change["operationType"] in {"insert", "update"}:
                 dlog(f"Change detected: {change}", notification=True)
-                check_report_queue()
+                check_report_queue(change)
                 time.sleep(5)
                 cleanup_files()
 

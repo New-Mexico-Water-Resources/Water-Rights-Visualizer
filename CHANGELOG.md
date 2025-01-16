@@ -17,6 +17,9 @@
   - Includes a locate button to center the map on the job area
   - Adds a Download GeoJSON button to download just the job area as a GeoJSON file regardless of job status
   - Shows status as Complete if the job is in a "Complete" state
+- Adds a "Date submitted" filter to the backlog to make the list easier to navigate
+- Makes the pause button work immediately (within 5 seconds) as opposed to stopping at the end of the year
+- Better progress estimation based on latest date in logs 
 
 ### Bug Fixes
 - Fixes bug where active job occassionally would get out of sync from the corresponding job in the queue

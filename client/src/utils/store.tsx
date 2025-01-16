@@ -27,7 +27,10 @@ export interface PolygonLocation {
 
 export interface JobStatus {
   status: string;
+  found: boolean;
+  paused: boolean;
   currentYear: number;
+  latestDate: string;
   totalYears: number;
   fileCount: number;
   estimatedPercentComplete: number;
@@ -102,6 +105,8 @@ interface Store {
   setIsMapLayersPanelOpen: (isMapLayersPanelOpen: boolean) => void;
   isBacklogOpen: boolean;
   setIsBacklogOpen: (isBacklogOpen: boolean) => void;
+  backlogDateFilter: string;
+  setBacklogDateFilter: (backlogDateFilter: string) => void;
   jobName: string;
   setJobName: (jobName: string) => void;
   minYear: number;
@@ -220,6 +225,8 @@ const useStore = create<Store>()(
       setIsBacklogOpen: (isBacklogOpen) => {
         get().setActiveTab(isBacklogOpen ? "backlog" : "");
       },
+      backlogDateFilter: "Last Week",
+      setBacklogDateFilter: (backlogDateFilter) => set({ backlogDateFilter }),
       isUsersPanelOpen: false,
       setIsUsersPanelOpen: (isUsersPanelOpen) => {
         get().setActiveTab(isUsersPanelOpen ? "users" : "");
@@ -675,7 +682,10 @@ const useStore = create<Store>()(
                 ...state.jobStatuses,
                 [jobKey]: {
                   status: "Error fetching job status",
+                  found: error?.response?.status === 200,
+                  paused: false,
                   currentYear: 0,
+                  latestDate: "",
                   totalYears: 0,
                   fileCount: 0,
                   estimatedPercentComplete: 0,
@@ -685,7 +695,10 @@ const useStore = create<Store>()(
             }));
             return {
               status: "Error",
+              found: error?.response?.status === 200,
+              paused: false,
               currentYear: 0,
+              latestDate: "",
               totalYears: 0,
               fileCount: 0,
               estimatedPercentComplete: 0,

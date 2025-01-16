@@ -26,6 +26,7 @@ import { useConfirm } from "material-ui-confirm";
 
 import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
+import dayjs from "dayjs";
 
 const JobQueue = () => {
   const queue = useStore((state) => state.queue);
@@ -37,6 +38,29 @@ const JobQueue = () => {
 
   const [activeStatusFilters, setActiveStatusFilters] = useState<string[]>([]);
   const [activeAuthorFilters, setActiveAuthorFilters] = useState<string[]>([]);
+
+  const backlogDateFilterOptions = ["Last Day", "Last Week", "Last Month", "Last Year", "All Time"];
+
+  const [backlogDateFilter, setBacklogDateFilter] = useStore((state) => [
+    state.backlogDateFilter,
+    state.setBacklogDateFilter,
+  ]);
+
+  const backlogCutoffDate = useMemo(() => {
+    switch (backlogDateFilter) {
+      case "Last Day":
+        return dayjs().subtract(1, "day").toDate();
+      case "Last Week":
+        return dayjs().subtract(1, "week").toDate();
+      case "Last Month":
+        return dayjs().subtract(1, "month").toDate();
+      case "Last Year":
+        return dayjs().subtract(1, "year").toDate();
+      case "All Time":
+      default:
+        return null;
+    }
+  }, [backlogDateFilter]);
 
   const [jobLogs, setJobLogs] = useState<Record<string, { timestamp: number; logs: string }>>({});
   const [activeJobLogKey, setActiveJobLogKey] = useState("");
@@ -52,7 +76,10 @@ const JobQueue = () => {
     if (!jobStatus) {
       jobStatus = {
         status: "",
+        found: true,
+        paused: false,
         currentYear: 0,
+        latestDate: "",
         totalYears: 0,
         fileCount: 0,
         estimatedPercentComplete: 0,
@@ -83,9 +110,10 @@ const JobQueue = () => {
     return job;
   }, [queue, backlog, activeJobLogKey]);
 
+  const [lastFetchedLogs, setLastFetchedLogs] = useState(0);
   useEffect(() => {
     const fetchLogs = async () => {
-      if (activeJobLogKey && jobLogsOpen) {
+      if (activeJobLogKey && jobLogsOpen && Date.now() - lastFetchedLogs > 2000) {
         if (viewingJob?.name) {
           let jobStatusRequest = fetchJobStatus(activeJobLogKey, viewingJob.name);
           if (!jobStatusRequest) {
@@ -93,7 +121,9 @@ const JobQueue = () => {
           }
 
           jobStatusRequest
-            .then(() => {})
+            .then(() => {
+              setLastFetchedLogs(Date.now());
+            })
             .catch((error) => {
               console.error("Error fetching job status", error);
             });
@@ -129,7 +159,7 @@ const JobQueue = () => {
       }
     }, 2000);
     return () => clearInterval(interval);
-  }, [activeJobLogKey, jobLogsOpen]);
+  }, [activeJobLogKey, jobLogsOpen, lastFetchedLogs]);
 
   const [searchField, setSearchField] = useState("");
 
@@ -141,6 +171,12 @@ const JobQueue = () => {
 
   const filteredItemList = useMemo(() => {
     let items = isBacklogOpen ? backlog : queue;
+    if (isBacklogOpen && backlogCutoffDate) {
+      items = items.filter(
+        (item) => new Date(item?.started || 0) > backlogCutoffDate || new Date(item?.finished || 0) > backlogCutoffDate
+      );
+    }
+
     let searchTerm = searchField.toLowerCase();
 
     if (activeAuthorFilters.length) {
@@ -176,7 +212,16 @@ const JobQueue = () => {
     });
 
     return filteredItems;
-  }, [queue, backlog, isBacklogOpen, searchField, sortAscending, activeAuthorFilters, activeStatusFilters]);
+  }, [
+    queue,
+    backlog,
+    isBacklogOpen,
+    searchField,
+    sortAscending,
+    activeAuthorFilters,
+    activeStatusFilters,
+    backlogCutoffDate,
+  ]);
 
   const authors = useMemo(() => {
     let authors = new Set<string>();
@@ -386,7 +431,8 @@ const JobQueue = () => {
             justifyContent: "space-between",
             padding: "8px",
             paddingTop: 0,
-            borderBottom: "1px solid var(--st-gray-80)",
+            paddingBottom: isBacklogOpen ? 0 : "8px",
+            borderBottom: isQueueOpen ? "1px solid var(--st-gray-80)" : "",
             gap: "8px",
           }}
         >
@@ -433,6 +479,41 @@ const JobQueue = () => {
             </Select>
           </FormControl>
         </div>
+        {isBacklogOpen && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              padding: "8px",
+              paddingTop: 0,
+              borderBottom: "1px solid var(--st-gray-80)",
+              gap: "8px",
+              marginTop: "12px",
+            }}
+          >
+            <FormControl size="small" sx={{ flex: 1 }}>
+              <InputLabel size="small" id="author-filter-label">
+                Date Submitted
+              </InputLabel>
+              <Select
+                size="small"
+                labelId="author-filter-label"
+                label="Date Submitted"
+                value={backlogDateFilter}
+                onChange={(evt) => {
+                  setBacklogDateFilter(evt.target.value as string);
+                }}
+              >
+                {backlogDateFilterOptions.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
+        )}
       </div>
       <div className="queue-list">
         <AutoSizer>
