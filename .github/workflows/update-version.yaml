@@ -45,8 +45,9 @@ jobs:
           git tag -a $NEW_VERSION -m "Bump version to $NEW_VERSION"
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Push Changes
+      - name: Push Changes and Tag
         run: |
           git add client/package.json
           git commit -m "Bump version to ${{ steps.bump_version.outputs.new_version }} [skip ci]"
           git push origin ${{ github.ref_name }}
+          git push origin ${{ steps.bump_version.outputs.new_version }}

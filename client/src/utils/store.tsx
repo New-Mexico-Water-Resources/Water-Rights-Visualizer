@@ -4,6 +4,7 @@ import axios, { AxiosInstance } from "axios";
 import { API_URL, QUEUE_STATUSES, ROLES } from "./constants";
 import { formatElapsedTime, formJobForQueue } from "./helpers";
 import packageJson from "../../package.json";
+import dayjs from "dayjs";
 
 export interface PolygonLocation {
   visible: boolean;
@@ -72,13 +73,33 @@ export interface UserListingDetails {
   roles: UserRole[];
 }
 
+export type ActiveTabType = "queue" | "backlog" | "users" | "map-layers" | "";
+
+export type MapLayer = {
+  name: string;
+  attribution: string;
+  url: string;
+  maxZoom: number;
+  subdomains: string[];
+  time?: string;
+  [key: string]: any;
+};
+
 interface Store {
   minimumValidArea: number;
   maximumValidArea: number;
+  tileDate: string;
+  setTileDate: (tileDate: string) => void;
+  mapLayerKey: string;
+  setMapLayerKey: (mapLayerKey: string) => void;
+  activeTab: ActiveTabType;
+  setActiveTab: (tab: ActiveTabType) => void;
   isQueueOpen: boolean;
   setIsQueueOpen: (isQueueOpen: boolean) => void;
   isUsersPanelOpen: boolean;
   setIsUsersPanelOpen: (isUsersPanelOpen: boolean) => void;
+  isMapLayersPanelOpen: boolean;
+  setIsMapLayersPanelOpen: (isMapLayersPanelOpen: boolean) => void;
   isBacklogOpen: boolean;
   setIsBacklogOpen: (isBacklogOpen: boolean) => void;
   jobName: string;
@@ -165,12 +186,48 @@ const useStore = create<Store>()(
     devtools((set, get) => ({
       minimumValidArea: 900,
       maximumValidArea: 100000000,
+      tileDate: dayjs().format("YYYY-MM-DD"),
+      setTileDate: (tileDate) => set({ tileDate }),
+      mapLayerKey: "Google Satellite",
+      setMapLayerKey: (mapLayerKey) => set({ mapLayerKey }),
+      activeTab: "",
+      setActiveTab: (activeTab) => {
+        let isQueueOpen = false;
+        let isBacklogOpen = false;
+        let isUsersPanelOpen = false;
+        let isMapLayersPanelOpen = false;
+
+        if (activeTab === "queue" && !get().isQueueOpen) {
+          get().fetchQueue();
+          isQueueOpen = true;
+        } else if (activeTab === "backlog" && !get().isBacklogOpen) {
+          get().fetchQueue();
+          isBacklogOpen = true;
+        } else if (activeTab === "users" && !get().isUsersPanelOpen) {
+          get().adminFetchUsers();
+          isUsersPanelOpen = true;
+        } else if (activeTab === "map-layers" && !get().isMapLayersPanelOpen) {
+          isMapLayersPanelOpen = true;
+        }
+
+        set({ activeTab, isQueueOpen, isBacklogOpen, isUsersPanelOpen, isMapLayersPanelOpen });
+      },
       isQueueOpen: false,
-      setIsQueueOpen: (isQueueOpen) => set({ isQueueOpen }),
+      setIsQueueOpen: (isQueueOpen) => {
+        get().setActiveTab(isQueueOpen ? "queue" : "");
+      },
       isBacklogOpen: false,
-      setIsBacklogOpen: (isBacklogOpen) => set({ isBacklogOpen }),
+      setIsBacklogOpen: (isBacklogOpen) => {
+        get().setActiveTab(isBacklogOpen ? "backlog" : "");
+      },
       isUsersPanelOpen: false,
-      setIsUsersPanelOpen: (isUsersPanelOpen) => set({ isUsersPanelOpen }),
+      setIsUsersPanelOpen: (isUsersPanelOpen) => {
+        get().setActiveTab(isUsersPanelOpen ? "users" : "");
+      },
+      isMapLayersPanelOpen: false,
+      setIsMapLayersPanelOpen: (isMapLayersPanelOpen) => {
+        get().setActiveTab(isMapLayersPanelOpen ? "map-layers" : "");
+      },
       jobName: "",
       setJobName: (jobName) => set({ jobName }),
       minYear: 1985,
@@ -839,6 +896,8 @@ const useStore = create<Store>()(
         sortAscending: state.sortAscending,
         changelog: state.changelog,
         ardTiles: state.ardTiles,
+        mapLayerKey: state.mapLayerKey,
+        showARDTiles: state.showARDTiles,
       }),
     }
   )

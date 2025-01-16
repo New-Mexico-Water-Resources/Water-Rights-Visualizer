@@ -1,6 +1,5 @@
 import {
   Button,
-  Checkbox,
   FormControl,
   IconButton,
   Input,
@@ -67,9 +66,6 @@ const LayersControl: FC = () => {
   const submitMultipolygonJob = useStore((state) => state.submitMultipolygonJob);
   const closeNewJob = useStore((state) => state.closeNewJob);
   const prepareGeoJSON = useStore((state) => state.prepareGeoJSON);
-
-  const toggleARDTiles = useStore((state) => state.toggleARDTiles);
-  const showARDTiles = useStore((state) => state.showARDTiles);
 
   const userInfo = useStore((state) => state.userInfo);
   const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
@@ -161,14 +157,12 @@ const LayersControl: FC = () => {
       reader.onerror = () => console.log("file reading has failed");
       reader.onload = () => {
         setLoadedFile(file);
-        console.log("Loaded file", file);
         if (!jobName) {
           let fileName = file.name.replace(/\.[^/.]+$/, "");
           setJobName(fileName);
         }
 
         let prepareRequest = prepareGeoJSON(file);
-        console.log("Prepare request", prepareRequest);
         if (!prepareRequest) {
           // User not authenticated
           console.error("User not authenticated, cannot prepare GeoJSON.");
@@ -176,15 +170,12 @@ const LayersControl: FC = () => {
         }
 
         prepareRequest.then((geojson) => {
-          console.log("GeoJSON prepared", geojson);
           if (geojson.data && !geojson?.data?.multipolygon) {
-            console.log("Setting loaded geojson", geojson.data);
             setLoadedGeoJSON(geojson.data);
             setMultipolygons([]);
             setRows([]);
             setActiveJob(null);
           } else if (geojson?.data?.multipolygon && geojson?.data?.geojsons?.length > 0) {
-            console.log("Setting multipolygons", geojson.data.geojsons);
             setMultipolygons(geojson.data.geojsons);
             generateRows(geojson.data.geojsons);
             setActiveJob(null);
@@ -560,16 +551,21 @@ const LayersControl: FC = () => {
         className="bottom-buttons"
         style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-end" }}
       >
-        <div style={{ display: "flex", alignItems: "center", marginRight: "auto" }}>
-          <Checkbox
-            onClick={() => toggleARDTiles()}
-            checked={showARDTiles}
-            style={{ padding: 0, marginRight: "4px", marginLeft: "4px" }}
-          />
-          <Typography variant="body2" style={{ color: "var(--st-gray-30)", fontSize: "12px" }}>
-            Show Valid Bounds
-          </Typography>
-        </div>
+        <Button
+          disabled={!canSubmitJob}
+          variant="contained"
+          color="secondary"
+          style={{ marginRight: "auto", marginLeft: "8px" }}
+          onClick={() => {
+            let originalGeoJSON = loadedGeoJSON;
+            setLoadedGeoJSON(null);
+            setTimeout(() => {
+              setLoadedGeoJSON(originalGeoJSON);
+            }, 1);
+          }}
+        >
+          Locate
+        </Button>
         <Button
           disabled={!isValidArea || (!canSubmitJob && !canSubmitBulkJob)}
           variant="contained"
