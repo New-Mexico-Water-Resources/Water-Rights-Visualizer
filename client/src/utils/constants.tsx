@@ -1,3 +1,5 @@
+import { CRS } from "leaflet";
+
 export const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export const authConfig = {
@@ -13,6 +15,21 @@ export const ROLES = {
   JOB_APPROVER: import.meta.env.VITE_JOB_APPROVER,
   JOB_SUBMITTER: import.meta.env.VITE_JOB_SUBMITTER,
 };
+
+// var USGS_USImageryTopo = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', {
+// 	maxZoom: 20,
+// 	attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'
+// });
+// var NASAGIBS_ModisTerraChlorophyll = L.tileLayer('https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_L2_Chlorophyll_A/default/{time}/{tilematrixset}{maxZoom}/{z}/{y}/{x}.{format}', {
+// 	attribution: 'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
+// 	bounds: [[-85.0511287776, -179.999999975], [85.0511287776, 179.999999975]],
+// 	minZoom: 1,
+// 	maxZoom: 7,
+// 	format: 'png',
+// 	time: '',
+// 	tilematrixset: 'GoogleMapsCompatible_Level',
+// 	opacity: 0.75
+// });
 
 export const MAP_LAYER_OPTIONS = {
   "Google Satellite": {
@@ -61,37 +78,22 @@ export const MAP_LAYER_OPTIONS = {
     attribution:
       'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
     url: "https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_CorrectedReflectance_TrueColor/default/{time}/GoogleMapsCompatible_Level{maxZoom}/{z}/{y}/{x}.jpg",
-    bounds: [
-      [-85.0511287776, -179.999999975],
-      [85.0511287776, 179.999999975],
-    ],
     maxZoom: 9,
     time: "2023-01-01",
   },
-  "MODIS Aqua True Color CR": {
-    name: "MODIS Aqua True Color CR",
-    attribution:
-      'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
-    url: "https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Aqua_CorrectedReflectance_TrueColor/default/{time}/GoogleMapsCompatible_Level{maxZoom}/{z}/{y}/{x}.jpg",
-    bounds: [
-      [-85.0511287776, -179.999999975],
-      [85.0511287776, 179.999999975],
-    ],
-    maxZoom: 9,
-    time: "2023-01-01",
-  },
-  "MODIS Terra Land Surface Temp Day": {
-    name: "MODIS Terra Land Surface Temp Day",
-    attribution:
-      'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
-    url: "https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_CorrectedReflectance_Bands367/default/{time}/GoogleMapsCompatible_Level{maxZoom}/{z}/{y}/{x}.jpg",
-    bounds: [
-      [-85.0511287776, -179.999999975],
-      [85.0511287776, 179.999999975],
-    ],
-    maxZoom: 9,
-    time: "2023-01-01",
-  },
+
+  // "MODIS Terra LST Day": {
+  //   name: "MODIS Terra LST Day",
+  //   attribution:
+  //     'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
+  //   url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MOD16A2_ET/default/{time}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png",
+  //   bounds: [
+  //     [-85.0511287776, -179.999999975],
+  //     [85.0511287776, 179.999999975],
+  //   ],
+  //   maxZoom: 9,
+  //   time: "2023-01-01",
+  // },
 };
 
 export const QUEUE_STATUSES = ["Pending", "In Progress", "WaitingApproval", "Paused"];

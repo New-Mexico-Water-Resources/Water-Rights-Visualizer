@@ -44,6 +44,7 @@ const ActiveMapLayer = () => {
       maxNativeZoom={activeMapLayer.maxZoom}
       maxZoom={activeMapLayer.maxZoom}
       subdomains={activeMapLayer.subdomains || []}
+      bounds={activeMapLayer?.bounds}
     />
   );
 };

@@ -17,6 +17,7 @@ import UsersList from "../components/UsersList";
 import MapLayersPanel from "../components/MapLayersPanel";
 import { MAP_LAYER_OPTIONS } from "../utils/constants";
 import ActiveMapLayer from "../components/ActiveMapLayer";
+import { CRS } from "leaflet";
 
 const Dashboard = () => {
   const loadedGeoJSON = useStore((state) => state.loadedGeoJSON);
@@ -207,6 +208,7 @@ const Dashboard = () => {
         zoomControl={false}
         scrollWheelZoom={true}
         maxZoom={activeMapLayer.maxZoom}
+        crs={CRS.EPSG3857}
       >
         <ActiveMapLayer />
         <ZoomControl position="topright" />

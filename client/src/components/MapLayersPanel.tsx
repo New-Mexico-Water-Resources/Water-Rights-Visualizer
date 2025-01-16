@@ -63,6 +63,7 @@ const MapLayersPanel: FC = () => {
             alignItems: "center",
             padding: "8px 16px",
             paddingTop: 0,
+            paddingLeft: 0,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", marginRight: "auto" }}>
@@ -92,7 +93,7 @@ const MapLayersPanel: FC = () => {
         </Typography>
         <div style={{ display: "flex", alignItems: "center", marginRight: "auto" }}>
           <RadioGroup
-            style={{ padding: 0, marginRight: "4px", marginLeft: "16px" }}
+            style={{ padding: 0, marginRight: "4px", marginLeft: "8px" }}
             value={mapLayerKey}
             onChange={(evt) => {
               if (evt.target.value && mapLayerOptions.find((option) => option.name === evt.target.value)) {
@@ -103,13 +104,29 @@ const MapLayersPanel: FC = () => {
           >
             {mapLayerOptions.map((option) => {
               return (
-                <>
+                <div key={option.name}>
                   <FormControlLabel key={option.name} value={option.name} control={<Radio />} label={option.name} />
                   {option?.time && mapLayerKey === option.name && (
-                    <div style={{ display: "flex", alignItems: "center", marginRight: "auto" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginRight: "auto",
+                        marginLeft: "16px",
+                        marginTop: "-12px",
+                        marginBottom: "8px",
+                      }}
+                    >
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <div>
-                          <FormLabel style={{ color: "var(--st-gray-30)", fontSize: "12px", marginBottom: 0, padding: 0 }}>
+                          <FormLabel
+                            style={{
+                              color: "var(--st-gray-30)",
+                              fontSize: "12px",
+                              marginBottom: 0,
+                              padding: 0,
+                            }}
+                          >
                             Target Date
                           </FormLabel>
                           <DatePicker
@@ -125,7 +142,7 @@ const MapLayersPanel: FC = () => {
                       </LocalizationProvider>
                     </div>
                   )}
-                </>
+                </div>
               );
             })}
           </RadioGroup>
