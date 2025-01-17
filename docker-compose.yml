@@ -52,7 +52,7 @@ services:
     container_name: water-rights-visualizer-mongo
     command: ["--replSet", "rs0"]
     healthcheck:
-      test: test $$(mongosh --port 27017 --quiet --eval "try {rs.initiate({_id:'my-replica-set',members:[{_id:0,host:\"water_mongo:27017\"}]})} catch(e) {rs.status().ok}") -eq 1
+      test: test $$(mongosh --port 27017 --quiet --eval "try {rs.initiate({_id:'rs0',members:[{_id:0,host:\"water_mongo:27017\"}]})} catch(e) {rs.status().ok}") -eq 1
       interval: 10s
       start_period: 30s
     env_file: ".env"
