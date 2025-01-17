@@ -1,5 +1,3 @@
-import { CRS } from "leaflet";
-
 export const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export const authConfig = {
@@ -66,19 +64,6 @@ export const MAP_LAYER_OPTIONS = {
     maxZoom: 9,
     time: "2023-01-01",
   },
-
-  // "MODIS Terra LST Day": {
-  //   name: "MODIS Terra LST Day",
-  //   attribution:
-  //     'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
-  //   url: "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MOD16A2_ET/default/{time}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png",
-  //   bounds: [
-  //     [-85.0511287776, -179.999999975],
-  //     [85.0511287776, 179.999999975],
-  //   ],
-  //   maxZoom: 9,
-  //   time: "2023-01-01",
-  // },
 };
 
 export const QUEUE_STATUSES = ["Pending", "In Progress", "WaitingApproval", "Paused"];
