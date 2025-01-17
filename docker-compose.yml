@@ -50,11 +50,13 @@ services:
   water_mongo:
     image: mongo:7.0
     container_name: water-rights-visualizer-mongo
+    command: ["--replSet", "rs0"]
     env_file: ".env"
     ports:
       - 27017:27017
     volumes:
       - mongodata:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
       - water_network
 
