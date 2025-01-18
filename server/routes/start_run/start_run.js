@@ -118,6 +118,9 @@ router.post("/start_run", async (req, res) => {
   };
 
   let pipeline_script = sources[data_source] || sources["S3"];
+  if (!dev_mode) {
+    pipeline_script = path.join(project_directory, pipeline_script);
+  }
 
   let pythonExecutable = dev_mode ? "/opt/homebrew/anaconda3/envs/nmw-test/bin/python" : "/opt/conda/bin/python";
   let command = `${pythonExecutable} ${pipeline_script} ${config_filename}`;
