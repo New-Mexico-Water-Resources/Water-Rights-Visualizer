@@ -23,7 +23,7 @@ const CurrentJobChip = () => {
     }
 
     return job;
-  }, [queue, backlog, activeJob?.id]);
+  }, [queue, backlog, activeJob?.key]);
 
   useEffect(() => {
     let interval = setInterval(() => {
@@ -34,13 +34,10 @@ const CurrentJobChip = () => {
         }
 
         jobStatusRequest
-          .then((res) => {
+          .then(() => {
             if (liveJob?.status && activeJob.status !== liveJob?.status) {
+              console.log("Setting active job to live job", liveJob, "ACTIVE", activeJob);
               setActiveJob(liveJob);
-            }
-
-            if (!res.found) {
-              setActiveJob(null);
             }
           })
           .catch((error) => {

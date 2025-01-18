@@ -44,6 +44,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const confirm = useConfirm();
 
   const setLoadedGeoJSON = useStore((state) => state.setLoadedGeoJSON);
+  const activeJob = useStore((state) => state.activeJob);
   const setActiveJob = useStore((state) => state.setActiveJob);
 
   const deleteJob = useStore((state) => state.deleteJob);
@@ -127,23 +128,35 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
           </Typography>
         </Tooltip>
         {canDeleteJobs && (
-          <IconButton
-            onClick={() => {
-              confirm({
-                title: "Delete Job",
-                description: `Are you sure you want to delete the job "${job.name}"?`,
-                confirmationButtonProps: { color: "primary", variant: "contained" },
-                cancellationButtonProps: { color: "secondary", variant: "contained" },
-                titleProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
-                contentProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
-                dialogActionsProps: { sx: { backgroundColor: "var(--st-gray-90)" } },
-              }).then(() => {
-                deleteJob(job.key, true);
-              });
-            }}
+          <Tooltip
+            title={
+              job.status === "Killed"
+                ? "This job will be cleaned up automatically and cannot be deleted"
+                : `Delete ${job.name}`
+            }
           >
-            <CloseIcon />
-          </IconButton>
+            <IconButton
+              disabled={job.status === "Killed"}
+              onClick={() => {
+                confirm({
+                  title: "Delete Job",
+                  description: `Are you sure you want to delete the job "${job.name}"?`,
+                  confirmationButtonProps: { color: "primary", variant: "contained" },
+                  cancellationButtonProps: { color: "secondary", variant: "contained" },
+                  titleProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                  contentProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                  dialogActionsProps: { sx: { backgroundColor: "var(--st-gray-90)" } },
+                }).then(() => {
+                  deleteJob(job.key, true);
+                  if (job.key === activeJob?.key) {
+                    setActiveJob(null);
+                  }
+                });
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Tooltip>
         )}
       </div>
       <div className="item-body" style={{ flex: 1, justifyContent: "space-around" }}>

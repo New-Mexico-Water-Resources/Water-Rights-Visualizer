@@ -676,8 +676,11 @@ const useStore = create<Store>()(
             return response.data;
           })
           .catch((error) => {
+            // Only log error message if status !== 404
+            let errorMessage = error?.response?.status === 404 ? "" : error?.message || "Error fetching job status";
+
             set((state) => ({
-              errorMessage: error?.message || "Error fetching job status",
+              errorMessage: errorMessage,
               jobStatuses: {
                 ...state.jobStatuses,
                 [jobKey]: {

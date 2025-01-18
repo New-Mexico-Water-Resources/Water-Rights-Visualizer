@@ -297,9 +297,9 @@ def clean_up_killed_records(change=None):
         if not found_changed_record:
             killed_records.append(change["fullDocument"])
 
-    if records:
-        dlog("Cleaning up any killed records...", notification=True)
-    for record in records:
+    if len(killed_records) > 0:
+        dlog(f"Cleaning up {len(killed_records)} killed records...", notification=True)
+    for record in killed_records:
         dlog(f"Checking killed record: {record['key']}", notification=True)
         record_pid = record.get("pid", None)
         cmd = record.get("cmd", None)
