@@ -55,7 +55,7 @@ const CurrentJobChip = () => {
   const jobStatus = useMemo(() => {
     let jobStatus: JobStatus = jobStatuses[activeJob?.key];
     if (activeJob?.status === "Complete") {
-      jobStatus.status = "Complete test test long something test";
+      jobStatus.status = "Complete";
     }
 
     if (!jobStatus) {
