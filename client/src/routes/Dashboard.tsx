@@ -1,7 +1,7 @@
 import { Alert, Button, Snackbar, Typography } from "@mui/material";
 import { useEffect, useMemo } from "react";
-import { MapContainer, ScaleControl, TileLayer, ZoomControl } from "react-leaflet";
-import useStore from "../utils/store";
+import { MapContainer, ScaleControl, ZoomControl } from "react-leaflet";
+import useStore, { MapLayer } from "../utils/store";
 
 import GeoJSONLayer from "../components/GeoJsonLayer";
 import "../scss/Dashboard.scss";
@@ -14,6 +14,10 @@ import { useAuth0 } from "@auth0/auth0-react";
 import LoginButton from "../components/LoginButton";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import UsersList from "../components/UsersList";
+import MapLayersPanel from "../components/MapLayersPanel";
+import { MAP_LAYER_OPTIONS } from "../utils/constants";
+import ActiveMapLayer from "../components/ActiveMapLayer";
+import { CRS } from "leaflet";
 
 const Dashboard = () => {
   const loadedGeoJSON = useStore((state) => state.loadedGeoJSON);
@@ -38,6 +42,25 @@ const Dashboard = () => {
   const fetchARDTiles = useStore((state) => state.fetchARDTiles);
   const showARDTiles = useStore((state) => state.showARDTiles);
   const ardTiles = useStore((state) => state.ardTiles);
+
+  const mapLayerKey = useStore((state) => state.mapLayerKey);
+  const tileDate = useStore((state) => state.tileDate);
+
+  const activeMapLayer = useMemo(() => {
+    let mapLayer = (MAP_LAYER_OPTIONS as any)?.[mapLayerKey] as MapLayer;
+    if (!mapLayer) {
+      mapLayer = MAP_LAYER_OPTIONS["Google Satellite"];
+    }
+
+    let layer = JSON.parse(JSON.stringify(mapLayer));
+    if (tileDate) {
+      layer.url = layer.url.replace("{time}", tileDate);
+    } else if (layer.time) {
+      layer.url = layer.url.replace("{time}", layer.time);
+    }
+
+    return layer;
+  }, [mapLayerKey, tileDate]);
 
   useEffect(() => {
     if (showARDTiles && !Object.keys(ardTiles).length) {
@@ -176,6 +199,7 @@ const Dashboard = () => {
         </div>
       )}
       <JobQueue />
+      {<MapLayersPanel />}
       {isAdmin && <UsersList />}
       <MapContainer
         className="map-container"
@@ -183,16 +207,13 @@ const Dashboard = () => {
         zoom={7}
         zoomControl={false}
         scrollWheelZoom={true}
+        maxZoom={activeMapLayer.maxZoom}
+        crs={CRS.EPSG3857}
       >
-        <TileLayer
-          attribution='Imagery <a href="https://www.google.com/">Google</a>'
-          url="http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-          maxZoom={20}
-          subdomains={["mt0", "mt1", "mt2", "mt3"]}
-        />
+        <ActiveMapLayer />
         <ZoomControl position="topright" />
         <ScaleControl position="bottomleft" />
-        {ardTiles && showARDTiles && <GeoJSONLayer data={ardTiles} fitToBounds={false} />}
+        {ardTiles && showARDTiles && <GeoJSONLayer data={ardTiles} validateBounds={false} fitToBounds={false} />}
         <GeoJSONLayer data={loadedGeoJSON} />
         <MultiGeoJSONLayer data={multipolygons} locations={locations} />
       </MapContainer>

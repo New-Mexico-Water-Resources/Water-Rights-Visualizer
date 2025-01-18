@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from "react";
-import { Typography } from "@mui/material";
+import { Divider, Typography } from "@mui/material";
 
 import useStore, { UserListingDetails } from "../utils/store";
 
@@ -51,6 +51,7 @@ const UsersList: FC = () => {
       >
         Users
       </Typography>
+      <Divider />
       <div className="users-list">
         {orderedUsers.map((user) => (
           <UserItem key={user.user_id} user={user} />

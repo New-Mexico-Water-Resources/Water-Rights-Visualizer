@@ -22,6 +22,7 @@ import AddIcon from "@mui/icons-material/Add";
 import Logout from "@mui/icons-material/Logout";
 import GroupIcon from "@mui/icons-material/Group";
 import CloseIcon from "@mui/icons-material/Close";
+import LayersIcon from "@mui/icons-material/Layers";
 
 import Markdown from "react-markdown";
 
@@ -133,6 +134,10 @@ const NavToolbar: FC<{ publicMode?: boolean }> = ({ publicMode }) => {
   const [isQueueOpen, setIsQueueOpen] = useStore((state) => [state.isQueueOpen, state.setIsQueueOpen]);
   const [isBacklogOpen, setIsBacklogOpen] = useStore((state) => [state.isBacklogOpen, state.setIsBacklogOpen]);
   const [isUsersPanelOpen, setIsUsersPanelOpen] = useStore((state) => [state.isUsersPanelOpen, state.setIsUsersPanelOpen]);
+  const [isMapLayersPanelOpen, setIsMapLayersPanelOpen] = useStore((state) => [
+    state.isMapLayersPanelOpen,
+    state.setIsMapLayersPanelOpen,
+  ]);
 
   const startNewJob = useStore((state) => state.startNewJob);
   const queue = useStore((state) => state.queue);
@@ -318,12 +323,7 @@ const NavToolbar: FC<{ publicMode?: boolean }> = ({ publicMode }) => {
                   ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
                 }}
                 onClick={() => {
-                  if (isBacklogOpen && !isQueueOpen) {
-                    setIsBacklogOpen(false);
-                  }
-
                   setIsQueueOpen(!isQueueOpen);
-                  setIsUsersPanelOpen(false);
                 }}
               >
                 <Badge badgeContent={queue.length} color="primary">
@@ -355,12 +355,7 @@ const NavToolbar: FC<{ publicMode?: boolean }> = ({ publicMode }) => {
                   ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
                 }}
                 onClick={() => {
-                  if (isQueueOpen && !isBacklogOpen) {
-                    setIsQueueOpen(false);
-                  }
-
                   setIsBacklogOpen(!isBacklogOpen);
-                  setIsUsersPanelOpen(false);
                 }}
               >
                 <Typography
@@ -379,6 +374,36 @@ const NavToolbar: FC<{ publicMode?: boolean }> = ({ publicMode }) => {
                 </Typography>
               </Box>
             </Tooltip>
+            <Divider orientation="vertical" flexItem sx={{ margin: "0 8px" }} />
+            <Box
+              className={`nav-item ${isMapLayersPanelOpen ? "active" : ""}`}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                height: "100%",
+                cursor: "pointer",
+                ":hover": { backgroundColor: "var(--st-gray-80)", color: "var(--st-gray-10)" },
+              }}
+              onClick={() => {
+                setIsMapLayersPanelOpen(!isMapLayersPanelOpen);
+              }}
+            >
+              <Typography
+                color="inherit"
+                component="div"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "0 8px",
+                  height: "fit-content",
+                  gap: "4px",
+                }}
+              >
+                <LayersIcon />
+                Map Layers
+              </Typography>
+            </Box>
+            <Divider orientation="vertical" flexItem sx={{ margin: "0 8px" }} />
             {isAdmin && (
               <Tooltip title="View Users">
                 <Box
@@ -392,8 +417,6 @@ const NavToolbar: FC<{ publicMode?: boolean }> = ({ publicMode }) => {
                   }}
                   onClick={() => {
                     setIsUsersPanelOpen(!isUsersPanelOpen);
-                    setIsBacklogOpen(false);
-                    setIsQueueOpen(false);
                   }}
                 >
                   <Badge badgeContent={newUsers.length} color="primary">
@@ -415,6 +438,7 @@ const NavToolbar: FC<{ publicMode?: boolean }> = ({ publicMode }) => {
                 </Box>
               </Tooltip>
             )}
+            <Divider orientation="vertical" flexItem sx={{ marginLeft: "8px" }} />
           </Box>
         )}
         {!publicMode && <Profile />}

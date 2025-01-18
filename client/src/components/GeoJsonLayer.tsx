@@ -1,15 +1,26 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useMap } from "react-leaflet";
 import Leaflet from "leaflet";
-import useStore from "../utils/store";
+import useStore, { MapLayer } from "../utils/store";
 import { area as turfArea } from "@turf/turf";
+import { MAP_LAYER_OPTIONS } from "../utils/constants";
 
-const GeoJSONLayer = ({ data, fitToBounds = true }: { data: any; fitToBounds?: boolean }) => {
+const GeoJSONLayer = ({
+  data,
+  validateBounds = true,
+  fitToBounds = true,
+}: {
+  data: any;
+  validateBounds?: boolean;
+  fitToBounds?: boolean;
+}) => {
   const map = useMap();
   const layerRef = useRef<any>(null);
 
   const minimumValidArea = useStore((state) => state.minimumValidArea);
   const maximumValidArea = useStore((state) => state.maximumValidArea);
+  const mapLayerKey = useStore((state) => state.mapLayerKey);
+  const mapLayer = useMemo(() => (MAP_LAYER_OPTIONS as any)[mapLayerKey] as MapLayer, [mapLayerKey]);
 
   useEffect(() => {
     if (layerRef.current) {
@@ -18,7 +29,7 @@ const GeoJSONLayer = ({ data, fitToBounds = true }: { data: any; fitToBounds?: b
 
     if (data && Object.keys(data).length > 0) {
       let area = turfArea(data);
-      let isValidArea = area >= minimumValidArea && area <= maximumValidArea;
+      let isValidArea = !validateBounds || (area >= minimumValidArea && area <= maximumValidArea);
       const geoJsonLayer = new Leaflet.GeoJSON(data);
 
       if (!isValidArea) {
@@ -31,7 +42,10 @@ const GeoJSONLayer = ({ data, fitToBounds = true }: { data: any; fitToBounds?: b
 
       geoJsonLayer.addTo(map);
       if (fitToBounds) {
-        map.fitBounds(geoJsonLayer.getBounds());
+        if (mapLayer.maxZoom) {
+          map.setMaxZoom(mapLayer.maxZoom);
+        }
+        map.fitBounds(geoJsonLayer.getBounds(), { maxZoom: mapLayer.maxZoom });
       }
       layerRef.current = geoJsonLayer;
     }
@@ -41,7 +55,7 @@ const GeoJSONLayer = ({ data, fitToBounds = true }: { data: any; fitToBounds?: b
         map.removeLayer(layerRef.current);
       }
     };
-  }, [data, map, minimumValidArea]);
+  }, [data, map, minimumValidArea, mapLayerKey]);
 
   return null;
 };

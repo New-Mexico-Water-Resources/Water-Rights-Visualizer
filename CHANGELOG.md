@@ -1,3 +1,32 @@
+## 1.10.0 (2025-01-15)
+
+### Features
+- Adds new Map Layers tab to the application
+  - Available data boundary objects can be toggled on and off here instead of in the "New Job" popup
+  - Option to configure the base map and choose corresponding imagery date if applicable (eg. for MODIS)
+  - Max zoom level is configured per base map to prevent zooming in past tile boundary
+- Job runner performance enhancements
+  - Jobs are now picked up much quicker due to a switch to collection subscriptions instead of polling
+  - Logs are flushed after every line, meaning they now come out much cleaner and quicker
+  - Code refactor to help with maintainability
+- Development environment improvements
+  - Job runner can now be run fully locally outside of docker file
+  - Adds term coloring to the job runner logs for easier reading
+- Adds locate button to "New Job" popup to center the map on the uploaded area
+- Active job modal improvements
+  - Includes a locate button to center the map on the job area
+  - Adds a Download GeoJSON button to download just the job area as a GeoJSON file regardless of job status
+  - Shows status as Complete if the job is in a "Complete" state
+- Adds a "Date submitted" filter to the backlog to make the list easier to navigate
+- Makes the pause button work immediately (within 5 seconds) as opposed to stopping at the end of the year
+- Better progress estimation based on latest date in logs 
+
+### Bug Fixes
+- Fixes bug where active job occassionally would get out of sync from the corresponding job in the queue
+- If the job runner was killed (due to a server restart/update, eg.) while a job was "In Progress", the job would get stuck in that state
+  - This has been fixed by adding a check for stalled jobs and picking them up again if no PID is found active
+
+
 ## 1.9.0 (2025-01-09)
 
 ### Features
