@@ -1,4 +1,4 @@
-## 1.10.0 (2025-01-15)
+## 1.10.0 (2025-01-17)
 
 ### Features
 - Adds new Map Layers tab to the application
