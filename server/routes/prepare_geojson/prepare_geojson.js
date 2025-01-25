@@ -22,6 +22,20 @@ const getProjection = (prjFilePath) => {
   return proj4(projString);
 };
 
+const findFileWithExtensionRecursive = (directory, extension) => {
+  const files = fs.readdirSync(directory, { withFileTypes: true });
+  for (const file of files) {
+    const filePath = path.join(directory, file.name);
+    if (file.isDirectory()) {
+      const nestedResult = findFileWithExtensionRecursive(filePath, extension);
+      if (nestedResult) return nestedResult;
+    } else if (file.name.endsWith(extension)) {
+      return filePath;
+    }
+  }
+  return null;
+};
+
 const convertToGeoJSON = async (extractPath, baseName) => {
   return new Promise((resolve, reject) => {
     const geoJSONPath = path.join(extractPath, "output.geojson");
@@ -32,19 +46,19 @@ const convertToGeoJSON = async (extractPath, baseName) => {
       basePath = extractPath;
     }
 
-    const shapeFilePath = path.join(basePath, `${baseName}.shp`);
+    const shapeFilePath = findFileWithExtensionRecursive(extractPath, ".shp");
     if (!fs.existsSync(shapeFilePath)) {
       reject("SHP file not found");
       return;
     }
 
-    const dbfFilePath = path.join(basePath, `${baseName}.dbf`);
+    const dbfFilePath = findFileWithExtensionRecursive(extractPath, ".dbf");
     if (!fs.existsSync(dbfFilePath)) {
       reject("DBF file not found");
       return;
     }
 
-    const prjFilePath = path.join(basePath, `${baseName}.prj`);
+    const prjFilePath = findFileWithExtensionRecursive(extractPath, ".prj");
     if (!fs.existsSync(prjFilePath)) {
       reject("PRJ file not found");
       return;

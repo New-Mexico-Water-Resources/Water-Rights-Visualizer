@@ -1,3 +1,9 @@
+## 1.11.0 (2025-01-25)
+
+### Bug Fixes
+- Fixes issue with multi-polygon shapefiles that have non-standard "Acres" property
+- Fixes issue where shapefile isn't found if the zip file is named differently than its parent folder
+
 ## 1.10.0 (2025-01-17)
 
 ### Features

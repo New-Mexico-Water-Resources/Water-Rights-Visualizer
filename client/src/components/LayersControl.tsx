@@ -107,6 +107,8 @@ const LayersControl: FC = () => {
   const generateRows = useCallback((multipolygons: any[]) => {
     const rows: PolygonLocation[] = multipolygons.map((geojson, index) => {
       let defaultName = `${geojson?.properties?.County || ""} Part ${index + 1}`;
+      defaultName = defaultName.trim();
+
       let name = geojson?.features?.[0]?.properties?.name || defaultName;
 
       let lat = geojson?.geometry?.coordinates[0][0][0];
@@ -158,7 +160,7 @@ const LayersControl: FC = () => {
       reader.onload = () => {
         setLoadedFile(file);
         if (!jobName) {
-          let fileName = file.name.replace(/\.[^/.]+$/, "");
+          let fileName = (file?.name || "").replace(/\.[^/.]+$/, "").trim();
           setJobName(fileName);
         }
 
@@ -313,7 +315,7 @@ const LayersControl: FC = () => {
                     setRowName(evt.target.value);
                   }}
                   onBlur={() => {
-                    row.name = rowName;
+                    row.name = rowName.trim();
                     setRows([...rows]);
                     setEditRowName(false);
                   }}
