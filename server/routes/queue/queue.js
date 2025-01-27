@@ -19,10 +19,6 @@ router.get("/list", async (req, res) => {
 
 router.delete("/delete_job", async (req, res) => {
   let canWriteJobs = req.auth?.payload?.permissions?.includes("write:jobs") || false;
-  if (!canWriteJobs) {
-    res.status(401).send("Unauthorized: missing write:jobs permission");
-    return;
-  }
 
   let key = req.query.key;
   let deleteFiles = req.query.deleteFiles;
@@ -38,6 +34,12 @@ router.delete("/delete_job", async (req, res) => {
 
   if (!job) {
     res.status(404).send("Job not found");
+    return;
+  }
+
+  let userOwnsJob = req.auth?.payload?.sub === job?.user?.sub;
+  if (!canWriteJobs && !userOwnsJob) {
+    res.status(401).send("Unauthorized: missing write:jobs permission");
     return;
   }
 

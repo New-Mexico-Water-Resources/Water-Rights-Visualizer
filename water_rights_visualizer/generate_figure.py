@@ -360,17 +360,19 @@ def generate_figure(
 
     et_ticks = np.linspace(int(main_line_min), int(main_line_max), 6)
     ax.set_yticks(et_ticks)
-    ax.set_yticklabels([f"{int(tick)} {et_unit}" for tick in et_ticks])
+    ax.set_yticklabels([f"{round(tick * 10) / 10} {et_unit}" for tick in et_ticks])
 
     if "ppt_avg" in df.columns and not df["ppt_avg"].empty and not df["ppt_avg"].isnull().all():
         ppt_padding = 15 if metric_units else mm_to_in(15)
         ax_precip.set_ylim(0, max(df["ppt_avg"]) + ppt_padding)
         precip_ticks = np.linspace(0, max(df["ppt_avg"]), 3)
+        if precip_ticks[0] == precip_ticks[1] or precip_ticks[1] == precip_ticks[2]:
+            precip_ticks = [0, precip_ticks[1]]
     else:
         ax_precip.set_ylim(0, 0)
         precip_ticks = [0]
     ax_precip.set_yticks(precip_ticks)
-    ax_precip.set_yticklabels([f"{int(tick)} {et_unit}" for tick in precip_ticks])
+    ax_precip.set_yticklabels([f"{round(tick * 10) / 10} {et_unit}" for tick in precip_ticks])
 
     ax.tick_params(axis="y", labelsize=6)
     ax_precip.tick_params(axis="y", labelsize=6)

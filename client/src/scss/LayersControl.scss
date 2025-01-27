@@ -6,6 +6,9 @@
   top: 49px;
   left: 4px;
 
+  overflow-y: scroll;
+  max-height: calc(100vh - 55px);
+
   z-index: 999;
   background: var(--st-gray-90);
   padding: 4px 8px;

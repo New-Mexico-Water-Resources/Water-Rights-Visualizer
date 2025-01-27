@@ -1,3 +1,12 @@
+## 1.13.0 (2025-01-27)
+
+### Features
+- Allows users to delete their own job before they're approved
+
+### Bug Fixes
+- Shows y axis labels for ET and PPT with 1 decimal place to reduce duplicate number rounding when using imperial units
+- Makes the job configuration side panel scrollable for smaller screens
+
 ## 1.12.0 (2025-01-27)
 
 ### Features

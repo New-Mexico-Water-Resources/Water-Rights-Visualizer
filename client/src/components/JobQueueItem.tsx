@@ -58,7 +58,11 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
 
   const currentUserInfo = useStore((state) => state.userInfo);
   const canApproveJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
-  const canDeleteJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
+  const canDeleteJobs = useMemo(() => {
+    let hasPermission = currentUserInfo?.permissions?.includes("write:jobs");
+    let isCurrentUserJobOwner = job?.user?.sub === currentUserInfo?.sub;
+    return hasPermission || isCurrentUserJobOwner;
+  }, [currentUserInfo, job]);
   const canRestartJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
   const canPauseJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
   const isAdmin = useMemo(() => currentUserInfo?.permissions?.includes("write:admin"), [currentUserInfo]);
