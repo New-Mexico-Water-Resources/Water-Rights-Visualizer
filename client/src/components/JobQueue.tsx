@@ -436,7 +436,7 @@ const JobQueue = () => {
             gap: "8px",
           }}
         >
-          <FormControl size="small" sx={{ flex: 1 }}>
+          <FormControl size="small" sx={{ flex: 1 }} className="author-filter">
             <InputLabel size="small" id="author-filter-label">
               Author
             </InputLabel>

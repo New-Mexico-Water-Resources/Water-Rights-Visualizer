@@ -29,26 +29,26 @@ export const MAP_LAYER_OPTIONS = {
     maxZoom: 20,
     subdomains: ["mt0", "mt1", "mt2", "mt3"],
   },
-  "ESRI World Imagery": {
-    name: "ESRI World Imagery",
-    attribution:
-      "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    maxZoom: 18,
-  },
-  "ESRI NatGeo World Map": {
-    name: "ESRI NatGeo World Map",
-    attribution:
-      "Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC",
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}",
-    maxZoom: 16,
-  },
-  "USGS US Imagery": {
-    name: "USGS US Imagery",
-    attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>',
-    url: "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}",
-    maxZoom: 16,
-  },
+  // "ESRI World Imagery": {
+  //   name: "ESRI World Imagery",
+  //   attribution:
+  //     "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+  //   url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  //   maxZoom: 18,
+  // },
+  // "ESRI NatGeo World Map": {
+  //   name: "ESRI NatGeo World Map",
+  //   attribution:
+  //     "Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC",
+  //   url: "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}",
+  //   maxZoom: 16,
+  // },
+  // "USGS US Imagery": {
+  //   name: "USGS US Imagery",
+  //   attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>',
+  //   url: "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}",
+  //   maxZoom: 16,
+  // },
   "USGS US Imagery Topo": {
     name: "USGS US Imagery Topo",
     attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>',
@@ -63,6 +63,16 @@ export const MAP_LAYER_OPTIONS = {
     maxZoom: 9,
     time: "2023-01-01",
   },
+  // https://gibs-b.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?TIME=2012-07-25T00:00:00Z&layer=AMSRU2_Soil_Moisture_NPD_Day&style=default&tilematrixset=2km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fpng&TileMatrix=5&TileCol=7&TileRow=5
+  // "AMSRU2 Soil Moisture NPD Day": {
+  //   name: "AMSRU2 Soil Moisture NPD Day",
+  //   attribution:
+  //     'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
+  //   url: "https://gibs-b.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?TIME={time}&layer=AMSRU2_Soil_Moisture_NPD_Day&style=default&tilematrixset=2km&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileMatrix={z}&TileCol={x}&TileRow={y}",
+  //   maxZoom: 9,
+  //   time: "2012-07-25T00:00:00Z",
+  // },
+
   // "MODIS ET 500": {
   //   name: "MODIS ET 500",
   //   attribution:

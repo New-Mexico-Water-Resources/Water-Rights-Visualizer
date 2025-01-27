@@ -22,3 +22,8 @@
 .MuiAutocomplete-paper {
   width: fit-content;
 }
+
+ul.MuiMenu-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
