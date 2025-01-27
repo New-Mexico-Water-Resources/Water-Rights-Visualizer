@@ -63,14 +63,14 @@ export const MAP_LAYER_OPTIONS = {
     maxZoom: 9,
     time: "2023-01-01",
   },
-  "MODIS ET 500": {
-    name: "MODIS ET 500",
-    attribution:
-      'Imagery re-formatted and made available from the NASA MODIS MOD16A2 dataset, "Steve Running, Qiaozhen Mu - University of Montana and MODAPS SIPS - NASA. (2015). MOD16A2 MODIS/Terra Evapotranspiration 8-day L4 Global 500m SIN Grid. NASA LP DAAC. http://doi.org/10.5067/MODIS/MOD16A2.006"',
-    url: "http://localhost:5001/tiles/ET/{time}/{z}/{x}/{y}.png",
-    maxZoom: 9,
-    time: "2023-01-01",
-  },
+  // "MODIS ET 500": {
+  //   name: "MODIS ET 500",
+  //   attribution:
+  //     'Imagery re-formatted and made available from the NASA MODIS MOD16A2 dataset, "Steve Running, Qiaozhen Mu - University of Montana and MODAPS SIPS - NASA. (2015). MOD16A2 MODIS/Terra Evapotranspiration 8-day L4 Global 500m SIN Grid. NASA LP DAAC. http://doi.org/10.5067/MODIS/MOD16A2.006"',
+  //   url: "http://localhost:5001/tiles/ET/{time}/{z}/{x}/{y}.png",
+  //   maxZoom: 9,
+  //   time: "2023-01-01",
+  // },
 };
 
 export const QUEUE_STATUSES = ["Pending", "In Progress", "WaitingApproval", "Paused"];
