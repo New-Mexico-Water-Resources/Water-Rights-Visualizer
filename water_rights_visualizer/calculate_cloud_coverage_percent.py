@@ -155,7 +155,7 @@ def calculate_cloud_coverage_percent(
 
             percentage = None
             if percentages and percentages.get("avg_cloud_count") is not None and percentages.get("days_in_month"):
-                percentage = percentages["avg_cloud_count"] / percentages["days_in_month"]
+                percentage = (percentages["days_in_month"] - percentages["avg_cloud_count"]) / percentages["days_in_month"]
             if percentage is None and existing_nan_percent_csv is not None:
                 existing_row = existing_nan_percent_csv.loc[existing_nan_percent_csv["month"] == month_key]
                 if not existing_row.empty:

@@ -206,15 +206,15 @@ def water_rights(
         metric_figure_filename = join(figure_directory, f"{year}_{ROI_name}.png")
         metric_figure_image = plt.imread(metric_figure_filename)
 
-        imperial_figure_filename = join(figure_directory, f"{year}_{ROI_name}_in.png")
-        imperial_figure_image = plt.imread(imperial_figure_filename)
-
         fig = plt.figure(figsize=(19.2, 14.4), tight_layout=True)
         ax = fig.add_axes([0, 0, 1, 1])
         ax.imshow(metric_figure_image)
         ax.axis("off")
         metric_report_pdf.savefig(fig, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
+
+        imperial_figure_filename = join(figure_directory, f"{year}_{ROI_name}_in.png")
+        imperial_figure_image = plt.imread(imperial_figure_filename)
 
         fig = plt.figure(figsize=(19.2, 14.4), tight_layout=True)
         ax = fig.add_axes([0, 0, 1, 1])

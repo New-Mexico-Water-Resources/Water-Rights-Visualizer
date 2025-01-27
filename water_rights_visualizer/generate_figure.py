@@ -339,14 +339,16 @@ def generate_figure(
         ax_cloud.set(xlabel="", ylabel="")
         max_cloud_coverage = max(df["percent_nan"])
         top_gap = min(max_cloud_coverage / 2, 10)
-        ax_cloud.set_ylim(0, min(max_cloud_coverage + top_gap, 100))
-        normalized_ticks = np.linspace(0, max_cloud_coverage, 3)
+        min_non_nan = df["percent_nan"].loc[df["percent_nan"] != 0].min()
+        min_cloud_coverage = max(min_non_nan - 5, 0)
+        ax_cloud.set_ylim(min_cloud_coverage, min(max_cloud_coverage + top_gap, 100))
+        normalized_ticks = np.linspace(min_cloud_coverage, max_cloud_coverage, 3)
         ax_cloud.set_yticks(normalized_ticks)
         ax_cloud.set_yticklabels([f"{int(tick)}%" for tick in normalized_ticks])
         ax_cloud.tick_params(axis="y", labelsize=6)
 
     cloud_coverage_label = (
-        ["Avg Cloud Coverage"] if year >= OPENET_TRANSITION_DATE else ["Avg Cloud Coverage & Missing Data"]
+        ["Avg Cloud Coverage & Missing Data"] if year >= OPENET_TRANSITION_DATE else ["Avg Cloud Coverage & Missing Data"]
     )
     legend_labels = cloud_coverage_label if not is_confidence_data_null else ["Avg Cloud Coverage (Unavailable)"]
     legend_colors = ["gray"]

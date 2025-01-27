@@ -55,12 +55,19 @@ export const MAP_LAYER_OPTIONS = {
     url: "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}",
     maxZoom: 16,
   },
-
   "MODIS Terra True Color CR": {
     name: "MODIS Terra True Color CR",
     attribution:
       'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
     url: "https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_CorrectedReflectance_TrueColor/default/{time}/GoogleMapsCompatible_Level{maxZoom}/{z}/{y}/{x}.jpg",
+    maxZoom: 9,
+    time: "2023-01-01",
+  },
+  "MODIS ET 500": {
+    name: "MODIS ET 500",
+    attribution:
+      'Imagery re-formatted and made available from the NASA MODIS MOD16A2 dataset, "Steve Running, Qiaozhen Mu - University of Montana and MODAPS SIPS - NASA. (2015). MOD16A2 MODIS/Terra Evapotranspiration 8-day L4 Global 500m SIN Grid. NASA LP DAAC. http://doi.org/10.5067/MODIS/MOD16A2.006"',
+    url: "http://localhost:5001/tiles/ET/{time}/{z}/{x}/{y}.png",
     maxZoom: 9,
     time: "2023-01-01",
   },

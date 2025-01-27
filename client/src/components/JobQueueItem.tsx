@@ -12,6 +12,7 @@ import Menu from "@mui/material/Menu";
 import Divider from "@mui/material/Divider";
 
 import MenuItem from "@mui/material/MenuItem";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 import { formatElapsedTime } from "../utils/helpers";
 
@@ -60,6 +61,7 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
   const canDeleteJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
   const canRestartJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
   const canPauseJobs = useMemo(() => currentUserInfo?.permissions?.includes("write:jobs"), [currentUserInfo]);
+  const isAdmin = useMemo(() => currentUserInfo?.permissions?.includes("write:admin"), [currentUserInfo]);
 
   const isDownloadDisabled = useMemo(() => {
     return ["Pending", "In Progress", "WaitingApproval"].includes(job.status);
@@ -381,6 +383,34 @@ const JobQueueItem = ({ job, onOpenLogs }: { job: any; onOpenLogs: () => void })
             </MenuItem>
           </Menu>
         </span>
+        {isAdmin && job.status !== "In Progress" && (
+          <Tooltip title="Rerun job">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                marginLeft: "4px",
+              }}
+              onClick={() => {
+                confirm({
+                  title: "Rerun Job",
+                  description: `Are you sure you want to rerun the job "${job.name}"?`,
+                  confirmationButtonProps: { color: "primary", variant: "contained" },
+                  cancellationButtonProps: { color: "secondary", variant: "contained" },
+                  titleProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                  contentProps: { sx: { backgroundColor: "var(--st-gray-90)", color: "var(--st-gray-10)" } },
+                  dialogActionsProps: { sx: { backgroundColor: "var(--st-gray-90)" } },
+                }).then(() => {
+                  restartJob(job.key);
+                });
+              }}
+            >
+              <RestartAltIcon sx={{ padding: 0, margin: 0 }} />
+            </div>
+          </Tooltip>
+        )}
       </div>
     </div>
   );

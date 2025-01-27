@@ -118,6 +118,21 @@ router.post("/restart_job", async (req, res) => {
   let collection = db.collection(constants.report_queue_collection);
   let result = await collection.updateOne({ key }, { $set: { status: "Pending" } });
 
+  // Delete everything in the job's output folder so we can regenerate the report
+  let job = await collection.findOne({ key });
+  if (job.png_dir) {
+    if (fs.existsSync(job.png_dir)) {
+      fs.rmdir(job.png_dir, { recursive: true }, (err) => {
+        if (err) {
+          console.error(`Error deleting ${job.png_dir}`, err);
+        }
+
+        // Make empty dir
+        fs.mkdirSync(job.png_dir);
+      });
+    }
+  }
+
   res.status(200).send(result);
 });
 
