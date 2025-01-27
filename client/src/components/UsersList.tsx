@@ -49,7 +49,7 @@ const UsersList: FC = () => {
         variant="h5"
         style={{ color: "var(--st-gray-30)", padding: "8px 16px", display: "flex", alignItems: "center" }}
       >
-        Users
+        Users ({orderedUsers.length})
       </Typography>
       <Divider />
       <div className="users-list">

@@ -1,3 +1,8 @@
+## 1.14.0 (2025-01-27)
+
+### Bug Fixes
+- Fixes issue listing all users as an admin (previously caused issues above 50 users)
+
 ## 1.13.0 (2025-01-27)
 
 ### Features

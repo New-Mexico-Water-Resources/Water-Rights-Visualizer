@@ -35,11 +35,16 @@ async function fetchUsers() {
       } = await managementClient.users.getAll({
         include_totals: true,
         page: page++,
+        per_page: 50,
       });
 
       allUsers.push(...users);
 
-      if (users.length >= total) {
+      if (allUsers.length >= total) {
+        break;
+      }
+
+      if (page >= 20) {
         break;
       }
     }
