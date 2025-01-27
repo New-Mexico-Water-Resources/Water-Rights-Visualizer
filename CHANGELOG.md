@@ -1,3 +1,14 @@
+## 1.12.0 (2025-01-27)
+
+### Features
+- Admin feature to restart successfully completed jobs in case report generation changed
+
+### Bug Fixes
+- Fixes memory issue with report generation
+- Restart job button clears already processed figures for re-running just the report
+- Changes > 2008 data to OpenET Cloud Coverage and Missing Data
+
+
 ## 1.11.0 (2025-01-25)
 
 ### Bug Fixes
