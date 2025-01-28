@@ -219,6 +219,7 @@ const LayersControl: FC = () => {
     accept: {
       "application/zip": [".zip"],
       "application/json": [".geojson"],
+      "application/vnd.google-earth.kml+xml": [".kml"],
     },
   });
 

@@ -12,6 +12,7 @@
   "author": "Gregory Halverson",
   "license": "ISC",
   "dependencies": {
+    "@mapbox/togeojson": "^0.16.2",
     "archiver": "^6.0.1",
     "auth0": "^4.7.0",
     "child_process": "^1.0.2",
@@ -29,6 +30,7 @@
     "path": "^0.12.7",
     "proj4": "^2.9.2",
     "shapefile": "^0.6.6",
-    "unzipper": "^0.10.14"
+    "unzipper": "^0.10.14",
+    "xmldom": "^0.6.0"
   }
 }

@@ -1,3 +1,5 @@
+const DOMParser = require("xmldom").DOMParser;
+const togeojson = require("@mapbox/togeojson");
 const multer = require("multer");
 const shapefile = require("shapefile");
 const fs = require("fs");
@@ -267,6 +269,20 @@ function prepareGeojson(req, res) {
         console.error("Error extracting zip file", err);
         res.status(500).send("Error extracting zip file");
       });
+  } else if (extension === ".kml") {
+    const extractPath = path.join("./uploads", `${baseName}-extracted`);
+    if (!fs.existsSync(extractPath)) {
+      fs.mkdirSync(extractPath, { recursive: true });
+    }
+
+    const kmlContent = fs.readFileSync(filePath, "utf-8");
+    const kml = new DOMParser().parseFromString(kmlContent, "text/xml");
+    const geojson = togeojson.kml(kml);
+
+    const geoJSONPath = path.join(extractPath, "output.geojson");
+    fs.writeFileSync(geoJSONPath, JSON.stringify(geojson));
+
+    res.send(geojson);
   } else {
     res.status(400).send("Invalid file type. Please upload a .geojson or .zip file.");
   }
