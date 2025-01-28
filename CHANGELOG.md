@@ -2,6 +2,7 @@
 
 ### Bug Fixes
 - Fixes issue listing all users as an admin (previously caused issues above 50 users)
+- Fixes issue with job status showing an error state after submitting 
 
 ## 1.13.0 (2025-01-27)
 
