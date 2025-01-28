@@ -63,10 +63,6 @@ const LayersControl: FC = () => {
       area = 0;
     }
 
-    if (area > 0) {
-      area = area / 4046.86;
-    }
-
     return area;
   }, [loadedGeoJSON, multipolygons, rows]);
 
@@ -75,7 +71,12 @@ const LayersControl: FC = () => {
   }, [rows]);
 
   const roundedLoadedGeoJSONArea = useMemo(() => {
-    return Math.round(loadedGeoJSONArea * 100) / 100;
+    let convertedArea = loadedGeoJSONArea;
+    if (convertedArea > 0) {
+      convertedArea = convertedArea / 4046.86;
+    }
+
+    return Math.round(convertedArea * 100) / 100;
   }, [loadedGeoJSONArea]);
 
   const [activeRowId, setActiveRowId] = useState<number | null>(null);
