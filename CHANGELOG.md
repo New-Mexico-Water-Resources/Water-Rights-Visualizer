@@ -1,3 +1,12 @@
+## 1.15.0 (2025-01-28)
+
+### Features
+- Shows area in acres for uploaded files
+- Shows total area for all visible polygons in a multipolygon job
+
+### Bug Fixes
+- Fixes bug where job status would show in an error state for multipolygon jobs after submitting
+
 ## 1.14.0 (2025-01-27)
 
 ### Bug Fixes

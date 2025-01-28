@@ -494,8 +494,9 @@ const useStore = create<Store>()(
         }
 
         try {
-          let responses = [];
-          for (const job of jobs) {
+          let activeJob = jobs[0];
+          let responses: any[] = [];
+          await jobs.forEach(async (job, i) => {
             const response = await axiosInstance.post(`${API_URL}/start_run`, {
               name: job.name,
               startYear: job.start_year,
@@ -503,7 +504,15 @@ const useStore = create<Store>()(
               geojson: job.loaded_geo_json,
             });
             responses.push(response.data);
-          }
+            if (i === 0 && response.data?.entry) {
+              activeJob = response.data.entry;
+
+              set({
+                activeJob: activeJob,
+                loadedGeoJSON: activeJob.loaded_geo_json,
+              });
+            }
+          });
 
           set({
             showUploadDialog: false,
@@ -513,8 +522,6 @@ const useStore = create<Store>()(
             locations: [],
             successMessage: `All ${jobs.length} jobs submitted successfully!`,
             errorMessage: "",
-            activeJob: jobs[0],
-            loadedGeoJSON: jobs[0].loaded_geo_json,
           });
         } catch (error: any) {
           set({

@@ -38,22 +38,45 @@ const LayersControl: FC = () => {
   const [multipolygons, setMultipolygons] = useStore((state) => [state.multipolygons, state.setMultipolygons]);
   const [loadedGeoJSON, setLoadedGeoJSON] = useStore((state) => [state.loadedGeoJSON, state.setLoadedGeoJSON]);
 
+  const [rows, setRows] = useStore((state) => [state.locations, state.setLocations]);
+
   const loadedGeoJSONArea = useMemo(() => {
-    if (!loadedGeoJSON) {
+    let area = 0;
+    if (!loadedGeoJSON && multipolygons.length === 0) {
       return 0;
     }
 
-    return turfArea(loadedGeoJSON);
-  }, [loadedGeoJSON]);
+    if (loadedGeoJSON) {
+      area = turfArea(loadedGeoJSON);
+    } else {
+      let visiblePolygons: any[] = [];
+      rows.forEach((row) => {
+        if (row.visible) {
+          visiblePolygons.push(multipolygons[row.id]);
+        }
+      });
+
+      area = visiblePolygons.reduce((acc, geojson) => acc + turfArea(geojson), 0);
+    }
+
+    if (area < 0) {
+      area = 0;
+    }
+
+    if (area > 0) {
+      area = area / 4046.86;
+    }
+
+    return area;
+  }, [loadedGeoJSON, multipolygons, rows]);
+
+  const visibleLayerCount = useMemo(() => {
+    return rows.reduce((acc, row) => (row.visible ? acc + 1 : acc), 0);
+  }, [rows]);
 
   const roundedLoadedGeoJSONArea = useMemo(() => {
     return Math.round(loadedGeoJSONArea * 100) / 100;
   }, [loadedGeoJSONArea]);
-
-  const [rows, setRows] = useStore((state) => [state.locations, state.setLocations]);
-  const visibleLayerCount = useMemo(() => {
-    return rows.reduce((acc, row) => (row.visible ? acc + 1 : acc), 0);
-  }, [rows]);
 
   const [activeRowId, setActiveRowId] = useState<number | null>(null);
 
@@ -525,7 +548,7 @@ const LayersControl: FC = () => {
               <MapIcon style={{ color: "var(--st-gray-20)" }} />
               <p style={{ color: "var(--st-gray-20)", marginBottom: 0 }}>{loadedFile.name}</p>
               <p style={{ color: "var(--st-gray-50)", margin: 0, fontSize: "12px" }}>
-                Area: {roundedLoadedGeoJSONArea} m<sup>2</sup>
+                Area: {roundedLoadedGeoJSONArea} Acres
               </p>
             </div>
           ) : (

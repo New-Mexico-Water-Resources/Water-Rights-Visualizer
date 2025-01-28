@@ -177,7 +177,7 @@ const JobQueue = () => {
       );
     }
 
-    let searchTerm = searchField.toLowerCase();
+    let searchTerm = searchField?.toLowerCase() || "";
 
     if (activeAuthorFilters.length) {
       items = items.filter((item) => activeAuthorFilters.includes(item.user?.name));
@@ -189,11 +189,11 @@ const JobQueue = () => {
 
     let filteredItems = items.filter((item) => {
       let fields = [
-        item.name.toLowerCase(),
+        item?.name?.toLowerCase() || "",
         `${item?.start_year}`,
         `${item?.end_year}`,
-        item.user?.name.toLowerCase(),
-        item.user?.email.toLowerCase(),
+        item.user?.name?.toLowerCase(),
+        item.user?.email?.toLowerCase(),
         item?.status.toLowerCase(),
       ].filter((field) => field);
 
