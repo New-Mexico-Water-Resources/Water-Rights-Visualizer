@@ -17,6 +17,24 @@ router.get("/list", async (req, res) => {
   res.status(200).send(result);
 });
 
+router.get("/search_geojsons", async (req, res) => {
+  let canReadJobs = req.auth?.payload?.permissions?.includes("read:jobs") || false;
+  if (!canReadJobs) {
+    res.status(401).send("Unauthorized: missing read:jobs permission");
+    return;
+  }
+
+  let db = await constants.connectToDatabase();
+  let collection = db.collection(constants.report_queue_collection);
+  let result = await collection.find({}).toArray();
+  result.forEach((job, i) => {
+    let geojson = fs.readFileSync(job.geo_json, "utf8");
+    result[i].geojson = JSON.parse(geojson);
+  });
+
+  res.status(200).send(result);
+});
+
 router.delete("/delete_job", async (req, res) => {
   let canWriteJobs = req.auth?.payload?.permissions?.includes("write:jobs") || false;
 

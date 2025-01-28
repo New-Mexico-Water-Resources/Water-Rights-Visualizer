@@ -184,6 +184,8 @@ interface Store {
   toggleARDTiles: () => void;
   ardTiles: Record<string, any>;
   fetchARDTiles: () => void;
+  searchGeoJSONs: () => void;
+  allGeoJSONs: any[];
 }
 
 const useStore = create<Store>()(
@@ -443,12 +445,15 @@ const useStore = create<Store>()(
             geojson: get().loadedGeoJSON,
           })
           .then((response) => {
+            let message = response?.data?.status || "";
+            newJob = response.data?.entry || newJob;
+
             set({
               showUploadDialog: false,
               previewMode: false,
               loadedFile: null,
               activeJob: newJob,
-              successMessage: response.data,
+              successMessage: message,
               errorMessage: "",
             });
             get().increasePollCount();
@@ -904,6 +909,23 @@ const useStore = create<Store>()(
             set({ errorMessage: error?.response?.data || error?.message || "Error fetching ARD tiles" });
           });
       },
+      searchGeoJSONs: () => {
+        let axiosInstance = get().authAxios();
+        if (!axiosInstance) {
+          return;
+        }
+
+        axiosInstance
+          .get(`${API_URL}/search_geojsons`)
+          .then((response) => {
+            set({ allGeoJSONs: response.data });
+          })
+          .catch((error) => {
+            console.error("Error fetching GeoJSONs", error);
+            set({ errorMessage: error?.response?.data || error?.message || "Error fetching GeoJSONs" });
+          });
+      },
+      allGeoJSONs: [],
     })),
     {
       name: "et-visualizer-state",

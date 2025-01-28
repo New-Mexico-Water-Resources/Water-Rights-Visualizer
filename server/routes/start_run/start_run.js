@@ -157,7 +157,7 @@ router.post("/start_run", async (req, res) => {
   console.log("Writing entry to mongodb");
   console.log(entry);
 
-  res.status(200).send(`Queued report for ${name} from ${start_year} to ${end_year}`);
+  res.status(200).send({ entry: entry, status: `Queued report for ${name} from ${start_year} to ${end_year}` });
 });
 
 module.exports = router;
