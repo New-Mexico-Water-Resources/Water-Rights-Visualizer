@@ -95,6 +95,7 @@ const LayersControl: FC = () => {
   const canWriteJobs = useMemo(() => userInfo?.permissions.includes("write:jobs"), [userInfo?.permissions]);
 
   const submitJob = useStore((state) => state.submitJob);
+
   const canSubmitJob = useMemo(() => {
     return jobName && loadedFile && loadedGeoJSON && startYear <= endYear;
   }, [jobName, loadedFile, loadedGeoJSON, startYear, endYear]);
@@ -400,17 +401,19 @@ const LayersControl: FC = () => {
           <CloseIcon />
         </IconButton>
       </div>
-      <FormControl style={{ width: "100%", padding: "0 8px", marginTop: "16px" }}>
-        <InputLabel htmlFor="name-field">Output Name</InputLabel>
-        <Input
-          id="name-field"
-          style={{ padding: "0 8px", width: "100%" }}
-          value={jobName}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-            setJobName(event.target.value);
-          }}
-        />
-      </FormControl>
+      {multipolygons.length === 0 && (
+        <FormControl style={{ width: "100%", padding: "0 8px", marginTop: "16px" }}>
+          <InputLabel htmlFor="name-field">Output Name</InputLabel>
+          <Input
+            id="name-field"
+            style={{ padding: "0 8px", width: "100%" }}
+            value={jobName}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              setJobName(event.target.value);
+            }}
+          />
+        </FormControl>
+      )}
       <div style={{ padding: "8px 16px" }}>
         <Slider
           min={minYear}

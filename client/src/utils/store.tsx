@@ -430,6 +430,10 @@ const useStore = create<Store>()(
       },
       submitJob: async () => {
         let jobName = get().jobName.trim() || "Untitled Job";
+
+        // Remove any special characters
+        jobName = jobName.replace(/[^\w\s-_]/gi, "");
+
         let newJob = formJobForQueue(jobName, get().startYear, get().endYear, get().loadedGeoJSON);
 
         let axiosInstance = get().authAxios();
@@ -469,6 +473,7 @@ const useStore = create<Store>()(
       },
       prepareMultipolygonJob: () => {
         let baseName = get().jobName.trim() || "Untitled Job";
+        baseName = baseName.replace(/[^\w\s-_]/gi, "");
         let multipolygons = get().multipolygons;
         let polygonLocations = get().locations;
 
@@ -482,6 +487,7 @@ const useStore = create<Store>()(
           .map((location) => {
             let defaultName = `${baseName} Part ${location.id + 1}`;
             let jobName = location?.name || defaultName;
+            jobName = jobName.replace(/[^\w\s-_]/gi, "") || "Untitled Job";
             let geojson = multipolygons[location.id];
 
             return formJobForQueue(jobName, get().startYear, get().endYear, geojson);
@@ -497,8 +503,9 @@ const useStore = create<Store>()(
           let activeJob = jobs[0];
           let responses: any[] = [];
           await jobs.forEach(async (job, i) => {
+            let jobName = job?.name.replace(/[^\w\s-_]/gi, "") || "Untitled Job";
             const response = await axiosInstance.post(`${API_URL}/start_run`, {
-              name: job.name,
+              name: jobName,
               startYear: job.start_year,
               endYear: job.end_year,
               geojson: job.loaded_geo_json,

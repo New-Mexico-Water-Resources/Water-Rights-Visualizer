@@ -6,6 +6,8 @@
 
 ### Bug Fixes
 - Fixes bug where job status would show in an error state for multipolygon jobs after submitting
+- Strips special characters from job names to prevent issues with file paths when downloading
+- Hides "job name" field for multipolygons as the individual layer name overwrites it
 
 ## 1.14.0 (2025-01-27)
 
