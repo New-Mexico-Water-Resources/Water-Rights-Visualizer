@@ -21,9 +21,20 @@ function mm_to_in(mm) {
   return mm / 25.4;
 }
 
-router.get("/download", function (req, res) {
+router.get("/download", async function (req, res) {
   let key = req.query.key;
-  let name = req.query.name;
+
+  let db = await constants.connectToDatabase();
+  let collection = db.collection(constants.report_queue_collection);
+
+  let job = await collection.findOne({ key });
+  if (!job) {
+    res.status(404).send("Job not found");
+    return;
+  }
+
+  let name = job.name;
+
   let metric_units = req.query.units !== "in";
 
   let units = metric_units ? "mm" : "in";

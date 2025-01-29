@@ -167,7 +167,8 @@ interface Store {
   fetchUserInfo: () => void;
   authAxios: () => AxiosInstance | null;
   users: UserListingDetails[];
-  adminFetchUsers: () => void;
+  totalUsers: number;
+  adminFetchUsers: (page?: number) => void;
   adminDeleteUser: (userId: string) => void;
   adminUpdateUser: (userId: string, roles: string[]) => void;
   reverifyEmail: (userId: string) => void;
@@ -430,6 +431,10 @@ const useStore = create<Store>()(
       },
       submitJob: async () => {
         let jobName = get().jobName.trim() || "Untitled Job";
+
+        // Remove any special characters
+        jobName = jobName.replace(/[^\w\s-_]/gi, "");
+
         let newJob = formJobForQueue(jobName, get().startYear, get().endYear, get().loadedGeoJSON);
 
         let axiosInstance = get().authAxios();
@@ -469,6 +474,7 @@ const useStore = create<Store>()(
       },
       prepareMultipolygonJob: () => {
         let baseName = get().jobName.trim() || "Untitled Job";
+        baseName = baseName.replace(/[^\w\s-_]/gi, "");
         let multipolygons = get().multipolygons;
         let polygonLocations = get().locations;
 
@@ -482,6 +488,7 @@ const useStore = create<Store>()(
           .map((location) => {
             let defaultName = `${baseName} Part ${location.id + 1}`;
             let jobName = location?.name || defaultName;
+            jobName = jobName.replace(/[^\w\s-_]/gi, "") || "Untitled Job";
             let geojson = multipolygons[location.id];
 
             return formJobForQueue(jobName, get().startYear, get().endYear, geojson);
@@ -497,8 +504,9 @@ const useStore = create<Store>()(
           let activeJob = jobs[0];
           let responses: any[] = [];
           await jobs.forEach(async (job, i) => {
+            let jobName = job?.name.replace(/[^\w\s-_]/gi, "") || "Untitled Job";
             const response = await axiosInstance.post(`${API_URL}/start_run`, {
-              name: job.name,
+              name: jobName,
               startYear: job.start_year,
               endYear: job.end_year,
               geojson: job.loaded_geo_json,
@@ -755,16 +763,17 @@ const useStore = create<Store>()(
         get().bulkDeleteJobs(pendingJobs, true);
       },
       users: [],
-      adminFetchUsers: () => {
+      totalUsers: 0,
+      adminFetchUsers: (page = 0) => {
         let axiosInstance = get().authAxios();
         if (!axiosInstance) {
           return;
         }
 
         axiosInstance
-          .get(`${API_URL}/admin/users`)
+          .get(`${API_URL}/admin/users?page=${page}`)
           .then((response) => {
-            let users: UserListingDetails[] = response.data;
+            let users: UserListingDetails[] = response.data.users;
             users.sort((a, b) => {
               if (
                 a.roles.some((role) => role.id === ROLES.NEW_USER) &&
@@ -781,7 +790,7 @@ const useStore = create<Store>()(
               }
             });
 
-            set({ users });
+            set({ users, totalUsers: response.data.total });
           })
           .catch((error) => {
             set({ errorMessage: error?.response?.data || error?.message || "Error fetching users" });

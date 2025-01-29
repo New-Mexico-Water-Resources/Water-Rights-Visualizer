@@ -154,8 +154,7 @@ router.post("/start_run", async (req, res) => {
   let collection = db.collection(constants.report_queue_collection);
   await collection.insertOne(entry);
 
-  console.log("Writing entry to mongodb");
-  console.log(entry);
+  console.log(`Writing entry to mongodb: ${entry?.key || "unknown"}`);
 
   res.status(200).send({ entry: entry, status: `Queued report for ${name} from ${start_year} to ${end_year}` });
 });

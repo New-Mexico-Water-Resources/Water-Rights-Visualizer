@@ -1,3 +1,12 @@
+## 1.16.0 (2025-01-29)
+
+### Features
+- Adds support for KML files
+- Adds pagination for users to prevent too many requests to Auth0 (admin feature)
+
+### Bug Fixes
+- Adds better error messaging for Auth0 rate limiting
+
 ## 1.15.0 (2025-01-28)
 
 ### Features
@@ -6,6 +15,8 @@
 
 ### Bug Fixes
 - Fixes bug where job status would show in an error state for multipolygon jobs after submitting
+- Strips special characters from job names to prevent issues with file paths when downloading
+- Hides "job name" field for multipolygons as the individual layer name overwrites it
 
 ## 1.14.0 (2025-01-27)
 

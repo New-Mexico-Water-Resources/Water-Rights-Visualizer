@@ -7,12 +7,23 @@ const constants = require("../constants");
 const run_directory_base = constants.run_directory_base;
 const project_directory = constants.project_directory;
 
-router.get("/geojson", (req, res) => {
-  let name = req.query.name;
+router.get("/geojson", async (req, res) => {
   let key = req.query.key;
+
+  // Make sure job exists
+  let db = await constants.connectToDatabase();
+  let collection = db.collection(constants.report_queue_collection);
+
+  let job = await collection.findOne({ key });
+  if (!job) {
+    res.status(404).send("Job not found");
+    return;
+  }
+
+  let jobName = job.name;
+
   let run_directory = path.join(run_directory_base, key);
-  let geojson_filename = path.join(run_directory, `${name}.geojson`);
-  console.log(`reading GeoJSON from ${geojson_filename}`);
+  let geojson_filename = path.join(run_directory, `${jobName}.geojson`);
   let geojson = fs.readFileSync(geojson_filename, "utf8");
   res.status(200).send(geojson);
 });

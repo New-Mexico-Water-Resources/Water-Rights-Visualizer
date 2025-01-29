@@ -74,7 +74,6 @@ router.get("/job/status", async (req, res) => {
   }
 
   let key = req.query.key;
-  let jobName = req.query.name;
 
   if (!key) {
     res.status(400).send("key parameter is required");
@@ -93,6 +92,8 @@ router.get("/job/status", async (req, res) => {
     res.status(404).send("Job not found");
     return;
   }
+
+  let jobName = job.name;
 
   let totalYears = job.end_year - job.start_year + 1;
   let processedYears = calculateYearsProcessed(

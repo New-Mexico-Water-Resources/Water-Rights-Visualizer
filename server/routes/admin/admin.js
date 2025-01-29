@@ -1,6 +1,3 @@
-// axiosInstance.get(`${API_URL}/admin/users`).then((response) => {
-// axiosInstance.delete(`${API_URL}/admin/delete_user?userId=${userId}`).then(() => {
-// .post(`${API_URL}/admin/update_user`, { userId, roles })
 const express = require("express");
 const router = express.Router();
 const path = require("path");
@@ -11,9 +8,10 @@ const { ManagementClient } = require("auth0");
 const cachedUsers = {
   data: [],
   lastUpdated: 0,
+  page: 0,
 };
 
-const DEEP_CACHE_DURATION = 60000; // 1 minute
+const DEEP_CACHE_DURATION = 2 * 60000; // 2 minutes
 const SHALLOW_CACHE_DURATION = 600000; // 10 minutes
 
 const managementClient = new ManagementClient({
@@ -25,29 +23,30 @@ const managementClient = new ManagementClient({
   grantType: "client_credentials",
 });
 
-async function fetchUsers() {
+async function fetchUsers(requestedPage) {
   try {
     const allUsers = [];
-    let page = 0;
-    while (true) {
-      const {
-        data: { users, total },
-      } = await managementClient.users.getAll({
-        include_totals: true,
-        page: page++,
-        per_page: 50,
-      });
+    // let page = 0;
+    // while (true) {
+    const {
+      data: { users, total },
+    } = await managementClient.users.getAll({
+      include_totals: true,
+      // page: page++,
+      page: requestedPage,
+      per_page: 25,
+    });
 
-      allUsers.push(...users);
+    allUsers.push(...users);
 
-      if (allUsers.length >= total) {
-        break;
-      }
+    // if (allUsers.length >= total) {
+    //   break;
+    // }
 
-      if (page >= 20) {
-        break;
-      }
-    }
+    // if (page >= 20) {
+    //   break;
+    // }
+    // }
 
     let usersWithPermissions = await allUsers.map(async (user) => {
       // Fetch user permissions
@@ -73,30 +72,37 @@ router.get("/users", async (req, res) => {
     return;
   }
 
+  let page = req.query.page || 0;
+
   try {
     let lastUpdateTimeString = new Date(cachedUsers?.lastUpdated || 0).toLocaleString();
-    // If users were fetched less than 1 minute ago, return cached users without any additional requests
-    if (cachedUsers.lastUpdated > Date.now() - DEEP_CACHE_DURATION) {
-      res.status(200).send(cachedUsers.data);
+    // If users were fetched less than 2 minutes ago, return cached users without any additional requests
+    if (cachedUsers.lastUpdated > Date.now() - DEEP_CACHE_DURATION && cachedUsers.page === page) {
+      res.status(200).send({ users: cachedUsers.data, total: cachedUsers.data.length, page: page });
       console.log("Returning cached users, last updated", `\x1b[32m${lastUpdateTimeString}\x1b[0m`);
       return;
     }
 
     // If users were fetched less than 10 minute ago, check user count and return cached users if count is the same
-    let allUsers = await managementClient.users.getAll({ include_totals: true });
+    let allUsers = await managementClient.users.getAll({ include_totals: true, per_page: 1 });
     if (cachedUsers.lastUpdated > Date.now() - SHALLOW_CACHE_DURATION && cachedUsers.data.length === allUsers.data.total) {
       console.log("Returning cached users, count is the same, last updated", `\x1b[32m${lastUpdateTimeString}\x1b[0m`);
       res.status(200).send(cachedUsers.data);
       return;
     }
 
-    const users = await fetchUsers();
+    const users = await fetchUsers(page);
     cachedUsers.data = users;
     cachedUsers.lastUpdated = Date.now();
-    res.status(200).send(users);
+    res.status(200).send({ users: users, total: allUsers.data.total, page: page });
   } catch (error) {
-    console.error("Failed to fetch users from Auth0:", error);
-    res.status(500).send({ error: "Failed to fetch users" });
+    if (error?.errorCode === "too_many_requests") {
+      console.log("Too many requests to Auth0:", error);
+      res.status(429).send({ error: `Too many requests to Auth0, rate limit reached.` });
+      return;
+    } else {
+      res.status(500).send({ error: "Failed to fetch users" });
+    }
   }
 });
 
