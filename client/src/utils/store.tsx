@@ -167,7 +167,8 @@ interface Store {
   fetchUserInfo: () => void;
   authAxios: () => AxiosInstance | null;
   users: UserListingDetails[];
-  adminFetchUsers: () => void;
+  totalUsers: number;
+  adminFetchUsers: (page?: number) => void;
   adminDeleteUser: (userId: string) => void;
   adminUpdateUser: (userId: string, roles: string[]) => void;
   reverifyEmail: (userId: string) => void;
@@ -762,16 +763,17 @@ const useStore = create<Store>()(
         get().bulkDeleteJobs(pendingJobs, true);
       },
       users: [],
-      adminFetchUsers: () => {
+      totalUsers: 0,
+      adminFetchUsers: (page = 0) => {
         let axiosInstance = get().authAxios();
         if (!axiosInstance) {
           return;
         }
 
         axiosInstance
-          .get(`${API_URL}/admin/users`)
+          .get(`${API_URL}/admin/users?page=${page}`)
           .then((response) => {
-            let users: UserListingDetails[] = response.data;
+            let users: UserListingDetails[] = response.data.users;
             users.sort((a, b) => {
               if (
                 a.roles.some((role) => role.id === ROLES.NEW_USER) &&
@@ -788,7 +790,7 @@ const useStore = create<Store>()(
               }
             });
 
-            set({ users });
+            set({ users, totalUsers: response.data.total });
           })
           .catch((error) => {
             set({ errorMessage: error?.response?.data || error?.message || "Error fetching users" });
