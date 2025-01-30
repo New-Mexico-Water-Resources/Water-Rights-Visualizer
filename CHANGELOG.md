@@ -1,3 +1,12 @@
+## 1.17.0 (2025-01-30)
+
+### Features
+
+
+### Bug Fixes
+- Clears status and finished fields when restarting job
+
+
 ## 1.16.0 (2025-01-29)
 
 ### Features
