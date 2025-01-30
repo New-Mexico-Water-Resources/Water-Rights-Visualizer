@@ -6,6 +6,7 @@
 
 ### Bug Fixes
 - Adds better error messaging for Auth0 rate limiting
+- Fixes issue fetching job status/location for job names with special charactres in them
 
 ## 1.15.0 (2025-01-28)
 
